@@ -3,9 +3,9 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./interfaces/IEcoPoints.sol";
+import "./interfaces/IRecycleNFT.sol";
 import "./interfaces/IRecycleHub.sol";
-import "./tokens/EcoPoints.sol";
-import "./tokens/RecycleNFT.sol";
 import "./libraries/MaterialLib.sol";
 
 contract RecycleHub is AccessControl, IRecycleHub {
@@ -13,23 +13,25 @@ contract RecycleHub is AccessControl, IRecycleHub {
     bytes32 public constant BRANCH_ROLE = keccak256("BRANCH_ROLE");
     bytes32 public constant BUYER_ROLE = keccak256("BUYER_ROLE");
 
-    EcoPoints public immutable ecoPoints;
-    RecycleNFT public immutable recycleNFT;
+    IEcoPoints public immutable ecoPoints;
+    IRecycleNFT public immutable recycleNFT;
     IERC20 public immutable paymentToken; // cUSD on Celo
     uint256 public constant MIN_BULK_WEIGHT = 100_000; // 100kg in grams
 
     mapping(uint256 => Material) public override materials;
-    uint256 public materialCounter;
+    uint256 public override materialCounter;
 
     error MaterialNotFound(uint256 id);
     error MaterialAlreadyVerified(uint256 id);
     error InsufficientFunds(uint256 required, uint256 available);
     error UnauthorizedRole();
+    error InvalidWeight(uint256 weight);
+    error InvalidPrice(uint256 price);
 
     constructor(address _ecoPoints, address _recycleNFT, address _paymentToken) {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        ecoPoints = EcoPoints(_ecoPoints);
-        recycleNFT = RecycleNFT(_recycleNFT);
+        ecoPoints = IEcoPoints(_ecoPoints);
+        recycleNFT = IRecycleNFT(_recycleNFT);
         paymentToken = IERC20(_paymentToken);
     }
 
@@ -38,6 +40,7 @@ contract RecycleHub is AccessControl, IRecycleHub {
         uint256 _weight,
         MaterialLib.Quality _quality
     ) external override onlyRole(COLLECTOR_ROLE) {
+        if (_weight == 0) revert InvalidWeight(_weight);
         materialCounter++;
         materials[materialCounter] = Material({
             id: materialCounter,
@@ -60,6 +63,7 @@ contract RecycleHub is AccessControl, IRecycleHub {
         Material storage material = materials[_materialId];
         if (material.id == 0) revert MaterialNotFound(_materialId);
         if (material.isVerified) revert MaterialAlreadyVerified(_materialId);
+        if (_price == 0) revert InvalidPrice(_price);
 
         material.isVerified = true;
         material.quality = _quality;
@@ -84,7 +88,7 @@ contract RecycleHub is AccessControl, IRecycleHub {
         Material storage material = materials[_materialId];
         if (material.id == 0) revert MaterialNotFound(_materialId);
         if (!material.isVerified) revert MaterialAlreadyVerified(_materialId);
-        if (material.price == 0) revert("Price not set");
+        if (material.price == 0) revert InvalidPrice(material.price);
 
         uint256 balance = paymentToken.balanceOf(msg.sender);
         if (balance < material.price) revert InsufficientFunds(material.price, balance);
