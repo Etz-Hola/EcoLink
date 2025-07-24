@@ -27,11 +27,15 @@ const config: HardhatUserConfig = {
       url: "https://alfajores-forno.celo-testnet.org",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 44787,
+      gas: 8000000, // Increase gas limit
+      gasPrice: 1000000000, // 1 gwei
     },
     celo: {
       url: "https://forno.celo.org",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 42220,
+      gas: 8000000,
+      gasPrice: 1000000000,
     },
   },
   solidity: {
