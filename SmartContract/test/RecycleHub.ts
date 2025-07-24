@@ -15,46 +15,46 @@ describe("RecycleHub", function () {
     // Deploy MockCUSD
     const MockCUSD = await ethers.getContractFactory("MockCUSD");
     cUSD = await MockCUSD.deploy();
-    await cUSD.deployed();
+    // await cUSD.deployed();
 
     // Deploy EcoPoints
     const EcoPoints = await ethers.getContractFactory("EcoPoints");
     ecoPoints = await EcoPoints.deploy();
-    await ecoPoints.deployed();
+    // await ecoPoints.deployed();
 
     // Deploy RecycleNFT
     const RecycleNFT = await ethers.getContractFactory("RecycleNFT");
     recycleNFT = await RecycleNFT.deploy();
-    await recycleNFT.deployed();
+    // await recycleNFT.deployed();
 
     // Deploy RecycleHub
     const RecycleHub = await ethers.getContractFactory("RecycleHub");
-    recycleHub = await RecycleHub.deploy(ecoPoints.address, recycleNFT.address, cUSD.address);
-    await recycleHub.deployed();
+    recycleHub = await RecycleHub.deploy(ecoPoints.getAddress(), recycleNFT.getAddress(), cUSD.getAddress());
+    // await recycleHub.deployed();
 
     // Transfer ownership
-    await ecoPoints.transferOwnership(recycleHub.address);
-    await recycleNFT.transferOwnership(recycleHub.address);
+    await ecoPoints.transferOwnership(await recycleHub.getAddress());
+    await recycleNFT.transferOwnership(await recycleHub.getAddress());
 
     // Grant roles
-    await recycleHub.grantRole(ethers.utils.keccak256(ethers.utils.toUtf8Bytes("COLLECTOR_ROLE")), collector.address);
-    await recycleHub.grantRole(ethers.utils.keccak256(ethers.utils.toUtf8Bytes("BRANCH_ROLE")), branch.address);
-    await recycleHub.grantRole(ethers.utils.keccak256(ethers.utils.toUtf8Bytes("BUYER_ROLE")), buyer.address);
+    await recycleHub.grantRole(ethers.keccak256(ethers.toUtf8Bytes("COLLECTOR_ROLE")), collector.address);
+    await recycleHub.grantRole(ethers.keccak256(ethers.toUtf8Bytes("BRANCH_ROLE")), branch.address);
+    await recycleHub.grantRole(ethers.keccak256(ethers.toUtf8Bytes("BUYER_ROLE")), buyer.address);
 
     // Fund buyer with cUSD
-    await cUSD.mint(buyer.address, ethers.utils.parseUnits("1000", 18));
+    await cUSD.mint(buyer.address, ethers.parseUnits("1000", 18));
   });
 
   describe("Role Management", function () {
     it("should allow admin to grant roles", async function () {
       const newCollector = ethers.Wallet.createRandom().address;
-      await recycleHub.grantRole(ethers.utils.keccak256(ethers.utils.toUtf8Bytes("COLLECTOR_ROLE")), newCollector);
-      expect(await recycleHub.hasRole(ethers.utils.keccak256(ethers.utils.toUtf8Bytes("COLLECTOR_ROLE")), newCollector)).to.be.true;
+      await recycleHub.grantRole(ethers.keccak256(ethers.toUtf8Bytes("COLLECTOR_ROLE")), newCollector);
+      expect(await recycleHub.hasRole(ethers.keccak256(ethers.toUtf8Bytes("COLLECTOR_ROLE")), newCollector)).to.be.true;
     });
 
     it("should revert if non-admin tries to grant role", async function () {
       await expect(
-        recycleHub.connect(collector).grantRole(ethers.utils.keccak256(ethers.utils.toUtf8Bytes("COLLECTOR_ROLE")), collector.address)
+        recycleHub.connect(collector).grantRole(ethers.keccak256(ethers.toUtf8Bytes("COLLECTOR_ROLE")), collector.address)
       ).to.be.revertedWith("AccessControl: account is missing role");
     });
   });
@@ -94,35 +94,35 @@ describe("RecycleHub", function () {
     });
 
     it("should allow branch to verify material", async function () {
-      await recycleHub.connect(branch).verifyMaterial(1, 0, ethers.utils.parseUnits("1", 18));
+      await recycleHub.connect(branch).verifyMaterial(1, 0, ethers.parseUnits("1", 18));
       const material = await recycleHub.materials(1);
       expect(material.isVerified).to.be.true;
       expect(material.quality).to.equal(0);
-      expect(material.price).to.equal(ethers.utils.parseUnits("1", 18));
+      expect(material.price).to.equal(ethers.parseUnits("1", 18));
       expect(material.branch).to.equal(branch.address);
     });
 
     it("should issue eco-points on verification", async function () {
-      await recycleHub.connect(branch).verifyMaterial(1, 0, ethers.utils.parseUnits("1", 18));
+      await recycleHub.connect(branch).verifyMaterial(1, 0, ethers.parseUnits("1", 18));
       expect(await ecoPoints.balanceOf(collector.address)).to.equal(5);
     });
 
     it("should emit MaterialVerified and EcoPointsIssued events", async function () {
-      await expect(recycleHub.connect(branch).verifyMaterial(1, 0, ethers.utils.parseUnits("1", 18)))
+      await expect(recycleHub.connect(branch).verifyMaterial(1, 0, ethers.parseUnits("1", 18)))
         .to.emit(recycleHub, "MaterialVerified")
-        .withArgs(1, branch.address, 0, ethers.utils.parseUnits("1", 18))
+        .withArgs(1, branch.address, 0, ethers.parseUnits("1", 18))
         .to.emit(recycleHub, "EcoPointsIssued")
         .withArgs(collector.address, 5);
     });
 
     it("should revert if material does not exist", async function () {
-      await expect(recycleHub.connect(branch).verifyMaterial(999, 0, ethers.utils.parseUnits("1", 18)))
+      await expect(recycleHub.connect(branch).verifyMaterial(999, 0, ethers.parseUnits("1", 18)))
         .to.be.revertedWithCustomError(recycleHub, "MaterialNotFound");
     });
 
     it("should revert if material already verified", async function () {
-      await recycleHub.connect(branch).verifyMaterial(1, 0, ethers.utils.parseUnits("1", 18));
-      await expect(recycleHub.connect(branch).verifyMaterial(1, 0, ethers.utils.parseUnits("1", 18)))
+      await recycleHub.connect(branch).verifyMaterial(1, 0, ethers.parseUnits("1", 18));
+      await expect(recycleHub.connect(branch).verifyMaterial(1, 0, ethers.parseUnits("1", 18)))
         .to.be.revertedWithCustomError(recycleHub, "MaterialAlreadyVerified");
     });
 
@@ -135,16 +135,16 @@ describe("RecycleHub", function () {
   describe("NFT Minting", function () {
     it("should mint NFT for bulk contributions", async function () {
       await recycleHub.connect(collector).uploadMaterial(0, 100_000, 0);
-      await recycleHub.connect(branch).verifyMaterial(1, 0, ethers.utils.parseUnits("10", 18));
+      await recycleHub.connect(branch).verifyMaterial(1, 0, ethers.parseUnits("10", 18));
       expect(await recycleNFT.ownerOf(1)).to.equal(collector.address);
-      await expect(recycleHub.connect(branch).verifyMaterial(1, 0, ethers.utils.parseUnits("10", 18)))
+      await expect(recycleHub.connect(branch).verifyMaterial(1, 0, ethers.parseUnits("10", 18)))
         .to.emit(recycleHub, "NFTMinted")
         .withArgs(collector.address, 1, 1);
     });
 
     it("should not mint NFT for non-bulk contributions", async function () {
       await recycleHub.connect(collector).uploadMaterial(0, 50_000, 0);
-      await recycleHub.connect(branch).verifyMaterial(1, 0, ethers.utils.parseUnits("5", 18));
+      await recycleHub.connect(branch).verifyMaterial(1, 0, ethers.parseUnits("5", 18));
       await expect(recycleNFT.ownerOf(1)).to.be.revertedWith("ERC721: invalid token ID");
     });
   });
@@ -152,19 +152,19 @@ describe("RecycleHub", function () {
   describe("Payment Processing", function () {
     beforeEach(async function () {
       await recycleHub.connect(collector).uploadMaterial(0, 5000, 0);
-      await recycleHub.connect(branch).verifyMaterial(1, 0, ethers.utils.parseUnits("1", 18));
+      await recycleHub.connect(branch).verifyMaterial(1, 0, ethers.parseUnits("1", 18));
     });
 
     it("should process payment with cUSD", async function () {
-      await cUSD.connect(buyer).approve(recycleHub.address, ethers.utils.parseUnits("1", 18));
+      await cUSD.connect(buyer).approve(recycleHub.getAddress(), ethers.parseUnits("1", 18));
       await expect(recycleHub.connect(buyer).processPayment(1))
         .to.emit(recycleHub, "PaymentProcessed")
-        .withArgs(collector.address, 1, ethers.utils.parseUnits("1", 18));
-      expect(await cUSD.balanceOf(collector.address)).to.equal(ethers.utils.parseUnits("1", 18));
+        .withArgs(collector.address, 1, ethers.parseUnits("1", 18));
+      expect(await cUSD.balanceOf(collector.address)).to.equal(ethers.parseUnits("1", 18));
     });
 
     it("should revert if insufficient funds", async function () {
-      await cUSD.connect(buyer).approve(recycleHub.address, ethers.utils.parseUnits("0.5", 18));
+      await cUSD.connect(buyer).approve(recycleHub.getAddress(), ethers.parseUnits("0.5", 18));
       await expect(recycleHub.connect(buyer).processPayment(1))
         .to.be.revertedWithCustomError(recycleHub, "InsufficientFunds");
     });
