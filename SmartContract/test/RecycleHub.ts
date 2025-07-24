@@ -55,7 +55,7 @@ describe("RecycleHub", function () {
     it("should revert if non-admin tries to grant role", async function () {
       await expect(
         recycleHub.connect(collector).grantRole(ethers.keccak256(ethers.toUtf8Bytes("COLLECTOR_ROLE")), collector.address)
-      ).to.be.revertedWith("AccessControl: account is missing role");
+      ).to.be.revertedWithCustomError(recycleHub, "AccessControlUnauthorizedAccount");
     });
   });
 
@@ -78,7 +78,7 @@ describe("RecycleHub", function () {
 
     it("should revert if non-collector tries to upload", async function () {
       await expect(recycleHub.connect(buyer).uploadMaterial(0, 5000, 0))
-        .to.be.revertedWith("AccessControl: account is missing role");
+        .to.be.revertedWithCustomError(recycleHub, "AccessControlUnauthorizedAccount");
     });
 
     it("should emit MaterialUploaded event", async function () {
@@ -137,9 +137,9 @@ describe("RecycleHub", function () {
       await recycleHub.connect(collector).uploadMaterial(0, 100_000, 0);
       await recycleHub.connect(branch).verifyMaterial(1, 0, ethers.parseUnits("10", 18));
       expect(await recycleNFT.ownerOf(1)).to.equal(collector.address);
+      // Try to verify again, should revert with MaterialAlreadyVerified
       await expect(recycleHub.connect(branch).verifyMaterial(1, 0, ethers.parseUnits("10", 18)))
-        .to.emit(recycleHub, "NFTMinted")
-        .withArgs(collector.address, 1, 1);
+        .to.be.revertedWithCustomError(recycleHub, "MaterialAlreadyVerified");
     });
 
     it("should not mint NFT for non-bulk contributions", async function () {
@@ -177,7 +177,7 @@ describe("RecycleHub", function () {
 
     it("should revert if non-buyer tries to process payment", async function () {
       await expect(recycleHub.connect(collector).processPayment(1))
-        .to.be.revertedWith("AccessControl: account is missing role");
+        .to.be.revertedWithCustomError(recycleHub, "AccessControlUnauthorizedAccount");
     });
   });
 });

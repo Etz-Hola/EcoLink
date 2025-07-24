@@ -6,12 +6,11 @@ import { ethers } from "hardhat";
 describe("Lock", function () {
   async function deployOneYearLockFixture() {
     const ONE_YEAR_IN_SECS = 365 * 24 * 60 * 60;
-    const lockedAmount = ethers.utils.parseEther("1");
+    const lockedAmount = ethers.parseEther("1");
     const unlockTime = (await time.latest()) + ONE_YEAR_IN_SECS;
     const [owner, otherAccount] = await ethers.getSigners();
     const Lock = await ethers.getContractFactory("Lock");
     const lock = await Lock.deploy(unlockTime, { value: lockedAmount });
-    await lock.deployed();
     return { lock, unlockTime, lockedAmount, owner, otherAccount };
   }
 

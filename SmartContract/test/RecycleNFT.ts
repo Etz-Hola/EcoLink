@@ -15,30 +15,30 @@ describe("EcoPoints and RecycleNFT", function () {
     // Deploy MockCUSD
     const MockCUSD = await ethers.getContractFactory("MockCUSD");
     cUSD = await MockCUSD.deploy();
-    await cUSD.deployed();
+    // await cUSD.deployed();
 
     // Deploy EcoPoints
     const EcoPoints = await ethers.getContractFactory("EcoPoints");
     ecoPoints = await EcoPoints.deploy();
-    await ecoPoints.deployed();
+    // await ecoPoints.deployed();
 
     // Deploy RecycleNFT
     const RecycleNFT = await ethers.getContractFactory("RecycleNFT");
     recycleNFT = await RecycleNFT.deploy();
-    await recycleNFT.deployed();
+    // await recycleNFT.deployed();
 
     // Deploy RecycleHub
     const RecycleHub = await ethers.getContractFactory("RecycleHub");
-    recycleHub = await RecycleHub.deploy(ecoPoints.address, recycleNFT.address, cUSD.address);
-    await recycleHub.deployed();
+    recycleHub = await RecycleHub.deploy(await ecoPoints.getAddress(), await recycleNFT.getAddress(), await cUSD.getAddress());
+    // await recycleHub.deployed();
 
     // Transfer ownership to RecycleHub
-    await ecoPoints.transferOwnership(recycleHub.address);
-    await recycleNFT.transferOwnership(recycleHub.address);
+    await ecoPoints.transferOwnership(await recycleHub.getAddress());
+    await recycleNFT.transferOwnership(await recycleHub.getAddress());
 
     // Grant roles for RecycleHub
-    await recycleHub.grantRole(ethers.utils.keccak256(ethers.utils.toUtf8Bytes("COLLECTOR_ROLE")), collector.address);
-    await recycleHub.grantRole(ethers.utils.keccak256(ethers.utils.toUtf8Bytes("BRANCH_ROLE")), branch.address);
+    await recycleHub.grantRole(ethers.keccak256(ethers.toUtf8Bytes("COLLECTOR_ROLE")), collector.address);
+    await recycleHub.grantRole(ethers.keccak256(ethers.toUtf8Bytes("BRANCH_ROLE")), branch.address);
   });
 
   describe("EcoPoints", function () {
@@ -46,7 +46,7 @@ describe("EcoPoints and RecycleNFT", function () {
       it("should allow RecycleHub to mint eco-points", async function () {
         // Simulate RecycleHub minting via verifyMaterial
         await recycleHub.connect(collector).uploadMaterial(0, 5000, 0); // 5kg
-        await recycleHub.connect(branch).verifyMaterial(1, 0, ethers.utils.parseUnits("1", 18));
+        await recycleHub.connect(branch).verifyMaterial(1, 0, ethers.parseUnits("1", 18));
         expect(await ecoPoints.balanceOf(collector.address)).to.equal(5); // 5 points for 5kg
       });
 
@@ -57,24 +57,24 @@ describe("EcoPoints and RecycleNFT", function () {
 
       it("should emit Transfer event on mint", async function () {
         await recycleHub.connect(collector).uploadMaterial(0, 5000, 0);
-        await expect(recycleHub.connect(branch).verifyMaterial(1, 0, ethers.utils.parseUnits("1", 18)))
+        await expect(recycleHub.connect(branch).verifyMaterial(1, 0, ethers.parseUnits("1", 18)))
           .to.emit(ecoPoints, "Transfer")
-          .withArgs(ethers.constants.AddressZero, collector.address, 5);
+          .withArgs(ethers.ZeroAddress, collector.address, 5);
       });
     });
 
     describe("Ownership", function () {
       it("should have RecycleHub as owner", async function () {
-        expect(await ecoPoints.owner()).to.equal(recycleHub.address);
+        expect(await ecoPoints.owner()).to.equal(await recycleHub.getAddress());
       });
 
       it("should allow owner to transfer ownership", async function () {
         // Deploy a new EcoPoints contract for this test
         const EcoPoints = await ethers.getContractFactory("EcoPoints");
         const newEcoPoints = await EcoPoints.deploy();
-        await newEcoPoints.deployed();
-        await newEcoPoints.transferOwnership(recycleHub.address);
-        expect(await newEcoPoints.owner()).to.equal(recycleHub.address);
+        // await newEcoPoints.deployed();
+        await newEcoPoints.transferOwnership(await recycleHub.getAddress());
+        expect(await newEcoPoints.owner()).to.equal(await recycleHub.getAddress());
       });
 
       it("should revert if non-owner tries to transfer ownership", async function () {
@@ -87,7 +87,7 @@ describe("EcoPoints and RecycleNFT", function () {
       beforeEach(async function () {
         // Mint 100 points to collector via RecycleHub
         await recycleHub.connect(collector).uploadMaterial(0, 100_000, 0); // 100kg
-        await recycleHub.connect(branch).verifyMaterial(1, 0, ethers.utils.parseUnits("10", 18));
+        await recycleHub.connect(branch).verifyMaterial(1, 0, ethers.parseUnits("10", 18));
       });
 
       it("should return correct balance", async function () {
@@ -111,13 +111,13 @@ describe("EcoPoints and RecycleNFT", function () {
     describe("Minting", function () {
       it("should allow RecycleHub to mint NFT for bulk contributions", async function () {
         await recycleHub.connect(collector).uploadMaterial(0, 100_000, 0); // 100kg
-        await recycleHub.connect(branch).verifyMaterial(1, 0, ethers.utils.parseUnits("10", 18));
+        await recycleHub.connect(branch).verifyMaterial(1, 0, ethers.parseUnits("10", 18));
         expect(await recycleNFT.ownerOf(1)).to.equal(collector.address);
       });
 
       it("should not mint NFT for non-bulk contributions", async function () {
         await recycleHub.connect(collector).uploadMaterial(0, 50_000, 0); // 50kg
-        await recycleHub.connect(branch).verifyMaterial(1, 0, ethers.utils.parseUnits("5", 18));
+        await recycleHub.connect(branch).verifyMaterial(1, 0, ethers.parseUnits("5", 18));
         await expect(recycleNFT.ownerOf(1)).to.be.revertedWith("ERC721: invalid token ID");
       });
 
@@ -128,24 +128,24 @@ describe("EcoPoints and RecycleNFT", function () {
 
       it("should emit Transfer event on mint", async function () {
         await recycleHub.connect(collector).uploadMaterial(0, 100_000, 0);
-        await expect(recycleHub.connect(branch).verifyMaterial(1, 0, ethers.utils.parseUnits("10", 18)))
+        await expect(recycleHub.connect(branch).verifyMaterial(1, 0, ethers.parseUnits("10", 18)))
           .to.emit(recycleNFT, "Transfer")
-          .withArgs(ethers.constants.AddressZero, collector.address, 1);
+          .withArgs(ethers.ZeroAddress, collector.address, 1);
       });
     });
 
     describe("Ownership", function () {
       it("should have RecycleHub as owner", async function () {
-        expect(await recycleNFT.owner()).to.equal(recycleHub.address);
+        expect(await recycleNFT.owner()).to.equal(await recycleHub.getAddress());
       });
 
       it("should allow owner to transfer ownership", async function () {
         // Deploy a new RecycleNFT contract for this test
         const RecycleNFT = await ethers.getContractFactory("RecycleNFT");
         const newRecycleNFT = await RecycleNFT.deploy();
-        await newRecycleNFT.deployed();
-        await newRecycleNFT.transferOwnership(recycleHub.address);
-        expect(await newRecycleNFT.owner()).to.equal(recycleHub.address);
+        // await newRecycleNFT.deployed();
+        await newRecycleNFT.transferOwnership(await recycleHub.getAddress());
+        expect(await newRecycleNFT.owner()).to.equal(await recycleHub.getAddress());
       });
 
       it("should revert if non-owner tries to transfer ownership", async function () {
@@ -158,7 +158,7 @@ describe("EcoPoints and RecycleNFT", function () {
       beforeEach(async function () {
         // Mint NFT to collector via RecycleHub
         await recycleHub.connect(collector).uploadMaterial(0, 100_000, 0);
-        await recycleHub.connect(branch).verifyMaterial(1, 0, ethers.utils.parseUnits("10", 18));
+        await recycleHub.connect(branch).verifyMaterial(1, 0, ethers.parseUnits("10", 18));
       });
 
       it("should return correct owner of NFT", async function () {
@@ -177,7 +177,7 @@ describe("EcoPoints and RecycleNFT", function () {
 
       it("should increment tokenId correctly", async function () {
         await recycleHub.connect(collector).uploadMaterial(0, 200_000, 0); // Another 200kg
-        await recycleHub.connect(branch).verifyMaterial(2, 0, ethers.utils.parseUnits("20", 18));
+        await recycleHub.connect(branch).verifyMaterial(2, 0, ethers.parseUnits("20", 18));
         expect(await recycleNFT.ownerOf(2)).to.equal(collector.address);
       });
     });
