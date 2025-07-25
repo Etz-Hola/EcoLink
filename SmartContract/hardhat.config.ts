@@ -28,7 +28,7 @@ const config: HardhatUserConfig = {
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 44787,
       gas: 8000000, // Increase gas limit
-      gasPrice: 1000000000, // 1 gwei
+      gasPrice: 5000000000, // 5 gwei (higher to avoid base-fee-floor error)
     },
     celo: {
       url: "https://forno.celo.org",
