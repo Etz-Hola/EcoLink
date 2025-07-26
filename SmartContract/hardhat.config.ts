@@ -28,7 +28,9 @@ const config: HardhatUserConfig = {
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 44787,
       gas: 8000000, // Increase gas limit
-      gasPrice: 5000000000, // 5 gwei (higher to avoid base-fee-floor error)
+      gasPrice: 10000000000, // 10 gwei (much higher to avoid base-fee-floor error)
+      maxFeePerGas: 15000000000, // 15 gwei max fee
+      maxPriorityFeePerGas: 2000000000, // 2 gwei priority fee
     },
     celo: {
       url: "https://forno.celo.org",
@@ -133,7 +135,7 @@ task("create-account", "Prints a new private key", async (taskArgs, hre) => {
   const wallet = hre.ethers.Wallet.createRandom();
   console.log(`PRIVATE_KEY="${wallet.privateKey}"`);
   console.log(`Your account address: ${wallet.address}`);
-});
+}); 
 
 task(
   "print-account",
