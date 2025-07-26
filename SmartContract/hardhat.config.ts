@@ -30,6 +30,8 @@ const config: HardhatUserConfig = {
       gas: 8000000, // Increase gas limit
       maxFeePerGas: 20000000000, // 20 gwei max fee
       maxPriorityFeePerGas: 5000000000, // 5 gwei priority fee
+      // Disable address checksum validation for Celo
+      allowUnlimitedContractSize: true,
     },
     celo: {
       url: "https://forno.celo.org",
