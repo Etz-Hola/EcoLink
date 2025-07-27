@@ -10,6 +10,9 @@ export const useQuality = () => {
     recommendedGrade: 'A' | 'B' | 'C' | 'D';
     confidence: number;
     reasons: string[];
+    // recommendedGrade: 'A' | 'B' | 'C' | 'D';
+    // confidence: number;
+    // reasons: string[];
   }> => {
     setIsGrading(true);
     setError(null);
