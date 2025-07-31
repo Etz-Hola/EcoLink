@@ -13,4 +13,9 @@ contract EcoPoints is ERC20, Ownable {
         if (msg.sender != owner()) revert OnlyRecycleHub();
         _mint(to, amount);
     }
+    // function tract(address to, uint256 amount) external {
+    //     if (msg.sender != owner()) revert OnlyRecycleHub();
+    //     _track(to, amount);
+    // }
+
 }
