@@ -65,15 +65,12 @@ export const useQuality = () => {
         confidence,
         reasons
       };
-      // return {
-      //   recommendedGrade,
-      //   confidence,
-      //   reasons
-      // };
+     
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to assess quality');
       throw err;
     } finally {
+        // setIsGrading(false);
       setIsGrading(false);
     }
   }, []);
