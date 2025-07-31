@@ -70,7 +70,7 @@ export const useQuality = () => {
       setError(err instanceof Error ? err.message : 'Failed to assess quality');
       throw err;
     } finally {
-        // setIsGrading(false);
+        setIsGrading(false);
       setIsGrading(false);
     }
   }, []);
