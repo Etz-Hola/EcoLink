@@ -30,6 +30,7 @@ interface IRecycleHub {
     function materials(uint256 id) external view returns (Material memory);
 
     function materialCounter() external view returns (uint256);
+    // function materialCounter() external view returns (uint256);
 
     event MaterialUploaded(uint256 indexed id, address indexed collector, MaterialLib.MaterialType materialType, uint256 weight);
     event MaterialVerified(uint256 indexed id, address indexed branch, MaterialLib.Quality quality, uint256 price);
