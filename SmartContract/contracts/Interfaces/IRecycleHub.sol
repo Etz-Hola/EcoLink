@@ -37,4 +37,5 @@ interface IRecycleHub {
     event EcoPointsIssued(address indexed collector, uint256 points);
     event NFTMinted(address indexed collector, uint256 tokenId, uint256 materialId);
     event PaymentProcessed(address indexed collector, uint256 materialId, uint256 amount);
+    // event PaymentProcessed(address indexed collector, uint256 materialId, uint256 amount);
 }
