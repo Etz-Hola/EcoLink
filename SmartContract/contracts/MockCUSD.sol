@@ -12,6 +12,6 @@ contract MockCUSD is ERC20, Ownable {
     }
 
     // function mint(address to, uint256 amount) external onlyOwner {
-    //     _mint(to, 
+    //     _mint
     
 }
