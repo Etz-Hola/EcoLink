@@ -11,6 +11,6 @@ contract MockCUSD is ERC20, Ownable {
         _mint(to, amount);
     }
 
-    // function mint(address , uint256 ) external 
+    // function mint(address , uint2 ) external 
     
 }
