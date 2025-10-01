@@ -11,6 +11,6 @@ contract MockCUSD is ERC20, Ownable {
         _mint(to, amount);
     }
 
-    // function mint(addre   update     
+    // function mint(addre   updat  
     
 }
