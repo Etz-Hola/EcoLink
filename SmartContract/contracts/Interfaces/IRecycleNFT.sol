@@ -5,5 +5,5 @@ interface IRecycleNFT {
     function mint(address to, uint256 materialId) external returns (uint256);
     function ownerOf(uint256 tokenId) external view returns (address);
     function transferOwnership(address newOwner) external;
-    //  update function setBaseURI( )
+    //  update function setBase )
 }
