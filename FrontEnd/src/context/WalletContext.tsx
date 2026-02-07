@@ -4,9 +4,10 @@ import { injected } from 'wagmi/connectors';
 import { WalletState } from '../types';
 
 export interface WalletContextType extends WalletState {
-  connect: () => Promise<void>;
+  connect: (connector?: any) => Promise<void>;
   disconnect: () => Promise<void>;
   isConnecting: boolean;
+  connectors: readonly any[];
 }
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
@@ -17,14 +18,16 @@ interface WalletProviderProps {
 
 export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   const { address, isConnected, isConnecting } = useAccount();
-  const { connectAsync } = useConnect();
+  const { connectors, connectAsync } = useConnect();
   const { disconnect } = useDisconnect();
   const chainId = useChainId();
   const { data: balanceData } = useBalance({ address: address as `0x${string}` | undefined });
 
-  const handleConnect = async (): Promise<void> => {
+  const handleConnect = async (connector?: any): Promise<void> => {
     try {
-      await connectAsync({ connector: injected() });
+      const targetConnector = connector || connectors.find(c => c.id === 'injected') || connectors[0];
+      if (!targetConnector) throw new Error('No wallet connector available');
+      await connectAsync({ connector: targetConnector });
     } catch (error: any) {
       console.error('Wallet connection failed:', error);
       if (error.message?.includes('wallet must has at least one account')) {
@@ -51,7 +54,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         chainId: chainId || null,
         isConnecting,
         connect: handleConnect,
-        disconnect: handleDisconnect
+        disconnect: handleDisconnect,
+        connectors
       }}
     >
       {children}

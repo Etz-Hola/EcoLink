@@ -23,8 +23,9 @@ const RegisterForm: React.FC = () => {
 
   const { register, googleLogin, walletLogin, getNonce } = useAuth();
   const navigate = useNavigate();
-  const { isConnected, address, connect } = useWallet();
+  const { isConnected, address, connect, connectors } = useWallet();
   const { signMessageAsync } = useSignMessage();
+  const [showWalletList, setShowWalletList] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData(prev => ({
@@ -78,15 +79,20 @@ const RegisterForm: React.FC = () => {
     onError: () => setError('Google sign up failed'),
   });
 
-  const handleWalletSignup = async () => {
+  const handleWalletSignup = async (connector?: any) => {
     setError(null);
     try {
       if (!isConnected) {
-        await connect();
+        if (!connector && connectors.length > 1) {
+          setShowWalletList(prev => !prev);
+          return;
+        }
+        await connect(connector);
         // Small delay to ensure Wagmi state is synced
         await new Promise(resolve => setTimeout(resolve, 500));
       }
 
+      setShowWalletList(false);
       setIsLoading(true);
       const nonce = await getNonce();
       const message = `Sign in to EcoLink\nNonce: ${nonce}`;
@@ -241,13 +247,33 @@ const RegisterForm: React.FC = () => {
               <Chrome className="w-5 h-5 text-red-500" />
               Google
             </button>
-            <button
-              onClick={handleWalletSignup}
-              className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-gray-100 hover:bg-gray-50 hover:border-gray-200 transition-all font-semibold text-gray-700 shadow-sm"
-            >
-              <Wallet className="w-5 h-5 text-blue-500" />
-              Wallet
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => handleWalletSignup()}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-gray-100 hover:bg-gray-50 hover:border-gray-200 transition-all font-semibold text-gray-700 shadow-sm"
+              >
+                <Wallet className="w-5 h-5 text-blue-500" />
+                Wallet
+              </button>
+
+              {showWalletList && (
+                <div className="absolute bottom-full left-0 w-full mb-2 bg-white rounded-xl shadow-2xl border border-gray-100 p-2 z-50">
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2 py-1 mb-1 border-b border-gray-50">
+                    Connect Wallet
+                  </div>
+                  {connectors.map((connector) => (
+                    <button
+                      key={connector.uid}
+                      onClick={() => handleWalletSignup(connector)}
+                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-green-50 flex items-center gap-2 transition-all group"
+                    >
+                      {connector.icon && <img src={connector.icon} alt={connector.name} className="w-4 h-4 rounded" />}
+                      <span className="text-sm font-semibold text-gray-700 group-hover:text-green-600 truncate">{connector.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="text-center pt-2">
