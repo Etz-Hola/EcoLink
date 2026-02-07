@@ -1,4 +1,4 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, ReactNode } from 'react';
 import { useAccount, useConnect, useDisconnect, useBalance, useChainId } from 'wagmi';
 import { injected } from 'wagmi/connectors';
 import { WalletState } from '../types';
@@ -25,8 +25,11 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   const handleConnect = async (): Promise<void> => {
     try {
       await connectAsync({ connector: injected() });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Wallet connection failed:', error);
+      if (error.message?.includes('wallet must has at least one account')) {
+        throw new Error('MetaMask is locked or has no accounts. Please unlock it and ensure you have an account created.');
+      }
       throw error;
     }
   };

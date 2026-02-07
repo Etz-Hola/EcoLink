@@ -53,6 +53,13 @@ export class AuthService {
     } catch (error: any) {
       console.error('Registration internal error:', error);
       if (error instanceof AppError) throw error;
+
+      // Handle MongoDB duplication error
+      if (error.code === 11000) {
+        const field = Object.keys(error.keyPattern)[0];
+        throw new AppError(`User with this ${field} already exists`, 400);
+      }
+
       throw new AppError(`Registration failed: ${error.message}`, 500);
     }
   }
