@@ -1,6 +1,5 @@
 import React, { createContext, ReactNode } from 'react';
 import { useAccount, useConnect, useDisconnect, useBalance, useChainId } from 'wagmi';
-import { injected } from 'wagmi/connectors';
 import { WalletState } from '../types';
 
 export interface WalletContextType extends WalletState {

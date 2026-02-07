@@ -160,3 +160,6 @@
 2026-02-08 00:49:45:4945 [32minfo[39m: [32mServer running on port 5000 in development mode[39m
 2026-02-08 00:51:37:5137 [32minfo[39m: [32m::1 - - [07/Feb/2026:23:51:37 +0000] "POST /api/v1/auth/register HTTP/1.1" 500 462 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"[39m
 2026-02-08 00:52:14:5214 [32minfo[39m: [32m::1 - - [07/Feb/2026:23:52:14 +0000] "POST /api/v1/auth/register HTTP/1.1" 500 462 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"[39m
+2026-02-08 00:55:46:5546 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-08 00:55:46:5546 [32minfo[39m: [32mRedis URL not provided, skipping Redis connection (dev mode)[39m
+2026-02-08 00:55:46:5546 [32minfo[39m: [32mServer running on port 5000 in development mode[39m
