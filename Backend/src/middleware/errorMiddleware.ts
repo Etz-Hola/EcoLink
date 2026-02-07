@@ -10,11 +10,11 @@ export const errorMiddleware = (err: any, req: Request, res: Response, next: Nex
             message: err.message,
             stack: err.stack,
             path: req.path,
-            method: req.method,
+            method: req.method, 
             body: req.body
         });
 
-        res.status(err.statusCode).json({
+        res.status(err.statusCode).json({ 
             success: false,
             status: err.status,
             error: err,
