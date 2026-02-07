@@ -1,7 +1,7 @@
 import { useContext } from 'react';
-import { WalletContext } from '../context/WalletContext';
+import { WalletContext, WalletContextType } from '../context/WalletContext';
 
-export const useWallet = () => {
+export const useWallet = (): WalletContextType => {
   const context = useContext(WalletContext);
   if (context === undefined) {
     throw new Error('useWallet must be used within a WalletProvider');

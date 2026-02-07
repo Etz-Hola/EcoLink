@@ -3,9 +3,9 @@ import logger from '../utils/logger';
 
 export const connectDatabase = async (): Promise<void> => {
   try {
-    const mongoUri = process.env.NODE_ENV === 'test' 
-      ? process.env.MONGODB_TEST_URI 
-      : process.env.MONGODB_URI;
+    const mongoUri = process.env.NODE_ENV === 'test'
+      ? process.env.MONGODB_TEST_URI
+      : process.env.MONGO_URI;
 
     if (!mongoUri) {
       throw new Error('MongoDB URI is not defined in environment variables');
@@ -16,8 +16,6 @@ export const connectDatabase = async (): Promise<void> => {
       maxPoolSize: 10,
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
-      bufferCommands: false,
-      bufferMaxEntries: 0,
     };
 
     await mongoose.connect(mongoUri, options);

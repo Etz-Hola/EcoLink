@@ -1,32 +1,45 @@
 import jwt from 'jsonwebtoken';
 import { ethers } from 'ethers';
+import { OAuth2Client } from 'google-auth-library';
+import { SiweMessage, generateNonce } from 'siwe';
 import User from '../models/User';
-import { IUser, ILoginCredentials, IRegisterData, IAuthResponse, AuthProvider, UserStatus } from '../types/user';
+import { IUser, ILoginCredentials, IRegisterData, IAuthResponse, AuthProvider, UserStatus, UserRole } from '../types/user';
 import { AppError } from '../utils/logger';
 import { sendWelcomeEmail, sendVerificationEmail } from './notificationService';
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export class AuthService {
   /**
    * Register a new user
    */
   static async register(userData: IRegisterData): Promise<IAuthResponse> {
+    console.log('AuthService.register called with:', { ...userData, password: '***' });
     try {
       // Check if user already exists
       const existingUser = await this.findExistingUser(userData);
+      console.log('Existing user check result:', existingUser ? 'Found' : 'Not found');
       if (existingUser) {
         throw new AppError('User already exists with this email, phone, or wallet address', 400);
       }
 
       // Create new user
+      console.log('Creating new user instance...');
       const user = new User(userData);
+      console.log('Saving user to database...');
       await user.save();
+      console.log('User saved successfully. ID:', user._id);
 
       // Generate tokens
+      console.log('Generating tokens...');
       const accessToken = user.generateAuthToken();
       const refreshToken = user.generateRefreshToken();
+      console.log('Tokens generated.');
 
       // Send welcome notification
+      console.log('Sending welcome notification...');
       await this.sendWelcomeNotification(user);
+      console.log('Welcome notification process finished.');
 
       return {
         success: true,
@@ -37,9 +50,10 @@ export class AuthService {
           refreshToken
         }
       };
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Registration internal error:', error);
       if (error instanceof AppError) throw error;
-      throw new AppError('Registration failed', 500);
+      throw new AppError(`Registration failed: ${error.message}`, 500);
     }
   }
 
@@ -98,6 +112,115 @@ export class AuthService {
   }
 
   /**
+   * Login or Register with Google
+   */
+  static async googleLogin(idToken: string, role?: UserRole): Promise<IAuthResponse> {
+    try {
+      const ticket = await googleClient.verifyIdToken({
+        idToken,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+
+      const payload = ticket.getPayload();
+      if (!payload || !payload.email) {
+        throw new AppError('Invalid Google token', 400);
+      }
+
+      const email = payload.email.toLowerCase();
+      let user = await User.findOne({ email });
+
+      if (!user) {
+        // Create new user if not exists
+        user = new User({
+          username: (email.split('@')[0] || 'user') + Math.floor(Math.random() * 1000),
+          email,
+          firstName: payload.given_name || 'Google',
+          lastName: payload.family_name || 'User',
+          role: role || UserRole.COLLECTOR,
+          authProvider: AuthProvider.GOOGLE,
+          isEmailVerified: true,
+          status: UserStatus.ACTIVE
+        });
+        await user.save();
+        await this.sendWelcomeNotification(user);
+      } else if (user.status === UserStatus.SUSPENDED) {
+        throw new AppError('Account suspended', 403);
+      }
+
+      // Update last login
+      user.lastLogin = new Date();
+      await user.save();
+
+      const accessToken = user.generateAuthToken();
+      const refreshToken = user.generateRefreshToken();
+
+      return {
+        success: true,
+        message: 'Google login successful',
+        user: this.sanitizeUser(user),
+        tokens: { accessToken, refreshToken }
+      };
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError('Google authentication failed', 500);
+    }
+  }
+
+  /**
+   * Generate a nonce for SIWE
+   */
+  static generateNonce(): string {
+    return generateNonce();
+  }
+
+  /**
+   * Verify SIWE signature and login/register
+   */
+  static async verifyWalletLogin(data: { message: string; signature: string; role?: UserRole }): Promise<IAuthResponse> {
+    try {
+      const siweMessage = new SiweMessage(data.message);
+      const { data: verifiedData } = await siweMessage.verify({ signature: data.signature });
+
+      const walletAddress = verifiedData.address.toLowerCase();
+      let user = await User.findOne({ walletAddress });
+
+      if (!user) {
+        // Create new user if not exists
+        user = new User({
+          username: `wallet_${walletAddress.substring(0, 6)}_${walletAddress.substring(38)}`,
+          walletAddress,
+          firstName: 'Web3',
+          lastName: 'User',
+          role: data.role || UserRole.COLLECTOR,
+          authProvider: AuthProvider.WALLET,
+          status: UserStatus.ACTIVE
+        });
+        await user.save();
+        // Skip email notification for pure wallet users
+      } else if (user.status === UserStatus.SUSPENDED) {
+        throw new AppError('Account suspended', 403);
+      }
+
+      // Update last login
+      user.lastLogin = new Date();
+      await user.save();
+
+      const accessToken = user.generateAuthToken();
+      const refreshToken = user.generateRefreshToken();
+
+      return {
+        success: true,
+        message: 'Wallet login successful',
+        user: this.sanitizeUser(user),
+        tokens: { accessToken, refreshToken }
+      };
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError('Wallet verification failed', 500);
+    }
+  }
+
+  /**
    * Refresh access token
    */
   static async refreshToken(refreshToken: string): Promise<IAuthResponse> {
@@ -142,7 +265,7 @@ export class AuthService {
    * Get user profile by ID
    */
   static async getUserProfile(userId: string): Promise<IUser | null> {
-    return User.findById(userId).select('-password');
+    return User.findById(userId).select('-password') as Promise<IUser | null>;
   }
 
   /**
@@ -225,7 +348,7 @@ export class AuthService {
   // Private helper methods
   private static async findExistingUser(userData: IRegisterData): Promise<IUser | null> {
     const conditions = [];
-    
+
     if (userData.email) {
       conditions.push({ email: userData.email.toLowerCase() });
     }
@@ -247,11 +370,11 @@ export class AuthService {
       case AuthProvider.PHONE:
         if (!credentials.password) return false;
         return user.comparePassword(credentials.password);
-      
+
       case AuthProvider.WALLET:
         if (!credentials.signature || !credentials.message) return false;
         return this.verifyWalletSignature(user.walletAddress!, credentials.message, credentials.signature);
-      
+
       default:
         return false;
     }

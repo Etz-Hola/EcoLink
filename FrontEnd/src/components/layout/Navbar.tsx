@@ -9,7 +9,7 @@ const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const { user, logout } = useAuth();
-  const { isConnected, address, disconnect } = useWallet();
+  const { isConnected, address, disconnect, connect } = useWallet();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -54,7 +54,7 @@ const Navbar: React.FC = () => {
                 >
                   Logistics
                 </Link>
-                
+
                 {/* Profile Dropdown */}
                 <div className="relative">
                   <button
@@ -76,7 +76,7 @@ const Navbar: React.FC = () => {
                           </p>
                         )}
                       </div>
-                      
+
                       <Link
                         to="/profile"
                         className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
@@ -85,17 +85,20 @@ const Navbar: React.FC = () => {
                         <Settings className="h-4 w-4 mr-2" />
                         Profile Settings
                       </Link>
-                      
+
                       {!isConnected && (
                         <button
-                          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                          onClick={() => setIsProfileMenuOpen(false)}
+                          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
+                          onClick={() => {
+                            connect();
+                            setIsProfileMenuOpen(false);
+                          }}
                         >
                           <Wallet className="h-4 w-4 mr-2" />
                           Connect Wallet
                         </button>
                       )}
-                      
+
                       <button
                         onClick={handleLogout}
                         className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
@@ -109,6 +112,15 @@ const Navbar: React.FC = () => {
               </>
             ) : (
               <div className="flex items-center space-x-4">
+                {!isConnected && (
+                  <button
+                    onClick={connect}
+                    className="flex items-center space-x-2 text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium transition-colors"
+                  >
+                    <Wallet className="h-4 w-4" />
+                    <span className="hidden lg:inline">Connect Wallet</span>
+                  </button>
+                )}
                 <Button variant="ghost" onClick={() => navigate('/login')}>
                   Login
                 </Button>

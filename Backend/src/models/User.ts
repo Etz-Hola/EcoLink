@@ -13,10 +13,10 @@ const LocationSchema = new Schema({
     type: [Number], // [longitude, latitude]
     required: true,
     validate: {
-      validator: function(coordinates: number[]) {
+      validator: function (coordinates: number[]) {
         return coordinates.length === 2 &&
-               coordinates[0] >= -180 && coordinates[0] <= 180 &&
-               coordinates[1] >= -90 && coordinates[1] <= 90;
+          coordinates[0]! >= -180 && coordinates[0]! <= 180 &&
+          coordinates[1]! >= -90 && coordinates[1]! <= 90;
       },
       message: 'Invalid coordinates format'
     }
@@ -43,7 +43,7 @@ const UserSchema = new Schema<IUser>({
     lowercase: true,
     trim: true,
     validate: {
-      validator: function(email: string) {
+      validator: function (email: string) {
         return !email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
       },
       message: 'Invalid email format'
@@ -55,7 +55,7 @@ const UserSchema = new Schema<IUser>({
     sparse: true,
     trim: true,
     validate: {
-      validator: function(phone: string) {
+      validator: function (phone: string) {
         return !phone || /^\+?[1-9]\d{1,14}$/.test(phone);
       },
       message: 'Invalid phone format'
@@ -67,7 +67,7 @@ const UserSchema = new Schema<IUser>({
     sparse: true,
     lowercase: true,
     validate: {
-      validator: function(address: string) {
+      validator: function (address: string) {
         return !address || /^0x[a-fA-F0-9]{40}$/.test(address);
       },
       message: 'Invalid wallet address format'
@@ -75,8 +75,8 @@ const UserSchema = new Schema<IUser>({
   },
   password: {
     type: String,
-    required: function() {
-      return this.authProvider !== AuthProvider.WALLET;
+    required: function (this: any) {
+      return this.authProvider === AuthProvider.EMAIL || this.authProvider === AuthProvider.PHONE;
     },
     minlength: 6
   },
@@ -96,7 +96,7 @@ const UserSchema = new Schema<IUser>({
     enum: Object.values(AuthProvider),
     required: true
   },
-  
+
   // Profile information
   firstName: {
     type: String,
@@ -116,10 +116,10 @@ const UserSchema = new Schema<IUser>({
     type: String,
     enum: ['male', 'female', 'other']
   },
-  
+
   // Location
   location: LocationSchema,
-  
+
   // Verification
   isEmailVerified: {
     type: Boolean,
@@ -134,12 +134,12 @@ const UserSchema = new Schema<IUser>({
     default: false
   },
   verificationDocuments: [String],
-  
+
   // Business information
   businessName: String,
   businessRegistrationNumber: String,
   businessType: String,
-  
+
   // Statistics
   totalEarnings: {
     type: Number,
@@ -167,7 +167,7 @@ const UserSchema = new Schema<IUser>({
     default: 0,
     min: 0
   },
-  
+
   // Settings
   notifications: {
     email: {
@@ -183,13 +183,13 @@ const UserSchema = new Schema<IUser>({
       default: true
     }
   },
-  
+
   // Timestamps
   lastLogin: Date
 }, {
   timestamps: true,
   toJSON: {
-    transform: function(doc, ret) {
+    transform: function (doc: any, ret: any) {
       delete ret.password;
       return ret;
     }
@@ -198,19 +198,16 @@ const UserSchema = new Schema<IUser>({
 
 // Indexes
 UserSchema.index({ location: '2dsphere' });
-UserSchema.index({ email: 1 });
-UserSchema.index({ phone: 1 });
-UserSchema.index({ walletAddress: 1 });
 UserSchema.index({ role: 1, status: 1 });
 UserSchema.index({ createdAt: -1 });
 
 // Validation
-UserSchema.pre('validate', function() {
+UserSchema.pre('validate', function (this: any) {
   // Ensure at least one authentication method is provided
   if (!this.email && !this.phone && !this.walletAddress) {
     this.invalidate('auth', 'At least one authentication method (email, phone, or wallet) is required');
   }
-  
+
   // Validate auth provider matches available credentials
   if (this.authProvider === AuthProvider.EMAIL && !this.email) {
     this.invalidate('email', 'Email is required for email authentication');
@@ -221,12 +218,15 @@ UserSchema.pre('validate', function() {
   if (this.authProvider === AuthProvider.WALLET && !this.walletAddress) {
     this.invalidate('walletAddress', 'Wallet address is required for wallet authentication');
   }
+  if (this.authProvider === AuthProvider.GOOGLE && !this.email) {
+    this.invalidate('email', 'Email is required for Google authentication');
+  }
 });
 
 // Hash password before saving
-UserSchema.pre('save', async function(next) {
+UserSchema.pre('save', async function (this: any, next: any) {
   if (!this.isModified('password') || !this.password) return next();
-  
+
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
@@ -237,28 +237,28 @@ UserSchema.pre('save', async function(next) {
 });
 
 // Methods
-UserSchema.methods.comparePassword = async function(password: string): Promise<boolean> {
+UserSchema.methods.comparePassword = async function (password: string): Promise<boolean> {
   if (!this.password) return false;
   return bcrypt.compare(password, this.password);
 };
 
-UserSchema.methods.generateAuthToken = function(): string {
+UserSchema.methods.generateAuthToken = function (): string {
   return jwt.sign(
-    { 
-      userId: this._id, 
+    {
+      userId: this._id,
       role: this.role,
-      status: this.status 
+      status: this.status
     },
     process.env.JWT_SECRET!,
-    { expiresIn: process.env.JWT_EXPIRE }
+    { expiresIn: process.env.JWT_EXPIRE as any }
   );
 };
 
-UserSchema.methods.generateRefreshToken = function(): string {
+UserSchema.methods.generateRefreshToken = function (): string {
   return jwt.sign(
     { userId: this._id },
     process.env.JWT_REFRESH_SECRET!,
-    { expiresIn: process.env.JWT_REFRESH_EXPIRE }
+    { expiresIn: process.env.JWT_REFRESH_EXPIRE as any }
   );
 };
 

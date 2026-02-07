@@ -4,32 +4,50 @@ import logger from '../utils/logger';
 let redisClient: RedisClientType;
 
 export const connectRedis = async (): Promise<void> => {
+  // Only attempt to connect if REDIS_URL is provided
+  // In dev, we skip if URL is missing to avoid log spam
+  if (!process.env.REDIS_URL && process.env.NODE_ENV === 'development') {
+    logger.info('Redis URL not provided, skipping Redis connection (dev mode)');
+    return;
+  }
+
   try {
-    redisClient = createClient({
-      url: process.env.REDIS_URL || 'redis://localhost:6379',
-      password: process.env.REDIS_PASSWORD || undefined,
-      database: process.env.NODE_ENV === 'test' ? 1 : 0,
-      socket: {
-        reconnectStrategy: (retries) => Math.min(retries * 50, 1000)
-      }
-    });
+    if (!redisClient && process.env.REDIS_URL) {
+      redisClient = createClient({
+        url: process.env.REDIS_URL,
+        password: process.env.REDIS_PASSWORD || undefined,
+        database: process.env.NODE_ENV === 'test' ? 1 : 0,
+        socket: {
+          reconnectStrategy: (retries) => {
+            // Stop retrying after 10 attempts in dev if no URL is provided
+            if (!process.env.REDIS_URL && process.env.NODE_ENV === 'development' && retries > 2) {
+              return false;
+            }
+            if (retries > 10) return false;
+            return Math.min(retries * 500, 5000);
+          }
+        }
+      });
 
-    redisClient.on('error', (err) => {
-      logger.error('Redis Client Error:', err);
-    });
+      redisClient.on('error', (err) => {
+        // Silently handle errors unless explicitly configured or in production
+        if (process.env.REDIS_URL || process.env.NODE_ENV === 'production') {
+          logger.error('Redis Client Error:', err);
+        }
+      });
 
-    redisClient.on('connect', () => {
-      logger.info('Redis connected');
-    });
-
-    redisClient.on('disconnect', () => {
-      logger.warn('Redis disconnected');
-    });
+      redisClient.on('connect', () => {
+        logger.info('Redis connected');
+      });
+    }
 
     await redisClient.connect();
   } catch (error) {
-    logger.error('Redis connection failed:', error);
-    throw error;
+    if (process.env.REDIS_URL || process.env.NODE_ENV === 'production') {
+      logger.error('Redis connection failed:', error);
+    } else {
+      logger.warn('Redis unavailable (dev mode)');
+    }
   }
 };
 

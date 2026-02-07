@@ -13,5 +13,6 @@ library MaterialLib {
         NonFerrousMetal,
         MixedMetal
     }
+    
     enum Quality { Clean, Dirty, Treated }
 }

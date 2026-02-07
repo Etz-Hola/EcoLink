@@ -18,7 +18,8 @@ export enum UserStatus {
 export enum AuthProvider {
   EMAIL = 'email',
   PHONE = 'phone',
-  WALLET = 'wallet'
+  WALLET = 'wallet',
+  GOOGLE = 'google'
 }
 
 export interface ILocation {

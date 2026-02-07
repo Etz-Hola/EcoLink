@@ -4,9 +4,14 @@ import { User, AuthState } from '../types';
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>;
   register: (userData: any) => Promise<void>;
+  googleLogin: (idToken: string, role?: string) => Promise<void>;
+  walletLogin: (address: string, message: string, signature: string, role?: string) => Promise<void>;
+  getNonce: () => Promise<string>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
 }
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -69,7 +74,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem('ecolink_token');
     const userData = localStorage.getItem('ecolink_user');
-    
+
     if (token && userData) {
       try {
         const user = JSON.parse(userData);
@@ -85,55 +90,112 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     dispatch({ type: 'LOGIN_START' });
 
     try {
-      // Mock API call - replace with actual authentication
-      if (email === 'demo@ecolink.ng' && password === 'password') {
-        const mockUser: User = {
-          id: '1',
-          name: 'Demo User',
-          email: 'demo@ecolink.ng',
-          role: 'collector',
-          isVerified: true,
-          ecoPoints: 1250,
-          createdAt: new Date(),
-          phone: '+234 800 000 0000'
-        };
-        
-        const token = 'mock-jwt-token';
-        
-        localStorage.setItem('ecolink_token', token);
-        localStorage.setItem('ecolink_user', JSON.stringify(mockUser));
-        
-        dispatch({ type: 'LOGIN_SUCCESS', payload: { user: mockUser, token } });
-      } else {
-        throw new Error('Invalid credentials');
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier: email, password })
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Login failed');
       }
-    } catch (error) {
+
+      const { user, tokens } = data;
+      localStorage.setItem('ecolink_token', tokens.accessToken);
+      localStorage.setItem('ecolink_user', JSON.stringify(user));
+
+      dispatch({ type: 'LOGIN_SUCCESS', payload: { user, token: tokens.accessToken } });
+    } catch (error: any) {
       dispatch({ type: 'LOGIN_FAILURE' });
       throw error;
     }
   };
 
   const register = async (userData: any): Promise<void> => {
+    dispatch({ type: 'LOGIN_START' });
     try {
-      // Mock registration - replace with actual API call
-      const mockUser: User = {
-        id: Math.random().toString(36).substr(2, 9),
-        name: userData.name,
-        email: userData.email,
-        phone: userData.phone,
-        role: userData.role,
-        isVerified: false,
-        ecoPoints: 0,
-        createdAt: new Date()
-      };
+      const response = await fetch(`${API_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...userData,
+          authProvider: 'email'
+        })
+      });
 
-      const token = 'mock-jwt-token';
-      
-      localStorage.setItem('ecolink_token', token);
-      localStorage.setItem('ecolink_user', JSON.stringify(mockUser));
-      
-      dispatch({ type: 'LOGIN_SUCCESS', payload: { user: mockUser, token } });
-    } catch (error) {
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Registration failed');
+      }
+
+      const { user, tokens } = data;
+      localStorage.setItem('ecolink_token', tokens.accessToken);
+      localStorage.setItem('ecolink_user', JSON.stringify(user));
+
+      dispatch({ type: 'LOGIN_SUCCESS', payload: { user, token: tokens.accessToken } });
+    } catch (error: any) {
+      dispatch({ type: 'LOGIN_FAILURE' });
+      throw error;
+    }
+  };
+
+  const googleLogin = async (idToken: string, role?: string): Promise<void> => {
+    dispatch({ type: 'LOGIN_START' });
+    try {
+      const response = await fetch(`${API_URL}/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken, role })
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Google login failed');
+      }
+
+      const { user, tokens } = data;
+      localStorage.setItem('ecolink_token', tokens.accessToken);
+      localStorage.setItem('ecolink_user', JSON.stringify(user));
+
+      dispatch({ type: 'LOGIN_SUCCESS', payload: { user, token: tokens.accessToken } });
+    } catch (error: any) {
+      dispatch({ type: 'LOGIN_FAILURE' });
+      throw error;
+    }
+  };
+
+  const getNonce = async (): Promise<string> => {
+    const response = await fetch(`${API_URL}/auth/nonce`);
+    const data = await response.json();
+    return data.nonce;
+  };
+
+  const walletLogin = async (address: string, message: string, signature: string, role?: string): Promise<void> => {
+    dispatch({ type: 'LOGIN_START' });
+    try {
+      const response = await fetch(`${API_URL}/auth/verify-wallet`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address, message, signature, role })
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Wallet login failed');
+      }
+
+      const { user, tokens } = data;
+      localStorage.setItem('ecolink_token', tokens.accessToken);
+      localStorage.setItem('ecolink_user', JSON.stringify(user));
+
+      dispatch({ type: 'LOGIN_SUCCESS', payload: { user, token: tokens.accessToken } });
+    } catch (error: any) {
+      dispatch({ type: 'LOGIN_FAILURE' });
       throw error;
     }
   };
@@ -146,7 +208,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const updateUser = (userData: Partial<User>): void => {
     dispatch({ type: 'UPDATE_USER', payload: userData });
-    
+
     if (state.user) {
       const updatedUser = { ...state.user, ...userData };
       localStorage.setItem('ecolink_user', JSON.stringify(updatedUser));
@@ -159,6 +221,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         ...state,
         login,
         register,
+        googleLogin,
+        walletLogin,
+        getNonce,
         logout,
         updateUser
       }}

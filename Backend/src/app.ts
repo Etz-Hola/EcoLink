@@ -1,9 +1,12 @@
+import dotenv from 'dotenv';
+// Load environment variables immediately
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
-import dotenv from 'dotenv';
 import { connectDatabase } from './config/database';
 import { connectRedis } from './config/redis';
 import { errorMiddleware } from './middleware/errorMiddleware';
@@ -19,9 +22,6 @@ import logisticsRoutes from './routes/logisticsRoutes';
 import adminRoutes from './routes/adminRoutes';
 import web3Routes from './routes/web3Routes';
 
-// Load environment variables
-dotenv.config();
-
 const app = express();
 const PORT = process.env.PORT || 5000;
 const API_VERSION = process.env.API_VERSION || 'v1';
@@ -29,10 +29,10 @@ const API_VERSION = process.env.API_VERSION || 'v1';
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://yourdomain.com'] 
-    : ['http://localhost:3000', 'http://localhost:3001'],
-  credentials: true
+  origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:5173', 'http://localhost:3000'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 app.use(compression());
 app.use(morgan('combined', { stream: { write: (message: string) => logger.info(message.trim()) } }));
@@ -84,9 +84,8 @@ const startServer = async () => {
     await connectDatabase();
     logger.info('Connected to MongoDB');
 
-    // Connect to Redis
-    await connectRedis();
-    logger.info('Connected to Redis');
+    // Connect to Redis (Optional for local dev)
+    connectRedis().catch(err => logger.error('Async Redis connection error:', err));
 
     app.listen(PORT, () => {
       logger.info(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
