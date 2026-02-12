@@ -218,3 +218,19 @@
 2026-02-12 16:27:48:2748 [32minfo[39m: [32mConnected to MongoDB[39m
 2026-02-12 16:27:48:2748 [32minfo[39m: [32mRedis URL not provided, skipping Redis connection (dev mode)[39m
 2026-02-12 16:27:48:2748 [32minfo[39m: [32mServer running on port 5000 in development mode[39m
+2026-02-12 16:29:16:2916 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-12 16:29:16:2916 [32minfo[39m: [32mRedis URL not provided, skipping Redis connection (dev mode)[39m
+2026-02-12 16:29:16:2916 [32minfo[39m: [32mServer running on port 5000 in development mode[39m
+2026-02-12 16:31:52:3152 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-12 16:31:52:3152 [32minfo[39m: [32mRedis URL not provided, skipping Redis connection (dev mode)[39m
+2026-02-12 16:31:52:3152 [32minfo[39m: [32mServer running on port 5000 in development mode[39m
+2026-02-12 16:32:21:3221 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-12 16:32:21:3221 [32minfo[39m: [32mRedis URL not provided, skipping Redis connection (dev mode)[39m
+2026-02-12 16:32:21:3221 [32minfo[39m: [32mServer running on port 5000 in development mode[39m
+2026-02-12 16:34:20:3420 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-12 16:34:20:3420 [32minfo[39m: [32mRedis URL not provided, skipping Redis connection (dev mode)[39m
+2026-02-12 16:34:20:3420 [32minfo[39m: [32mServer running on port 5000 in development mode[39m
+2026-02-12 16:36:13:3613 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-12 16:36:13:3613 [32minfo[39m: [32mRedis URL not provided, skipping Redis connection (dev mode)[39m
+2026-02-12 16:36:13:3613 [32minfo[39m: [32mServer running on port 5000 in development mode[39m
+2026-02-12 16:39:46:3946 [33mwarn[39m: [33mMongoose disconnected from MongoDB[39m

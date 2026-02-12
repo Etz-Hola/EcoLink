@@ -16,6 +16,7 @@ import { register } from 'prom-client';
 
 // Import routes
 import authRoutes from './routes/authRoutes';
+import userRoutes from './routes/userRoutes';
 import materialRoutes from './routes/materialRoutes';
 import branchRoutes from './routes/branchRoutes';
 import logisticsRoutes from './routes/logisticsRoutes';
@@ -60,6 +61,7 @@ app.get('/metrics', async (req, res) => {
 
 // API Routes
 app.use(`/api/${API_VERSION}/auth`, authRoutes);
+app.use(`/api/${API_VERSION}/users`, userRoutes); // Add user routes
 app.use(`/api/${API_VERSION}/materials`, materialRoutes);
 app.use(`/api/${API_VERSION}/branches`, branchRoutes);
 app.use(`/api/${API_VERSION}/logistics`, logisticsRoutes);
