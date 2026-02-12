@@ -29,6 +29,9 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       await connectAsync({ connector: targetConnector });
     } catch (error: any) {
       console.error('Wallet connection failed:', error);
+      if (error.message?.toLowerCase().includes('user rejected') || error.name === 'UserRejectedRequestError') {
+        throw new Error('Connection rejected. Please unlock your wallet and try again.');
+      }
       if (error.message?.includes('wallet must has at least one account')) {
         throw new Error('MetaMask is locked or has no accounts. Please unlock it and ensure you have an account created.');
       }
