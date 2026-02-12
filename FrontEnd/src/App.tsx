@@ -7,6 +7,7 @@ import { config } from './config/wagmi';
 import { AuthProvider } from './context/AuthContext';
 import { WalletProvider } from './context/WalletContext';
 import { AppProvider } from './context/AppContext';
+import { Toaster } from 'react-hot-toast';
 import AppRoutes from './routes';
 
 const queryClient = new QueryClient({
@@ -29,6 +30,7 @@ function App() {
             <WalletProvider>
               <AppProvider>
                 <Router>
+                  <Toaster position="top-right" />
                   <AppRoutes />
                 </Router>
               </AppProvider>
