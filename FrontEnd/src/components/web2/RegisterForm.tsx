@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
 import { User as UserIcon, Mail, Lock, Phone, Eye, EyeOff, Chrome, Wallet, AlertCircle } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
@@ -55,9 +56,16 @@ const RegisterForm: React.FC = () => {
         role: formData.role,
         username: formData.email.split('@')[0]
       });
-      navigate('/home');
+      toast.success('Registration successful! Welcome to EcoLink.');
+      if (formData.role === 'branch') {
+        navigate('/branch');
+      } else {
+        navigate('/home');
+      }
     } catch (err: any) {
-      setError(err.message || 'Registration failed. Please try again.');
+      const message = err.message || 'Registration failed. Please try again.';
+      setError(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -69,9 +77,16 @@ const RegisterForm: React.FC = () => {
       setError(null);
       try {
         await googleLogin(tokenResponse.access_token, formData.role);
-        navigate('/home');
+        toast.success('Successfully signed up with Google!');
+        if (formData.role === 'branch') {
+          navigate('/branch');
+        } else {
+          navigate('/home');
+        }
       } catch (err: any) {
-        setError(err.message || 'Google registration failed');
+        const message = err.message || 'Google registration failed';
+        setError(message);
+        toast.error(message);
       } finally {
         setIsLoading(false);
       }
@@ -98,9 +113,16 @@ const RegisterForm: React.FC = () => {
       const message = `Sign in to EcoLink\nNonce: ${nonce}`;
       const signature = await signMessageAsync({ message });
       await walletLogin(address!, message, signature, formData.role);
-      navigate('/home');
+      toast.success('Successfully signed up with Wallet!');
+      if (formData.role === 'branch') {
+        navigate('/branch');
+      } else {
+        navigate('/home');
+      }
     } catch (err: any) {
-      setError(err.message || 'Wallet registration failed');
+      const message = err.message || 'Wallet registration failed';
+      setError(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }

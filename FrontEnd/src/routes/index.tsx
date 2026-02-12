@@ -10,6 +10,7 @@ import CollectorDashboard from '../pages/CollectorDashboard';
 import Profile from '../pages/Profile';
 import LoginForm from '../components/web2/LoginForm';
 import RegisterForm from '../components/web2/RegisterForm';
+import BranchDashboard from '../pages/BranchDashboard';
 
 // Layout Components
 import Navbar from '../components/layout/Navbar';
@@ -43,6 +44,7 @@ const AppRoutes: React.FC = () => {
             <Route path="/home" element={<Home />} />
             <Route path="/materials/upload" element={<MaterialUpload />} />
             <Route path="/materials" element={<CollectorDashboard />} />
+            <Route path="/branch" element={<BranchDashboard />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/login" element={<Navigate to="/home" replace />} />
             <Route path="/register" element={<Navigate to="/home" replace />} />
