@@ -17,7 +17,7 @@ import Navbar from '../components/layout/Navbar';
 import Sidebar from '../components/layout/Sidebar';
 
 const AppRoutes: React.FC = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   if (!isAuthenticated) {
     return (
@@ -40,11 +40,11 @@ const AppRoutes: React.FC = () => {
         <Sidebar />
         <main className="flex-1 p-6 md:p-8">
           <Routes>
-            <Route path="/" element={<Navigate to="/home" replace />} />
-            <Route path="/home" element={<Home />} />
+            <Route path="/" element={<Navigate to={user?.role === 'branch' ? '/branch' : '/home'} replace />} />
+            <Route path="/home" element={user?.role === 'branch' ? <Navigate to="/branch" replace /> : <Home />} />
+            <Route path="/branch" element={user?.role === 'branch' ? <BranchDashboard /> : <Navigate to="/home" replace />} />
             <Route path="/materials/upload" element={<MaterialUpload />} />
             <Route path="/materials" element={<CollectorDashboard />} />
-            <Route path="/branch" element={<BranchDashboard />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/login" element={<Navigate to="/home" replace />} />
             <Route path="/register" element={<Navigate to="/home" replace />} />

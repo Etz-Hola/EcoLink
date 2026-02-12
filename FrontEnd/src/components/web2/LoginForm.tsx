@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, Chrome, Wallet, AlertCircle } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
@@ -28,9 +29,17 @@ const LoginForm: React.FC = () => {
 
     try {
       await login(email, password);
-      navigate('/home');
+      // Wait for AuthContext to update with user data
+      const userData = JSON.parse(localStorage.getItem('ecolink_user') || '{}');
+      toast.success('Login successful!');
+      if (userData.role === 'branch') {
+        navigate('/branch');
+      } else {
+        navigate('/home');
+      }
     } catch (err: any) {
       setError(err.message || 'Invalid email or password');
+      toast.error(err.message || 'Login failed');
     } finally {
       setIsLoading(false);
     }
@@ -42,9 +51,16 @@ const LoginForm: React.FC = () => {
       setError(null);
       try {
         await googleLogin(tokenResponse.access_token);
-        navigate('/home');
+        const userData = JSON.parse(localStorage.getItem('ecolink_user') || '{}');
+        toast.success('Google login successful!');
+        if (userData.role === 'branch') {
+          navigate('/branch');
+        } else {
+          navigate('/home');
+        }
       } catch (err: any) {
         setError(err.message || 'Google login failed');
+        toast.error(err.message || 'Google login failed');
       } finally {
         setIsLoading(false);
       }
@@ -71,9 +87,16 @@ const LoginForm: React.FC = () => {
       const message = `Sign in to EcoLink\nNonce: ${nonce}`;
       const signature = await signMessageAsync({ message });
       await walletLogin(address!, message, signature);
-      navigate('/home');
+      const userData = JSON.parse(localStorage.getItem('ecolink_user') || '{}');
+      toast.success('Wallet login successful!');
+      if (userData.role === 'branch') {
+        navigate('/branch');
+      } else {
+        navigate('/home');
+      }
     } catch (err: any) {
       setError(err.message || 'Wallet authentication failed');
+      toast.error(err.message || 'Wallet login failed');
     } finally {
       setIsLoading(false);
     }
