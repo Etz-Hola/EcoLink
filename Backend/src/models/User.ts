@@ -224,11 +224,16 @@ UserSchema.pre('validate', function (this: any) {
 });
 
 // Hash password before saving
-UserSchema.pre('save', async function (this: any) {
-  if (!this.isModified('password') || !this.password) return;
+UserSchema.pre('save', async function (this: any, next: any) {
+  if (!this.isModified('password') || !this.password) return next();
 
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error: any) {
+    next(error);
+  }
 });
 
 // Methods
