@@ -4,8 +4,9 @@ export enum UserRole {
   COLLECTOR = 'collector',
   BRANCH = 'branch',
   BUYER = 'buyer',
-  TRANSPORTER = 'transporter',
-  ADMIN = 'admin'
+  ORGANIZATION = 'organization',
+  ADMIN = 'admin',
+  PENDING = 'pending'
 }
 
 export enum UserStatus {
@@ -41,47 +42,47 @@ export interface IUser extends Document {
   role: UserRole;
   status: UserStatus;
   authProvider: AuthProvider;
-  
+
   // Profile information
   firstName: string;
   lastName: string;
   profileImage?: string;
   dateOfBirth?: Date;
   gender?: 'male' | 'female' | 'other';
-  
+
   // Location
   location?: ILocation;
-  
+
   // Verification
   isEmailVerified: boolean;
   isPhoneVerified: boolean;
   isKYCVerified: boolean;
   verificationDocuments?: string[];
-  
+
   // Business information (for branches, buyers)
   businessName?: string;
   businessRegistrationNumber?: string;
   businessType?: string;
-  
+
   // Statistics
   totalEarnings: number;
   totalMaterialsSubmitted: number;
   ecoPoints: number;
   rating: number;
   reviewCount: number;
-  
+
   // Settings
   notifications: {
     email: boolean;
     sms: boolean;
     push: boolean;
   };
-  
+
   // Timestamps
   lastLogin?: Date;
   createdAt: Date;
   updatedAt: Date;
-  
+
   // Methods
   comparePassword(password: string): Promise<boolean>;
   generateAuthToken(): string;
