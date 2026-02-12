@@ -224,15 +224,14 @@ UserSchema.pre('validate', function (this: any) {
 });
 
 // Hash password before saving
-UserSchema.pre('save', async function (this: any, next: any) {
-  if (!this.isModified('password') || !this.password) return next();
+UserSchema.pre('save', async function (this: any) { // Removed next parameter
+  if (!this.isModified('password') || !this.password) return;
 
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
-    next();
   } catch (error: any) {
-    next(error);
+    throw new Error(error.message || 'Password hashing failed'); // Throw error instead of next(error)
   }
 });
 
@@ -242,7 +241,7 @@ UserSchema.methods.comparePassword = async function (password: string): Promise<
   return bcrypt.compare(password, this.password);
 };
 
-UserSchema.methods.generateAuthToken = function (): string {
+export const generateAuthToken = function (this: IUser): string {
   return jwt.sign(
     {
       userId: this._id,
@@ -250,15 +249,17 @@ UserSchema.methods.generateAuthToken = function (): string {
       status: this.status
     },
     process.env.JWT_SECRET!,
-    { expiresIn: process.env.JWT_EXPIRE as any }
+    { expiresIn: (process.env.JWT_EXPIRE || '24h') as any }
   );
 };
+
+UserSchema.methods.generateAuthToken = generateAuthToken;
 
 UserSchema.methods.generateRefreshToken = function (): string {
   return jwt.sign(
     { userId: this._id },
     process.env.JWT_REFRESH_SECRET!,
-    { expiresIn: process.env.JWT_REFRESH_EXPIRE as any }
+    { expiresIn: (process.env.JWT_REFRESH_EXPIRE || '7d') as any }
   );
 };
 

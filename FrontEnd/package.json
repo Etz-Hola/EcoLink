@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.2",
+    "@metamask/sdk": "^0.33.1",
     "@react-oauth/google": "^0.13.4",
     "@tanstack/react-query": "^5.90.20",
     "@wagmi/connectors": "^7.1.6",
