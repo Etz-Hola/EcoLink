@@ -11,6 +11,7 @@ import Profile from '../pages/Profile';
 import LoginForm from '../components/web2/LoginForm';
 import RegisterForm from '../components/web2/RegisterForm';
 import BranchDashboard from '../pages/BranchDashboard';
+import RoleSelection from '../pages/RoleSelection';
 
 // Layout Components
 import Navbar from '../components/layout/Navbar';
@@ -33,6 +34,19 @@ const AppRoutes: React.FC = () => {
     );
   }
 
+  // Handle pending role
+  if (user?.role === 'pending') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <Routes>
+          <Route path="/role-selection" element={<RoleSelection />} />
+          <Route path="*" element={<Navigate to="/role-selection" replace />} />
+        </Routes>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -46,6 +60,7 @@ const AppRoutes: React.FC = () => {
             <Route path="/materials/upload" element={<MaterialUpload />} />
             <Route path="/materials" element={<CollectorDashboard />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/role-selection" element={<Navigate to="/" replace />} />
             <Route path="/login" element={<Navigate to="/home" replace />} />
             <Route path="/register" element={<Navigate to="/home" replace />} />
             <Route path="*" element={<Navigate to="/home" replace />} />

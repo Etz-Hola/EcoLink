@@ -197,7 +197,9 @@ const RegisterForm: React.FC = () => {
                   required
                 >
                   <option value="collector">Individual Collector</option>
-                  <option value="branch">Branch/Organization</option>
+                  <option value="organization">Company / Organization / Hotel</option>
+                  <option value="branch">Processing Branch</option>
+                  <option value="buyer">Large Buyer / Exporter</option>
                 </select>
               </div>
 
