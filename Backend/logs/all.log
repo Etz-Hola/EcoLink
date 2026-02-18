@@ -267,3 +267,9 @@
 2026-02-18 15:44:54:4454 [32minfo[39m: [32mServer running on port 5000 in development mode[39m
 2026-02-18 15:53:57:5357 [33mwarn[39m: [33mMongoose disconnected from MongoDB[39m
 2026-02-18 15:53:57:5357 [32minfo[39m: [32mMongoose connected to MongoDB[39m
+2026-02-18 15:57:07:577 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-18 15:57:07:577 [32minfo[39m: [32mRedis URL not provided, skipping Redis connection (dev mode)[39m
+2026-02-18 15:57:07:577 [32minfo[39m: [32mServer running on port 5000 in development mode[39m
+2026-02-18 15:59:29:5929 [32minfo[39m: [32m::1 - - [18/Feb/2026:14:59:29 +0000] "POST /api/v1/auth/google HTTP/1.1" 500 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"[39m
+2026-02-18 15:59:41:5941 [32minfo[39m: [32m::1 - - [18/Feb/2026:14:59:41 +0000] "GET /api/v1/auth/nonce HTTP/1.1" 200 29 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"[39m
+2026-02-18 15:59:44:5944 [32minfo[39m: [32m::1 - - [18/Feb/2026:14:59:44 +0000] "POST /api/v1/auth/verify-wallet HTTP/1.1" 500 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"[39m
