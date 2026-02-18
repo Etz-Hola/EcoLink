@@ -9,6 +9,7 @@ interface AuthContextType extends AuthState {
   getNonce: () => Promise<string>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
+  dispatch: React.Dispatch<any>;
 }
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
@@ -225,7 +226,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         walletLogin,
         getNonce,
         logout,
-        updateUser
+        updateUser,
+        dispatch
       }}
     >
       {children}
