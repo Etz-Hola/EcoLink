@@ -6,7 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 import { User, Building2, Factory, Truck } from 'lucide-react';
 
 const RoleSelection: React.FC = () => {
-    const { user, login } = useAuth(); // Assuming login updates the user state
+    const { user, updateUser } = useAuth();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
 
@@ -17,7 +17,7 @@ const RoleSelection: React.FC = () => {
         try {
             // Update role on backend
             // We need the token from localStorage or context
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('ecolink_token');
             const res = await axios.patch(
                 `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/users/role`,
                 { role },
@@ -26,16 +26,9 @@ const RoleSelection: React.FC = () => {
                 }
             );
 
-            // Update local user state via auth context if possible, or just force a reload/refetch
-            // For now, we assume the backend returns the updated user and token
+            // Update local user state via auth context
             if (res.data.success) {
-                // If response contains updated token/user, update context
-                // Otherwise, we might need to fetch user profile again
-
-                // Temporary: dispatch a custom event or force update if useAuth doesn't have a direct 'updateUser' method
-                // Ideally useAuth should expose setUser or similar. 
-                // For now, we'll try to re-login or manually update if possible, 
-                // but since we are just redirecting, the next page load (e.g. dashboard) should fetch fresh data.
+                updateUser({ role: role as any });
 
                 toast.success(`Role set to ${role}`);
 

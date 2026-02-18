@@ -51,13 +51,8 @@ const LoginForm: React.FC = () => {
       setError(null);
       try {
         await googleLogin(tokenResponse.access_token);
-        const userData = JSON.parse(localStorage.getItem('ecolink_user') || '{}');
-        toast.success('Google login successful!');
-        if (userData.role === 'branch') {
-          navigate('/branch');
-        } else {
-          navigate('/home');
-        }
+        toast.success('Successfully logged in with Google!');
+        navigate('/role-selection');
       } catch (err: any) {
         setError(err.message || 'Google login failed');
         toast.error(err.message || 'Google login failed');
@@ -87,13 +82,7 @@ const LoginForm: React.FC = () => {
       const message = `Sign in to EcoLink\nNonce: ${nonce}`;
       const signature = await signMessageAsync({ message });
       await walletLogin(address!, message, signature);
-      const userData = JSON.parse(localStorage.getItem('ecolink_user') || '{}');
-      toast.success('Wallet login successful!');
-      if (userData.role === 'branch') {
-        navigate('/branch');
-      } else {
-        navigate('/home');
-      }
+      navigate('/role-selection');
     } catch (err: any) {
       setError(err.message || 'Wallet authentication failed');
       toast.error(err.message || 'Wallet login failed');

@@ -76,13 +76,9 @@ const RegisterForm: React.FC = () => {
       setIsLoading(true);
       setError(null);
       try {
-        await googleLogin(tokenResponse.access_token, formData.role);
+        await googleLogin(tokenResponse.access_token);
         toast.success('Successfully signed up with Google!');
-        if (formData.role === 'branch') {
-          navigate('/branch');
-        } else {
-          navigate('/home');
-        }
+        navigate('/role-selection');
       } catch (err: any) {
         const message = err.message || 'Google registration failed';
         setError(message);
@@ -96,15 +92,25 @@ const RegisterForm: React.FC = () => {
 
   const handleWalletSignup = async (connector?: any) => {
     setError(null);
+    let walletAddress = address;
+
     try {
       if (!isConnected) {
         if (!connector && connectors.length > 1) {
           setShowWalletList(prev => !prev);
           return;
         }
-        await connect(connector);
+        // Connect and get fresh address
+        const connectedAddress = await connect(connector);
+        if (connectedAddress) {
+          walletAddress = connectedAddress as `0x${string}`;
+        }
         // Small delay to ensure Wagmi state is synced
         await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      if (!walletAddress) {
+        throw new Error('No wallet address found. Please try connecting again.');
       }
 
       setShowWalletList(false);
@@ -112,7 +118,7 @@ const RegisterForm: React.FC = () => {
       const nonce = await getNonce();
       const message = `Sign in to EcoLink\nNonce: ${nonce}`;
       const signature = await signMessageAsync({ message });
-      await walletLogin(address!, message, signature, formData.role);
+      await walletLogin(walletAddress, message, signature, formData.role);
       toast.success('Successfully signed up with Wallet!');
       if (formData.role === 'branch') {
         navigate('/branch');

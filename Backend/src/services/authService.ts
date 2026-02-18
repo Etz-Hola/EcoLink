@@ -167,9 +167,10 @@ export class AuthService {
         user: this.sanitizeUser(user),
         tokens: { accessToken, refreshToken }
       };
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Google login internal error:', error);
       if (error instanceof AppError) throw error;
-      throw new AppError('Google authentication failed', 500);
+      throw new AppError(`Google authentication failed: ${error.message}`, 500);
     }
   }
 
@@ -221,9 +222,10 @@ export class AuthService {
         user: this.sanitizeUser(user),
         tokens: { accessToken, refreshToken }
       };
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Wallet verification internal error:', error);
       if (error instanceof AppError) throw error;
-      throw new AppError('Wallet verification failed', 500);
+      throw new AppError(`Wallet verification failed: ${error.message}`, 500);
     }
   }
 

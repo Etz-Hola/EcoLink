@@ -36,7 +36,7 @@ const createAdmin = async () => {
             status: UserStatus.ACTIVE,
             authProvider: AuthProvider.EMAIL,
             isEmailVerified: true,
-            phone: '+00000000000',
+            phone: '+1234567890',
             location: {
                 type: 'Point',
                 coordinates: [0, 0],

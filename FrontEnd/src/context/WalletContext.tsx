@@ -3,7 +3,7 @@ import { useAccount, useConnect, useDisconnect, useBalance, useChainId } from 'w
 import { WalletState } from '../types';
 
 export interface WalletContextType extends WalletState {
-  connect: (connector?: any) => Promise<void>;
+  connect: (connector?: any) => Promise<string | undefined>;
   disconnect: () => Promise<void>;
   isConnecting: boolean;
   connectors: readonly any[];
@@ -22,11 +22,12 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   const chainId = useChainId();
   const { data: balanceData } = useBalance({ address: address as `0x${string}` | undefined });
 
-  const handleConnect = async (connector?: any): Promise<void> => {
+  const handleConnect = async (connector?: any): Promise<string | undefined> => {
     try {
       const targetConnector = connector || connectors.find(c => c.id === 'injected') || connectors[0];
       if (!targetConnector) throw new Error('No wallet connector available');
-      await connectAsync({ connector: targetConnector });
+      const result = await connectAsync({ connector: targetConnector });
+      return result.accounts[0];
     } catch (error: any) {
       console.error('Wallet connection failed:', error);
       if (error.message?.toLowerCase().includes('user rejected') || error.name === 'UserRejectedRequestError') {
