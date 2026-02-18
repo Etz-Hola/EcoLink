@@ -143,7 +143,7 @@ export class AuthService {
           email,
           firstName: payload.given_name || 'Google',
           lastName: payload.family_name || 'User',
-          role: role || UserRole.COLLECTOR,
+          role: role || UserRole.PENDING,
           authProvider: AuthProvider.GOOGLE,
           isEmailVerified: true,
           status: UserStatus.ACTIVE
@@ -199,7 +199,7 @@ export class AuthService {
           walletAddress,
           firstName: 'Web3',
           lastName: 'User',
-          role: data.role || UserRole.COLLECTOR,
+          role: data.role || UserRole.PENDING,
           authProvider: AuthProvider.WALLET,
           status: UserStatus.ACTIVE
         });

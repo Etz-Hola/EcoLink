@@ -3,7 +3,7 @@ export interface User {
   name: string;
   email: string;
   phone?: string;
-  role: 'collector' | 'branch' | 'admin' | 'buyer';
+  role: 'collector' | 'branch' | 'admin' | 'buyer' | 'organization' | 'pending';
   isVerified: boolean;
   ecoPoints: number;
   walletAddress?: string;
