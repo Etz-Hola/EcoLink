@@ -35,7 +35,7 @@ const LoginForm: React.FC = () => {
       if (userData.role === 'branch') {
         navigate('/branch');
       } else {
-        navigate('/home');
+        navigate('/role-selection');
       }
     } catch (err: any) {
       setError(err.message || 'Invalid email or password');
