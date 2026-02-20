@@ -19,6 +19,7 @@ declare global {
 
 export const protect = async (req: Request, res: Response, next: NextFunction) => {
     let token;
+    
 
     if (
         req.headers.authorization &&
