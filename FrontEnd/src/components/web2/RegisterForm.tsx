@@ -16,7 +16,7 @@ const RegisterForm: React.FC = () => {
     phone: '',
     password: '',
     confirmPassword: '',
-    role: 'collector' as 'collector' | 'branch'
+    role: 'collector' as 'collector' | 'organization' | 'branch' | 'buyer'
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -29,9 +29,19 @@ const RegisterForm: React.FC = () => {
   const [showWalletList, setShowWalletList] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+
+    if (name === 'phone') {
+      const val = value.replace(/\D/g, ''); // only digits
+      if (val.length <= 10) {
+        setFormData(prev => ({ ...prev, [name]: val }));
+      }
+      return;
+    }
+
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [name]: value
     }));
   };
 
@@ -180,16 +190,24 @@ const RegisterForm: React.FC = () => {
                 leftIcon={<Mail className="h-4 w-4" />}
               />
 
-              <Input
-                type="tel"
-                name="phone"
-                label="Phone Number"
-                value={formData.phone}
-                onChange={handleChange}
-                placeholder="Enter your phone number"
-                required
-                leftIcon={<Phone className="h-4 w-4" />}
-              />
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+                <div className="flex">
+                  <span className="inline-flex items-center px-3 py-2 border border-r-0 border-gray-300 bg-gray-50 text-gray-500 rounded-l-xl text-sm font-semibold">
+                    +234
+                  </span>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    placeholder="8034567890"
+                    required
+                    className="flex-1 block w-full rounded-none rounded-r-xl border-gray-300 focus:border-green-500 focus:ring-green-500 sm:text-sm transition-all py-3 px-4"
+                  />
+                </div>
+                <p className="text-[10px] text-gray-400 font-medium">Enter your number without 0 or +234</p>
+              </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -204,8 +222,8 @@ const RegisterForm: React.FC = () => {
                 >
                   <option value="collector">Individual Collector</option>
                   <option value="organization">Company / Organization / Hotel</option>
-                  <option value="branch">Processing Branch</option>
-                  <option value="buyer">Large Buyer / Exporter</option>
+                  <option value="branch">Local Branch (Aggregation Hub)</option>
+                  <option value="buyer">Final Company (Exporter / Provider)</option>
                 </select>
               </div>
 

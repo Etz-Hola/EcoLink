@@ -1,27 +1,27 @@
 import React, { useState } from 'react';
-import { Package, TrendingUp, Clock, DollarSign, Plus } from 'lucide-react';
+import { Package, TrendingUp, Clock, DollarSign, Plus, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
-import { useMaterial } from '../hooks/useMaterial';
-import { formatPrice, formatWeight } from '../utils/helpers';
-import MaterialCard from '../components/feature/MaterialCard';
-import Button from '../components/common/Button';
-import EcoPointsDisplay from '../components/web3/EcoPointsDisplay';
+import { useAuth } from '../../hooks/useAuth';
+import { useMaterial } from '../../hooks/useMaterial';
+import { formatPrice, formatWeight } from '../../utils/helpers';
+import MaterialCard from '../../components/feature/MaterialCard';
+import Button from '../../components/common/Button';
+import EcoPointsDisplay from '../../components/web3/EcoPointsDisplay';
 
 const CollectorDashboard: React.FC = () => {
   const { user } = useAuth();
-  const { materials, getMaterialsByUser, getMaterialsByStatus } = useMaterial();
-  
+  const { getMaterialsByUser } = useMaterial();
+
   const [selectedTab, setSelectedTab] = useState('all');
-  
+
   const userMaterials = getMaterialsByUser(user?.id || '');
   const pendingMaterials = userMaterials.filter(m => m.status === 'pending');
   const acceptedMaterials = userMaterials.filter(m => m.status === 'accepted');
   const processedMaterials = userMaterials.filter(m => m.status === 'processed');
-  
+
   const totalValue = userMaterials.reduce((sum, m) => sum + m.totalValue, 0);
   const totalWeight = userMaterials.reduce((sum, m) => sum + m.weight, 0);
-  
+
   const tabs = [
     { id: 'all', label: 'All Materials', count: userMaterials.length },
     { id: 'pending', label: 'Pending', count: pendingMaterials.length },
@@ -87,18 +87,37 @@ const CollectorDashboard: React.FC = () => {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => (
-          <div key={index} className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div key={index} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">{stat.label}</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{stat.label}</p>
+                <p className="text-2xl font-black text-gray-900 mt-1">{stat.value}</p>
               </div>
-              <div className={`p-3 rounded-lg ${stat.bg}`}>
+              <div className={`p-3 rounded-xl ${stat.bg}`}>
                 <span className={stat.color}>{stat.icon}</span>
               </div>
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Nearby Buyers Map CTA */}
+      <div className="relative group overflow-hidden rounded-[2rem] border-4 border-white shadow-xl bg-gray-900 h-64">
+        <img
+          src="https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&q=80&w=1000"
+          className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700"
+          alt="Map"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-10 flex flex-col justify-end">
+          <div className="max-w-md">
+            <h2 className="text-2xl font-black text-white mb-2">Find a Branch Near You</h2>
+            <p className="text-gray-300 text-sm font-medium mb-6">Locate local branches or collection centers within 20km to drop off your materials and get paid instantly.</p>
+            <div className="flex gap-4">
+              <Button shadow variant="secondary" className="px-8" leftIcon={<MapPin className="w-4 h-4" />}>Open Map</Button>
+              <Button variant="ghost" className="text-white hover:bg-white/10 decoration-white">View List</Button>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Main Content */}
@@ -113,11 +132,10 @@ const CollectorDashboard: React.FC = () => {
                   <button
                     key={tab.id}
                     onClick={() => setSelectedTab(tab.id)}
-                    className={`relative py-2 px-1 border-b-2 font-medium text-sm ${
-                      selectedTab === tab.id
-                        ? 'border-green-500 text-green-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700'
-                    }`}
+                    className={`relative py-2 px-1 border-b-2 font-medium text-sm ${selectedTab === tab.id
+                      ? 'border-green-500 text-green-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                      }`}
                   >
                     {tab.label}
                     <span className="ml-2 bg-gray-100 text-gray-900 py-0.5 px-2.5 rounded-full text-xs">
@@ -147,7 +165,7 @@ const CollectorDashboard: React.FC = () => {
                     {selectedTab === 'all' ? 'No materials uploaded yet' : `No ${selectedTab} materials`}
                   </h3>
                   <p className="mt-1 text-sm text-gray-500">
-                    {selectedTab === 'all' 
+                    {selectedTab === 'all'
                       ? 'Get started by uploading your first recyclable material.'
                       : `You don't have any ${selectedTab} materials at the moment.`
                     }
@@ -168,7 +186,7 @@ const CollectorDashboard: React.FC = () => {
         {/* Sidebar */}
         <div className="space-y-6">
           <EcoPointsDisplay />
-          
+
           {/* Recent Activity */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>

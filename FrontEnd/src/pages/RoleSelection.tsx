@@ -78,16 +78,16 @@ const RoleSelection: React.FC = () => {
         },
         {
             id: 'branch',
-            label: 'Processing Branch',
+            label: 'Local Branch (Aggregation Hub)',
             icon: Factory,
-            description: 'Verify materials and manage regional recycling.',
+            description: 'Buy from individuals, process, and bundle materials.',
             color: 'bg-purple-500'
         },
         {
             id: 'buyer',
-            label: 'Large Buyer / Exporter',
+            label: 'Final Company (Exporter / Provider)',
             icon: Truck,
-            description: 'Purchase processed recyclables in large quantities.',
+            description: 'Purchase bundled materials directly from branches.',
             color: 'bg-orange-500'
         },
     ];

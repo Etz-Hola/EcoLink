@@ -283,3 +283,13 @@
 2026-02-19 19:55:43:5543 [32minfo[39m: [32m::1 - - [19/Feb/2026:18:55:43 +0000] "POST /api/v1/auth/login HTTP/1.1" 200 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
 2026-02-20 09:47:03:473 [33mwarn[39m: [33mMongoose disconnected from MongoDB[39m
 2026-02-20 09:47:03:473 [32minfo[39m: [32mMongoose connected to MongoDB[39m
+2026-02-20 09:57:47:5747 [33mwarn[39m: [33mMongoose disconnected from MongoDB[39m
+2026-02-20 09:57:47:5747 [32minfo[39m: [32mMongoose connected to MongoDB[39m
+2026-02-20 10:16:47:1647 [32minfo[39m: [32m::1 - - [20/Feb/2026:09:16:47 +0000] "POST /api/v1/auth/register HTTP/1.1" 400 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 10:17:16:1716 [32minfo[39m: [32m::1 - - [20/Feb/2026:09:17:16 +0000] "POST /api/v1/auth/register HTTP/1.1" 400 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 10:17:32:1732 [32minfo[39m: [32m::1 - - [20/Feb/2026:09:17:32 +0000] "POST /api/v1/auth/register HTTP/1.1" 400 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 10:17:56:1756 [32minfo[39m: [32m::1 - - [20/Feb/2026:09:17:56 +0000] "POST /api/v1/auth/register HTTP/1.1" 400 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 10:26:04:264 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-20 10:26:04:264 [32minfo[39m: [32mRedis URL not provided, skipping Redis connection (dev mode)[39m
+2026-02-20 10:26:04:264 [32minfo[39m: [32mServer running on port 5000 in development mode[39m
+2026-02-20 10:36:48:3648 [33mwarn[39m: [33mMongoose disconnected from MongoDB[39m

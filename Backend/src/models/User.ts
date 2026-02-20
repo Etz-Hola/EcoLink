@@ -56,9 +56,9 @@ const UserSchema = new Schema<IUser>({
     trim: true,
     validate: {
       validator: function (phone: string) {
-        return !phone || /^\+?[1-9]\d{1,14}$/.test(phone);
+        return !phone || /^\d{10}$/.test(phone);
       },
-      message: 'Invalid phone format'
+      message: 'Phone must be 10 digits (without +234)'
     }
   },
   walletAddress: {

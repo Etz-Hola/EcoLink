@@ -4,14 +4,14 @@ import { useAuth } from '../hooks/useAuth';
 
 // Pages
 import Landing from '../pages/Landing';
-import Home from '../pages/Home';
 import MaterialUpload from '../pages/MaterialUpload';
-import CollectorDashboard from '../pages/CollectorDashboard';
+import CollectorDashboard from '../pages/dashboard/CollectorDashboardrDashboard';
 import Profile from '../pages/Profile';
 import LoginForm from '../components/web2/LoginForm';
 import RegisterForm from '../components/web2/RegisterForm';
-import BranchDashboard from '../pages/BranchDashboard';
+import BranchDashboard from '../pages/dashboard/BranchDashboardhDashboard';
 import RoleSelection from '../pages/RoleSelection';
+import DashboardRouter from '../pages/dashboard/DashboardRouter';
 
 // Layout Components
 import Navbar from '../components/layout/Navbar';
@@ -55,8 +55,8 @@ const AppRoutes: React.FC = () => {
         <main className="flex-1 p-6 md:p-8">
           <Routes>
             <Route path="/" element={<Navigate to={user?.role === 'branch' ? '/branch' : '/home'} replace />} />
-            <Route path="/home" element={user?.role === 'branch' ? <Navigate to="/branch" replace /> : <Home />} />
-            <Route path="/branch" element={user?.role === 'branch' ? <BranchDashboard /> : <Navigate to="/home" replace />} />
+            <Route path="/home" element={<DashboardRouter />} />
+            <Route path="/branch" element={<BranchDashboard />} />
             <Route path="/materials/upload" element={<MaterialUpload />} />
             <Route path="/materials" element={<CollectorDashboard />} />
             <Route path="/profile" element={<Profile />} />

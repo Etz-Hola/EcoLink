@@ -8,6 +8,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   fullWidth?: boolean;
+  shadow?: boolean;
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -18,6 +19,7 @@ const Button: React.FC<ButtonProps> = ({
   leftIcon,
   rightIcon,
   fullWidth = false,
+  shadow = false,
   className,
   disabled,
   ...props
@@ -46,6 +48,7 @@ const Button: React.FC<ButtonProps> = ({
         baseClasses,
         variants[variant],
         sizes[size],
+        shadow && 'shadow-lg shadow-green-100',
         widthClass,
         className
       )}

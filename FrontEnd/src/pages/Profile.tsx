@@ -23,6 +23,15 @@ const Profile: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+
+    if (name === 'phone') {
+      const val = value.replace(/\D/g, ''); // only digits
+      if (val.length <= 10) {
+        setFormData(prev => ({ ...prev, [name]: val }));
+      }
+      return;
+    }
+
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -70,10 +79,16 @@ const Profile: React.FC = () => {
                   <Camera className="h-4 w-4 text-gray-600" />
                 </button>
               </div>
-              
+
               <h3 className="text-lg font-semibold text-gray-900">{user?.name}</h3>
-              <p className="text-gray-500 capitalize">{user?.role}</p>
-              
+              <p className="text-gray-500 capitalize">
+                {user?.role === 'collector' ? 'Individual Collector' :
+                  user?.role === 'organization' ? 'Company / Organization' :
+                    user?.role === 'branch' ? 'Local Branch' :
+                      user?.role === 'buyer' ? 'Exporter / Provider' :
+                        user?.role}
+              </p>
+
               {user?.isVerified && (
                 <div className="inline-flex items-center mt-2 px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
                   <Shield className="h-3 w-3 mr-1" />
@@ -190,14 +205,23 @@ const Profile: React.FC = () => {
                 leftIcon={<Mail className="h-4 w-4" />}
               />
 
-              <Input
-                label="Phone Number"
-                name="phone"
-                value={formData.phone}
-                onChange={handleInputChange}
-                disabled={!isEditing}
-                leftIcon={<Phone className="h-4 w-4" />}
-              />
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+                <div className="flex">
+                  <span className="inline-flex items-center px-3 py-2 border border-r-0 border-gray-300 bg-gray-50 text-gray-500 rounded-l-lg text-sm font-semibold">
+                    +234
+                  </span>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    disabled={!isEditing}
+                    placeholder="8034567890"
+                    className="flex-1 block w-full rounded-none rounded-r-lg border-gray-300 focus:border-green-500 focus:ring-green-500 sm:text-sm transition-all py-2 px-3 disabled:bg-gray-50"
+                  />
+                </div>
+              </div>
 
               <Input
                 label="Location"
@@ -229,7 +253,7 @@ const Profile: React.FC = () => {
           {/* Account Settings */}
           <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-6">Account Settings</h3>
-            
+
             <div className="space-y-4">
               <div className="flex items-center justify-between py-3 border-b">
                 <div>
