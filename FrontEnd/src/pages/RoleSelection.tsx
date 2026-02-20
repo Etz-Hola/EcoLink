@@ -6,7 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 import { User, Building2, Factory, Truck, ChevronRight } from 'lucide-react';
 
 const RoleSelection: React.FC = () => {
-    const { user, updateUser, dispatch } = useAuth() as any; // Using any for dispatch if not in type
+    const { updateUser, dispatch } = useAuth() as any; // Using any for dispatch if not in type
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [selectedId, setSelectedId] = useState<string | null>(null);
