@@ -10,7 +10,11 @@ export class UserController {
     static async updateRole(req: Request, res: Response, next: NextFunction) {
         try {
             const { role } = req.body;
-            const userId = req.user.userId; // Assuming auth middleware attaches user to req
+            const user = req.user; // Get user from protect middleware
+
+            if (!user) {
+                throw new AppError('User not found', 404);
+            }
 
             // Validate role
             if (!Object.values(UserRole).includes(role)) {
@@ -20,12 +24,6 @@ export class UserController {
             // Prevent setting admin role via this endpoint
             if (role === UserRole.ADMIN) {
                 throw new AppError('Cannot set admin role', 403);
-            }
-
-            const user = await User.findById(userId);
-
-            if (!user) {
-                throw new AppError('User not found', 404);
             }
 
             // Update role

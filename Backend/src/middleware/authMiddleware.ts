@@ -33,7 +33,10 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
-        req.user = await User.findById(decoded.userId);
+        console.log('Decoded Token:', decoded);
+        const user = await User.findById(decoded.userId);
+        console.log('User Found by ID:', user ? `Found (${user.email})` : 'NOT FOUND');
+        req.user = user;
         next();
     } catch (error) {
         return next(new AppError('Not authorized to access this route', 401));
