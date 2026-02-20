@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import CollectorDashboard from './CollectorDashboard;
-import BranchDashboard from './BranchDashboard;
+import CollectorDashboard from './CollectorDashboard';
+import BranchDashboard from './BranchDashboard';
 import OrganizationDashboard from './OrganizationDashboard';
 import ExporterDashboard from './ExporterDashboard';
 

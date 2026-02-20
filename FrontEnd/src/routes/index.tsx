@@ -5,11 +5,11 @@ import { useAuth } from '../hooks/useAuth';
 // Pages
 import Landing from '../pages/Landing';
 import MaterialUpload from '../pages/MaterialUpload';
-import CollectorDashboard from '../pages/dashboard/CollectorDashboardrDashboard';
+import CollectorDashboard from '../pages/dashboard/CollectorDashboard';
 import Profile from '../pages/Profile';
 import LoginForm from '../components/web2/LoginForm';
 import RegisterForm from '../components/web2/RegisterForm';
-import BranchDashboard from '../pages/dashboard/BranchDashboardhDashboard';
+import BranchDashboard from '../pages/dashboard/BranchDashboard';
 import RoleSelection from '../pages/RoleSelection';
 import DashboardRouter from '../pages/dashboard/DashboardRouter';
 

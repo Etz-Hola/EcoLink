@@ -293,3 +293,45 @@
 2026-02-20 10:26:04:264 [32minfo[39m: [32mRedis URL not provided, skipping Redis connection (dev mode)[39m
 2026-02-20 10:26:04:264 [32minfo[39m: [32mServer running on port 5000 in development mode[39m
 2026-02-20 10:36:48:3648 [33mwarn[39m: [33mMongoose disconnected from MongoDB[39m
+2026-02-20 11:01:39:139 [31merror[39m: [31mDatabase connection failed: queryTxt ESERVFAIL cluster0.ksak8ks.mongodb.net[39m
+2026-02-20 11:03:42:342 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-20 11:03:42:342 [32minfo[39m: [32mRedis URL not provided, skipping Redis connection (dev mode)[39m
+2026-02-20 11:03:42:342 [32minfo[39m: [32mServer running on port 5000 in development mode[39m
+2026-02-20 11:05:45:545 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-20 11:05:45:545 [32minfo[39m: [32mRedis URL not provided, skipping Redis connection (dev mode)[39m
+2026-02-20 11:05:45:545 [32minfo[39m: [32mServer running on port 5000 in development mode[39m
+2026-02-20 11:09:06:96 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-20 11:09:16:916 [33mwarn[39m: [33mMongoose disconnected from MongoDB[39m
+2026-02-20 11:13:58:1358 [31merror[39m: [31mDatabase connection failed: queryTxt ESERVFAIL cluster0.ksak8ks.mongodb.net[39m
+2026-02-20 11:17:54:1754 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-20 11:17:54:1754 [32minfo[39m: [32mRedis URL not provided, skipping Redis connection (dev mode)[39m
+2026-02-20 11:17:54:1754 [32minfo[39m: [32mServer running on port 5001 in development mode[39m
+2026-02-20 11:20:14:2014 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-20 11:20:32:2032 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-20 11:21:31:2131 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-20 11:21:31:2131 [32minfo[39m: [32mRedis URL not provided, skipping Redis connection (dev mode)[39m
+2026-02-20 11:21:31:2131 [32minfo[39m: [32mServer running on port 5003 in development mode[39m
+2026-02-20 11:23:30:2330 [32minfo[39m: [32m::1 - - [20/Feb/2026:10:23:30 +0000] "POST /api/v1/auth/login HTTP/1.1" 500 398 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 11:26:55:2655 [33mwarn[39m: [33mMongoose disconnected from MongoDB[39m
+2026-02-20 11:27:48:2748 [31merror[39m: [31mDatabase connection failed: queryTxt ESERVFAIL cluster0.ksak8ks.mongodb.net[39m
+2026-02-20 11:28:35:2835 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-20 11:28:35:2835 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-20 11:28:35:2835 [32minfo[39m: [32mRedis URL not provided, skipping Redis connection (dev mode)[39m
+2026-02-20 11:28:35:2835 [32minfo[39m: [32mServer running on port 5001 in development mode[39m
+2026-02-20 11:28:58:2858 [32minfo[39m: [32m::1 - - [20/Feb/2026:10:28:58 +0000] "POST /api/v1/auth/login HTTP/1.1" 500 398 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 11:30:38:3038 [32minfo[39m: [32mSending welcome email to what@gmail.com (what)[39m
+2026-02-20 11:30:38:3038 [32minfo[39m: [32m::1 - - [20/Feb/2026:10:30:38 +0000] "POST /api/v1/auth/register HTTP/1.1" 201 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 11:30:38:3038 [32minfo[39m: [32m::1 - - [20/Feb/2026:10:30:38 +0000] "GET /api/v1/branches/queue HTTP/1.1" 404 45 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 11:30:38:3038 [32minfo[39m: [32m::1 - - [20/Feb/2026:10:30:38 +0000] "GET /api/v1/branches/queue HTTP/1.1" 404 45 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 11:31:26:3126 [32minfo[39m: [32m::1 - - [20/Feb/2026:10:31:26 +0000] "POST /api/v1/auth/login HTTP/1.1" 200 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 11:31:26:3126 [32minfo[39m: [32m::1 - - [20/Feb/2026:10:31:26 +0000] "GET /api/v1/branches/queue HTTP/1.1" 404 45 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 11:31:26:3126 [32minfo[39m: [32m::1 - - [20/Feb/2026:10:31:26 +0000] "GET /api/v1/branches/queue HTTP/1.1" 404 45 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 11:32:37:3237 [32minfo[39m: [32m::1 - - [20/Feb/2026:10:32:37 +0000] "POST /api/v1/auth/google HTTP/1.1" 500 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 11:33:44:3344 [32minfo[39m: [32m::1 - - [20/Feb/2026:10:33:44 +0000] "POST /api/v1/auth/google HTTP/1.1" 500 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 15:12:50:1250 [33mwarn[39m: [33mMongoose disconnected from MongoDB[39m
+2026-02-20 15:13:17:1317 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-20 15:13:17:1317 [32minfo[39m: [32mRedis URL not provided, skipping Redis connection (dev mode)[39m
+2026-02-20 15:13:17:1317 [32minfo[39m: [32mServer running on port 5001 in development mode[39m
+2026-02-20 15:13:28:1328 [32minfo[39m: [32m::1 - - [20/Feb/2026:14:13:28 +0000] "POST /api/v1/auth/google HTTP/1.1" 500 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 15:16:44:1644 [31merror[39m: [31mDatabase connection failed: querySrv ESERVFAIL _mongodb._tcp.cluster0.ksak8ks.mongodb.net[39m
+2026-02-20 15:16:44:1644 [31merror[39m: [31mDatabase connection failed: querySrv ESERVFAIL _mongodb._tcp.cluster0.ksak8ks.mongodb.net[39m

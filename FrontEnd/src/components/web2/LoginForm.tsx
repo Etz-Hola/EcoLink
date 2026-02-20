@@ -51,8 +51,13 @@ const LoginForm: React.FC = () => {
       setError(null);
       try {
         await googleLogin(tokenResponse.access_token);
+        const userData = JSON.parse(localStorage.getItem('ecolink_user') || '{}');
         toast.success('Successfully logged in with Google!');
-        navigate('/role-selection');
+        if (userData.role === 'branch') {
+          navigate('/branch');
+        } else {
+          navigate('/home');
+        }
       } catch (err: any) {
         setError(err.message || 'Google login failed');
         toast.error(err.message || 'Google login failed');

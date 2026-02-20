@@ -86,9 +86,13 @@ const RegisterForm: React.FC = () => {
       setIsLoading(true);
       setError(null);
       try {
-        await googleLogin(tokenResponse.access_token);
+        await googleLogin(tokenResponse.access_token, formData.role);
         toast.success('Successfully signed up with Google!');
-        navigate('/role-selection');
+        if (formData.role === 'branch') {
+          navigate('/branch');
+        } else {
+          navigate('/home');
+        }
       } catch (err: any) {
         const message = err.message || 'Google registration failed';
         setError(message);

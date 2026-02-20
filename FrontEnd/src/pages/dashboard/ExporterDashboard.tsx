@@ -1,5 +1,5 @@
 import React from 'react';
-import { Package, MapPin, TrendingUp, Truck, ShoppingCart, ArrowUpRight } from 'lucide-react';
+import { Package, TrendingUp, Truck, ShoppingCart, ArrowUpRight, Search } from 'lucide-react';
 import Button from '../../components/common/Button';
 
 const ExporterDashboard: React.FC = () => {

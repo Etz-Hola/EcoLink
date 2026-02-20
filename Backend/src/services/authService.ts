@@ -121,16 +121,29 @@ export class AuthService {
   /**
    * Login or Register with Google
    */
-  static async googleLogin(idToken: string, role?: UserRole): Promise<IAuthResponse> {
+  static async googleLogin(token: string, role?: UserRole): Promise<IAuthResponse> {
     try {
-      const ticket = await googleClient.verifyIdToken({
-        idToken,
-        audience: process.env.GOOGLE_CLIENT_ID,
-      });
+      let payload;
 
-      const payload = ticket.getPayload();
+      // Check if it's a JWT (ID Token) or an opaque Access Token
+      if (token.split('.').length === 3) {
+        // Handle ID Token
+        const ticket = await googleClient.verifyIdToken({
+          idToken: token,
+          audience: process.env.GOOGLE_CLIENT_ID,
+        });
+        payload = ticket.getPayload();
+      } else {
+        // Handle Access Token - Fetch from userinfo endpoint
+        const response = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${token}`);
+        if (!response.ok) {
+          throw new AppError('Failed to verify Google access token', 400);
+        }
+        payload = await response.json() as any;
+      }
+
       if (!payload || !payload.email) {
-        throw new AppError('Invalid Google token', 400);
+        throw new AppError('Invalid Google token data', 400);
       }
 
       const email = payload.email.toLowerCase();

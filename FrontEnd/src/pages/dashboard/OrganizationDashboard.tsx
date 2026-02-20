@@ -1,8 +1,22 @@
 import React from 'react';
-import { Building2, MapPin, BarChart3, Upload, History, Zap, ArrowRight, Download } from 'lucide-react';
+import { Building2, BarChart3, Upload, History, Zap, Download } from 'lucide-react';
 import Button from '../../components/common/Button';
+import UploadMaterialsForm from '../../components/dashboard/UploadMaterialsForm';
+import NearbyBuyersMap from '../../components/dashboard/NearbyBuyersMap';
 
 const OrganizationDashboard: React.FC = () => {
+    const [userLocation, setUserLocation] = React.useState<{ lat: number; lng: number } | null>(null);
+
+    React.useEffect(() => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude }),
+                () => setUserLocation({ lat: 6.5244, lng: 3.3792 }) // Lagos
+            );
+        } else {
+            setUserLocation({ lat: 6.5244, lng: 3.3792 });
+        }
+    }, []);
     const stats = [
         { label: 'Bulk Listings', value: '48', icon: History, color: 'text-blue-600', bg: 'bg-blue-50' },
         { label: 'Total Volume', value: '1,240kg', icon: BarChart3, color: 'text-green-600', bg: 'bg-green-50' },
@@ -40,22 +54,21 @@ const OrganizationDashboard: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Main Content */}
                 <div className="lg:col-span-2 space-y-6">
-                    {/* Map CTA */}
-                    <div className="relative h-64 rounded-[2rem] overflow-hidden group cursor-pointer border-4 border-white shadow-xl">
-                        <img
-                            src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=1000"
-                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                            alt="Map Background"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-r from-green-900/90 to-transparent flex items-center px-10">
-                            <div className="max-w-xs space-y-3">
-                                <h3 className="text-2xl font-black text-white leading-tight">Locate a Branch Near You</h3>
-                                <p className="text-green-100 text-sm font-medium">Find high-capacity aggregation hubs to drop off your bulk materials.</p>
-                                <div className="flex items-center gap-2 text-white font-bold group-hover:gap-4 transition-all">
-                                    Open Interactive Map <ArrowRight className="w-5 h-5" />
-                                </div>
-                            </div>
+                    {/* Bulk Upload Section */}
+                    <div className="space-y-6">
+                        <div className="flex items-center justify-between px-2">
+                            <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase">Bulk Material Submission</h2>
+                            <span className="text-[10px] font-bold text-green-600 bg-green-50 px-3 py-1 rounded-full uppercase tracking-widest">Enterprise Mode</span>
                         </div>
+                        <UploadMaterialsForm />
+                    </div>
+
+                    {/* Nearby Branch Map (Contextual) */}
+                    <div className="space-y-6 pt-8">
+                        <div className="flex items-center justify-between px-2">
+                            <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase">Nearby Aggregation Hubs</h2>
+                        </div>
+                        <NearbyBuyersMap userLocation={userLocation} />
                     </div>
 
                     {/* Recent Listings */}

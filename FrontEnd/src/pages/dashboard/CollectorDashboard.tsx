@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Package, TrendingUp, Clock, DollarSign, Plus, MapPin } from 'lucide-react';
+import { Package, TrendingUp, Clock, DollarSign, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useMaterial } from '../../hooks/useMaterial';
@@ -7,12 +7,35 @@ import { formatPrice, formatWeight } from '../../utils/helpers';
 import MaterialCard from '../../components/feature/MaterialCard';
 import Button from '../../components/common/Button';
 import EcoPointsDisplay from '../../components/web3/EcoPointsDisplay';
+import NearbyBuyersMap from '../../components/dashboard/NearbyBuyersMap';
+import UploadMaterialsForm from '../../components/dashboard/UploadMaterialsForm';
 
 const CollectorDashboard: React.FC = () => {
   const { user } = useAuth();
   const { getMaterialsByUser } = useMaterial();
 
   const [selectedTab, setSelectedTab] = useState('all');
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+
+  React.useEffect(() => {
+    // Attempt to get user location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        () => {
+          // Default to Lagos, Nigeria if blocked
+          setUserLocation({ lat: 6.5244, lng: 3.3792 });
+        }
+      );
+    } else {
+      setUserLocation({ lat: 6.5244, lng: 3.3792 });
+    }
+  }, []);
 
   const userMaterials = getMaterialsByUser(user?.id || '');
   const pendingMaterials = userMaterials.filter(m => m.status === 'pending');
@@ -101,23 +124,21 @@ const CollectorDashboard: React.FC = () => {
         ))}
       </div>
 
-      {/* Nearby Buyers Map CTA */}
-      <div className="relative group overflow-hidden rounded-[2rem] border-4 border-white shadow-xl bg-gray-900 h-64">
-        <img
-          src="https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&q=80&w=1000"
-          className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700"
-          alt="Map"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-10 flex flex-col justify-end">
-          <div className="max-w-md">
-            <h2 className="text-2xl font-black text-white mb-2">Find a Branch Near You</h2>
-            <p className="text-gray-300 text-sm font-medium mb-6">Locate local branches or collection centers within 20km to drop off your materials and get paid instantly.</p>
-            <div className="flex gap-4">
-              <Button shadow variant="secondary" className="px-8" leftIcon={<MapPin className="w-4 h-4" />}>Open Map</Button>
-              <Button variant="ghost" className="text-white hover:bg-white/10 decoration-white">View List</Button>
-            </div>
-          </div>
+      {/* Nearby Buyers Map */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between px-2">
+          <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase">Nearby Collection Centers</h2>
+          <span className="text-[10px] font-bold text-green-600 bg-green-50 px-3 py-1 rounded-full uppercase tracking-widest">Live Updates</span>
         </div>
+        <NearbyBuyersMap userLocation={userLocation} />
+      </div>
+
+      {/* Upload Section */}
+      <div className="space-y-4 pt-8">
+        <div className="flex items-center justify-between px-2">
+          <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase">Ready to Recycle?</h2>
+        </div>
+        <UploadMaterialsForm />
       </div>
 
       {/* Main Content */}
