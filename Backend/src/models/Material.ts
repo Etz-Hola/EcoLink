@@ -1,12 +1,12 @@
 import mongoose, { Schema } from 'mongoose';
-import { 
-  IMaterial, 
-  MaterialType, 
-  PlasticType, 
-  MetalType, 
-  HouseholdType, 
-  MaterialCondition, 
-  MaterialStatus 
+import {
+  IMaterial,
+  MaterialType,
+  PlasticType,
+  MetalType,
+  HouseholdType,
+  MaterialCondition,
+  MaterialStatus
 } from '../types/material';
 
 const MaterialImageSchema = new Schema({
@@ -165,7 +165,7 @@ const MaterialSchema = new Schema<IMaterial>({
     type: String,
     required: true,
     validate: {
-      validator: function(subType: string) {
+      validator: function (subType: string) {
         const validSubTypes = [
           ...Object.values(PlasticType),
           ...Object.values(MetalType),
@@ -186,7 +186,7 @@ const MaterialSchema = new Schema<IMaterial>({
     enum: Object.values(MaterialStatus),
     default: MaterialStatus.PENDING
   },
-  
+
   // Physical Properties
   weight: {
     type: Number,
@@ -200,33 +200,33 @@ const MaterialSchema = new Schema<IMaterial>({
   },
   color: String,
   dimensions: DimensionsSchema,
-  
+
   // Images
   images: {
     type: [MaterialImageSchema],
     validate: {
-      validator: function(images: any[]) {
+      validator: function (images: any[]) {
         return images.length >= 1 && images.length <= 10;
       },
       message: 'At least 1 and at most 10 images are required'
     }
   },
-  
+
   // Quality Assessment
   qualityAssessment: QualityAssessmentSchema,
-  
+
   // Pricing
   pricing: {
     type: PricingSchema,
     required: true
   },
-  
+
   // Location & Logistics
   pickupLocation: {
     type: LocationSchema,
     required: true
   },
-  
+
   // Ownership & Processing
   submittedBy: {
     type: Schema.Types.ObjectId,
@@ -246,7 +246,7 @@ const MaterialSchema = new Schema<IMaterial>({
     type: Schema.Types.ObjectId,
     ref: 'User'
   },
-  
+
   // Treatment Information
   requiresTreatment: {
     type: Boolean,
@@ -258,7 +258,7 @@ const MaterialSchema = new Schema<IMaterial>({
     min: 0
   },
   treatmentNotes: String,
-  
+
   // Batch Information
   batchId: String,
   isPartOfBatch: {
@@ -269,7 +269,7 @@ const MaterialSchema = new Schema<IMaterial>({
     type: Number,
     min: 0
   },
-  
+
   // Analytics
   views: {
     type: Number,
@@ -280,7 +280,7 @@ const MaterialSchema = new Schema<IMaterial>({
     type: Schema.Types.ObjectId,
     ref: 'User'
   }],
-  
+
   // Timestamps
   submittedAt: {
     type: Date,
@@ -306,30 +306,28 @@ MaterialSchema.index({ 'pricing.finalPrice': 1 });
 MaterialSchema.index({ weight: 1 });
 
 // Middleware
-MaterialSchema.pre('save', function(next) {
+MaterialSchema.pre('save', function (this: any) {
   // Set current owner to submitter initially
   if (this.isNew && !this.currentOwner) {
     this.currentOwner = this.submittedBy;
   }
-  
+
   // Calculate final price
   if (this.pricing) {
-    this.pricing.finalPrice = this.pricing.basePrice * 
-                              this.pricing.conditionMultiplier * 
-                              this.pricing.qualityMultiplier * 
-                              this.pricing.marketMultiplier;
+    this.pricing.finalPrice = this.pricing.basePrice *
+      this.pricing.conditionMultiplier *
+      this.pricing.qualityMultiplier *
+      this.pricing.marketMultiplier;
   }
-  
-  next();
 });
 
 // Virtual for total estimated value
-MaterialSchema.virtual('totalValue').get(function() {
-  return this.weight * this.pricing.finalPrice;
+MaterialSchema.virtual('totalValue').get(function (this: any) {
+  return (this.weight || 0) * (this.pricing?.finalPrice || 0);
 });
 
 // Static methods
-MaterialSchema.statics.findByLocation = function(center: [number, number], radius: number) {
+MaterialSchema.statics.findByLocation = function (center: [number, number], radius: number) {
   return this.find({
     pickupLocation: {
       $geoWithin: {
@@ -339,7 +337,7 @@ MaterialSchema.statics.findByLocation = function(center: [number, number], radiu
   });
 };
 
-MaterialSchema.statics.findByMaterialType = function(materialType: MaterialType, subType?: string) {
+MaterialSchema.statics.findByMaterialType = function (materialType: MaterialType, subType?: string) {
   const query: any = { materialType };
   if (subType) query.subType = subType;
   return this.find(query);

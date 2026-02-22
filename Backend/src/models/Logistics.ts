@@ -246,7 +246,7 @@ const LogisticsSchema = new Schema<ILogistics>({
     enum: ['low', 'medium', 'high', 'urgent'],
     default: 'medium'
   },
-  
+
   // Materials & Weight
   materials: [{
     type: Schema.Types.ObjectId,
@@ -263,7 +263,7 @@ const LogisticsSchema = new Schema<ILogistics>({
     required: true,
     min: 0
   },
-  
+
   // Parties Involved
   collector: {
     type: Schema.Types.ObjectId,
@@ -279,16 +279,16 @@ const LogisticsSchema = new Schema<ILogistics>({
     ref: 'Branch',
     required: true
   },
-  
+
   // Route Information
   route: {
     type: RouteSchema,
     required: true
   },
-  
+
   // Vehicle Information
   assignedVehicle: TransportVehicleSchema,
-  
+
   // Scheduling
   requestedPickupTime: {
     type: Date,
@@ -298,7 +298,7 @@ const LogisticsSchema = new Schema<ILogistics>({
   actualPickupTime: Date,
   estimatedDeliveryTime: Date,
   actualDeliveryTime: Date,
-  
+
   // Cost Information
   costBreakdown: {
     type: CostBreakdownSchema,
@@ -313,25 +313,25 @@ const LogisticsSchema = new Schema<ILogistics>({
     type: String,
     enum: ['cash', 'bank_transfer', 'digital_wallet', 'crypto']
   },
-  
+
   // Tracking Information
   currentLocation: CurrentLocationSchema,
   trackingHistory: [TrackingHistorySchema],
-  
+
   // Documentation
   pickupReceipt: ReceiptSchema,
   deliveryReceipt: ReceiptSchema,
-  
+
   // Quality Control
   pickupPhotos: [String],
   deliveryPhotos: [String],
   weightDiscrepancy: WeightDiscrepancySchema,
-  
+
   // Communication
   specialInstructions: String,
   contactAtPickup: ContactSchema,
   contactAtDelivery: ContactSchema,
-  
+
   // Performance Metrics
   rating: RatingSchema,
   feedback: FeedbackSchema
@@ -340,7 +340,6 @@ const LogisticsSchema = new Schema<ILogistics>({
 });
 
 // Indexes
-LogisticsSchema.index({ pickupId: 1 });
 LogisticsSchema.index({ status: 1 });
 LogisticsSchema.index({ collector: 1 });
 LogisticsSchema.index({ transporter: 1 });
@@ -351,29 +350,27 @@ LogisticsSchema.index({ 'route.origin': '2dsphere' });
 LogisticsSchema.index({ 'route.destination': '2dsphere' });
 
 // Pre-save middleware
-LogisticsSchema.pre('save', function(next) {
+LogisticsSchema.pre('save', function (this: any) {
   // Generate pickup ID if not provided
   if (this.isNew && !this.pickupId) {
     const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
     this.pickupId = `PU${date}${random}`;
   }
-  
+
   // Calculate total cost
   if (this.costBreakdown) {
-    this.costBreakdown.totalCost = 
+    this.costBreakdown.totalCost =
       this.costBreakdown.baseFee +
       this.costBreakdown.distanceFee +
       this.costBreakdown.weightFee +
       this.costBreakdown.urgencyFee +
       this.costBreakdown.fuelSurcharge;
   }
-  
-  next();
 });
 
 // Virtual for delivery duration
-LogisticsSchema.virtual('deliveryDuration').get(function() {
+LogisticsSchema.virtual('deliveryDuration').get(function () {
   if (this.actualPickupTime && this.actualDeliveryTime) {
     return this.actualDeliveryTime.getTime() - this.actualPickupTime.getTime();
   }
@@ -381,7 +378,7 @@ LogisticsSchema.virtual('deliveryDuration').get(function() {
 });
 
 // Static methods
-LogisticsSchema.statics.findByRoute = function(origin: [number, number], destination: [number, number], radius: number = 5) {
+LogisticsSchema.statics.findByRoute = function (origin: [number, number], destination: [number, number], radius: number = 5) {
   return this.find({
     $and: [
       {
@@ -402,7 +399,7 @@ LogisticsSchema.statics.findByRoute = function(origin: [number, number], destina
   });
 };
 
-LogisticsSchema.statics.findActivePickups = function() {
+LogisticsSchema.statics.findActivePickups = function () {
   return this.find({
     status: { $in: [LogisticsStatus.ASSIGNED, LogisticsStatus.IN_TRANSIT] }
   });

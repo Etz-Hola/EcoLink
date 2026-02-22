@@ -39,7 +39,7 @@ const OperatingHoursSchema = new Schema({
     type: String,
     required: true,
     validate: {
-      validator: function(time: string) {
+      validator: function (time: string) {
         return /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(time);
       },
       message: 'Invalid time format. Use HH:MM'
@@ -49,7 +49,7 @@ const OperatingHoursSchema = new Schema({
     type: String,
     required: true,
     validate: {
-      validator: function(time: string) {
+      validator: function (time: string) {
         return /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(time);
       },
       message: 'Invalid time format. Use HH:MM'
@@ -79,8 +79,8 @@ const CapacitySchema = new Schema({
   },
   available: {
     type: Number,
-    default: function() {
-      return this.maximum - this.current - this.reserved;
+    default: function (this: any) {
+      return (this.maximum || 0) - (this.current || 0) - (this.reserved || 0);
     }
   },
   lastUpdated: {
@@ -280,7 +280,7 @@ const BranchSchema = new Schema<IBranch>({
     enum: Object.values(BranchStatus),
     default: BranchStatus.INACTIVE
   },
-  
+
   // Owner/Manager Information
   ownerId: {
     type: Schema.Types.ObjectId,
@@ -295,7 +295,7 @@ const BranchSchema = new Schema<IBranch>({
     type: ContactPersonSchema,
     required: true
   },
-  
+
   // Location
   location: {
     type: LocationSchema,
@@ -307,12 +307,12 @@ const BranchSchema = new Schema<IBranch>({
     min: 1,
     max: 100
   },
-  
+
   // Operating Information
   operatingHours: {
     type: [OperatingHoursSchema],
     validate: {
-      validator: function(hours: any[]) {
+      validator: function (hours: any[]) {
         const days = hours.map(h => h.day);
         return new Set(days).size === days.length; // No duplicate days
       },
@@ -323,29 +323,29 @@ const BranchSchema = new Schema<IBranch>({
     type: Boolean,
     default: false
   },
-  
+
   // Capacity Management
   capacity: {
     type: CapacitySchema,
     required: true
   },
-  
+
   // Equipment & Capabilities
   equipment: [EquipmentSchema],
   processingCapabilities: {
     type: ProcessingCapabilitySchema,
     required: true
   },
-  
+
   // Queue Management
   currentQueue: {
     type: QueueSchema,
     default: () => ({})
   },
-  
+
   // Financial Information
   bankAccount: BankAccountSchema,
-  
+
   // Verification & Compliance
   isVerified: {
     type: Boolean,
@@ -355,7 +355,7 @@ const BranchSchema = new Schema<IBranch>({
   certifications: [String],
   lastInspection: Date,
   nextInspection: Date,
-  
+
   // Performance Metrics
   metrics: {
     type: MetricsSchema,
@@ -372,7 +372,7 @@ const BranchSchema = new Schema<IBranch>({
     default: 0,
     min: 0
   },
-  
+
   // Pricing & Commission
   commissionRate: {
     type: Number,
@@ -386,13 +386,13 @@ const BranchSchema = new Schema<IBranch>({
     condition: String,
     rate: Number
   }],
-  
+
   // Notifications & Preferences
   notifications: {
     type: NotificationsSchema,
     default: () => ({})
   },
-  
+
   // Timestamps
   registeredAt: {
     type: Date,
@@ -410,36 +410,33 @@ const BranchSchema = new Schema<IBranch>({
 BranchSchema.index({ location: '2dsphere' });
 BranchSchema.index({ branchType: 1, status: 1 });
 BranchSchema.index({ ownerId: 1 });
-BranchSchema.index({ code: 1 });
 BranchSchema.index({ rating: -1 });
 BranchSchema.index({ 'capacity.available': -1 });
 
 // Pre-save middleware
-BranchSchema.pre('save', function(next) {
+BranchSchema.pre('save', function (this: any) {
   // Generate branch code if not provided
   if (this.isNew && !this.code) {
     const typeCode = this.branchType.substring(0, 2).toUpperCase();
     const randomNum = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
     this.code = `${typeCode}${randomNum}`;
   }
-  
+
   // Update available capacity
   if (this.capacity) {
     this.capacity.available = this.capacity.maximum - this.capacity.current - this.capacity.reserved;
     this.capacity.lastUpdated = new Date();
   }
-  
-  next();
 });
 
 // Virtual for occupancy rate
-BranchSchema.virtual('occupancyRate').get(function() {
+BranchSchema.virtual('occupancyRate').get(function () {
   if (!this.capacity || this.capacity.maximum === 0) return 0;
   return (this.capacity.current / this.capacity.maximum) * 100;
 });
 
 // Static methods
-BranchSchema.statics.findNearby = function(center: [number, number], radius: number) {
+BranchSchema.statics.findNearby = function (center: [number, number], radius: number) {
   return this.find({
     location: {
       $geoWithin: {
@@ -450,7 +447,7 @@ BranchSchema.statics.findNearby = function(center: [number, number], radius: num
   });
 };
 
-BranchSchema.statics.findWithCapacity = function(minCapacity: number = 0) {
+BranchSchema.statics.findWithCapacity = function (minCapacity: number = 0) {
   return this.find({
     'capacity.available': { $gte: minCapacity },
     status: BranchStatus.ACTIVE

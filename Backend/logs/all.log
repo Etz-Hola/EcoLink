@@ -356,3 +356,58 @@
 2026-02-20 15:28:47:2847 [31merror[39m: [31mDatabase connection failed: Could not connect to any servers in your MongoDB Atlas cluster. One common reason is that you're trying to access the database from an IP that isn't whitelisted. Make sure your current IP address is on your Atlas cluster's IP whitelist: https://www.mongodb.com/docs/atlas/security-whitelist/[39m
 2026-02-20 15:29:26:2926 [31merror[39m: [31mDatabase connection failed: Could not connect to any servers in your MongoDB Atlas cluster. One common reason is that you're trying to access the database from an IP that isn't whitelisted. Make sure your current IP address is on your Atlas cluster's IP whitelist: https://www.mongodb.com/docs/atlas/security-whitelist/[39m
 2026-02-20 15:29:26:2926 [31merror[39m: [31mDatabase connection failed: Could not connect to any servers in your MongoDB Atlas cluster. One common reason is that you're trying to access the database from an IP that isn't whitelisted. Make sure your current IP address is on your Atlas cluster's IP whitelist: https://www.mongodb.com/docs/atlas/security-whitelist/[39m
+2026-02-20 15:38:31:3831 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-20 15:38:31:3831 [32minfo[39m: [32mRedis URL not provided, skipping Redis connection (dev mode)[39m
+2026-02-20 15:38:31:3831 [32minfo[39m: [32mServer running on port 5001 in development mode[39m
+2026-02-20 15:39:16:3916 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-20 15:39:16:3916 [32minfo[39m: [32m::1 - - [20/Feb/2026:14:39:16 +0000] "PATCH /api/v1/users/role HTTP/1.1" 200 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 15:39:32:3932 [32minfo[39m: [32m::1 - - [20/Feb/2026:14:39:32 +0000] "GET /api/v1/branches/nearby?lat=6.5244&lng=3.3792&radius=50 HTTP/1.1" 404 45 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 15:39:56:3956 [32minfo[39m: [32m::1 - - [20/Feb/2026:14:39:56 +0000] "GET /api/v1/branches/nearby?lat=6.5244&lng=3.3792&radius=50 HTTP/1.1" 404 45 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 15:40:14:4014 [32minfo[39m: [32m::1 - - [20/Feb/2026:14:40:14 +0000] "GET /api/v1/branches/nearby?lat=6.5244&lng=3.3792&radius=50 HTTP/1.1" 404 45 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 15:40:23:4023 [32minfo[39m: [32m::1 - - [20/Feb/2026:14:40:23 +0000] "GET /api/v1/branches/nearby?lat=6.5244&lng=3.3792&radius=50 HTTP/1.1" 404 45 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 15:40:51:4051 [31merror[39m: [31mDatabase connection failed: querySrv ESERVFAIL _mongodb._tcp.cluster0.ksak8ks.mongodb.net[39m
+2026-02-20 15:40:51:4051 [31merror[39m: [31mDatabase connection failed: querySrv ESERVFAIL _mongodb._tcp.cluster0.ksak8ks.mongodb.net[39m
+2026-02-20 15:41:25:4125 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-20 15:41:25:4125 [32minfo[39m: [32mRedis URL not provided, skipping Redis connection (dev mode)[39m
+2026-02-20 15:41:25:4125 [32minfo[39m: [32mServer running on port 5001 in development mode[39m
+2026-02-20 15:41:35:4135 [32minfo[39m: [32m::1 - - [20/Feb/2026:14:41:35 +0000] "GET /api/v1/branches/nearby?lat=6.5244&lng=3.3792&radius=50 HTTP/1.1" 404 45 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 15:42:00:420 [32minfo[39m: [32m::1 - - [20/Feb/2026:14:42:00 +0000] "GET /api/v1/branches/nearby?lat=6.5244&lng=3.3792&radius=50 HTTP/1.1" 404 45 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 15:42:07:427 [32minfo[39m: [32m::1 - - [20/Feb/2026:14:42:07 +0000] "GET /api/v1/branches/nearby?lat=6.5244&lng=3.3792&radius=50 HTTP/1.1" 404 45 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 15:42:26:4226 [32minfo[39m: [32m::1 - - [20/Feb/2026:14:42:26 +0000] "GET /api/v1/branches/nearby?lat=6.5244&lng=3.3792&radius=50 HTTP/1.1" 404 45 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 15:42:49:4249 [32minfo[39m: [32m::1 - - [20/Feb/2026:14:42:49 +0000] "GET /api/v1/branches/nearby?lat=6.5244&lng=3.3792&radius=50 HTTP/1.1" 404 45 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 15:44:48:4448 [32minfo[39m: [32m::1 - - [20/Feb/2026:14:44:48 +0000] "GET /api/v1/branches/nearby?lat=6.5244&lng=3.3792&radius=50 HTTP/1.1" 404 45 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 15:45:28:4528 [32minfo[39m: [32m::1 - - [20/Feb/2026:14:45:28 +0000] "GET /api/v1/branches/nearby?lat=6.6&lng=3.39&radius=50 HTTP/1.1" 404 45 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 15:46:28:4628 [32minfo[39m: [32m::1 - - [20/Feb/2026:14:46:28 +0000] "POST /api/v1/auth/google HTTP/1.1" 200 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 15:46:33:4633 [32minfo[39m: [32m::1 - - [20/Feb/2026:14:46:33 +0000] "GET /api/v1/branches/nearby?lat=6.6&lng=3.39&radius=50 HTTP/1.1" 404 45 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 15:47:19:4719 [32minfo[39m: [32m::1 - - [20/Feb/2026:14:47:19 +0000] "GET /api/v1/branches/nearby?lat=6.6&lng=3.39&radius=50 HTTP/1.1" 404 45 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 15:49:10:4910 [32minfo[39m: [32m::1 - - [20/Feb/2026:14:49:10 +0000] "GET /api/v1/branches/nearby?lat=6.6&lng=3.39&radius=50 HTTP/1.1" 404 45 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 15:50:06:506 [32minfo[39m: [32m::1 - - [20/Feb/2026:14:50:06 +0000] "GET /api/v1/branches/nearby?lat=6.6&lng=3.39&radius=50 HTTP/1.1" 404 45 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 15:50:12:5012 [32minfo[39m: [32m::1 - - [20/Feb/2026:14:50:12 +0000] "GET /api/v1/branches/nearby?lat=6.6&lng=3.39&radius=50 HTTP/1.1" 404 45 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 15:51:11:5111 [32minfo[39m: [32m::1 - - [20/Feb/2026:14:51:11 +0000] "POST /api/v1/auth/google HTTP/1.1" 200 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 15:51:12:5112 [32minfo[39m: [32m::1 - - [20/Feb/2026:14:51:12 +0000] "GET /api/v1/branches/nearby?lat=6.6&lng=3.39&radius=50 HTTP/1.1" 404 45 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 15:59:32:5932 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-20 15:59:32:5932 [32minfo[39m: [32mRedis URL not provided, skipping Redis connection (dev mode)[39m
+2026-02-20 15:59:32:5932 [32minfo[39m: [32mServer running on port 5001 in development mode[39m
+2026-02-20 15:59:32:5932 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-20 16:00:30:030 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-20 16:00:30:030 [32minfo[39m: [32mRedis URL not provided, skipping Redis connection (dev mode)[39m
+2026-02-20 16:00:30:030 [32minfo[39m: [32mServer running on port 5001 in development mode[39m
+2026-02-20 16:00:31:031 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-20 16:01:22:122 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-20 16:01:22:122 [32minfo[39m: [32mRedis URL not provided, skipping Redis connection (dev mode)[39m
+2026-02-20 16:01:22:122 [32minfo[39m: [32mServer running on port 5001 in development mode[39m
+2026-02-20 16:01:24:124 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-20 16:02:06:26 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-20 16:02:06:26 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-20 16:02:06:26 [32minfo[39m: [32mRedis URL not provided, skipping Redis connection (dev mode)[39m
+2026-02-20 16:02:06:26 [32minfo[39m: [32mServer running on port 5001 in development mode[39m
+2026-02-20 16:04:37:437 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-20 16:04:37:437 [32minfo[39m: [32mRedis URL not provided, skipping Redis connection (dev mode)[39m
+2026-02-20 16:04:37:437 [32minfo[39m: [32mServer running on port 5001 in development mode[39m
+2026-02-20 16:27:49:2749 [32minfo[39m: [32m::1 - - [20/Feb/2026:15:27:49 +0000] "GET /api/v1/branches/nearby?lat=6.6&lng=3.39&radius=50 HTTP/1.1" 200 36 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-20 17:22:28:2228 [33mwarn[39m: [33mMongoose disconnected from MongoDB[39m
+2026-02-20 17:22:28:2228 [32minfo[39m: [32mMongoose connected to MongoDB[39m
+2026-02-20 19:59:51:5951 [33mwarn[39m: [33mMongoose disconnected from MongoDB[39m
+2026-02-20 19:59:51:5951 [32minfo[39m: [32mMongoose connected to MongoDB[39m
+2026-02-20 20:55:20:5520 [33mwarn[39m: [33mMongoose disconnected from MongoDB[39m
+2026-02-20 20:55:20:5520 [32minfo[39m: [32mMongoose connected to MongoDB[39m

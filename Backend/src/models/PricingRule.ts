@@ -176,7 +176,7 @@ const PricingRuleSchema = new Schema<IPricingRule>({
     max: 100,
     default: 50
   },
-  
+
   // Applicability
   materialType: {
     type: String,
@@ -189,14 +189,14 @@ const PricingRuleSchema = new Schema<IPricingRule>({
     enum: Object.values(MaterialCondition)
   },
   locations: [String],
-  
+
   // Pricing Strategy
   strategy: {
     type: String,
     enum: Object.values(PricingStrategy),
     required: true
   },
-  
+
   // Price Factors
   basePrice: {
     type: Number,
@@ -208,7 +208,7 @@ const PricingRuleSchema = new Schema<IPricingRule>({
     default: 'NGN'
   },
   priceFactors: [PriceFactorSchema],
-  
+
   // Market Integration
   marketPrices: [MarketPriceSchema],
   marketPriceWeight: {
@@ -217,10 +217,10 @@ const PricingRuleSchema = new Schema<IPricingRule>({
     max: 1,
     default: 0.3
   },
-  
+
   // Quantity Tiers
   quantityTiers: [QuantityTierSchema],
-  
+
   // Time-based Rules
   validFrom: {
     type: Date,
@@ -229,19 +229,19 @@ const PricingRuleSchema = new Schema<IPricingRule>({
   },
   validUntil: Date,
   timeOfDayRules: [TimeOfDayRuleSchema],
-  
+
   // Seasonal Adjustments
   seasonalAdjustments: [SeasonalAdjustmentSchema],
-  
+
   // Treatment Pricing
   treatmentPricing: [TreatmentPricingSchema],
-  
+
   // Performance Metrics
   usage: {
     type: UsageSchema,
     default: () => ({})
   },
-  
+
   // Approval & Governance
   createdBy: {
     type: Schema.Types.ObjectId,
@@ -270,15 +270,15 @@ PricingRuleSchema.index({ approvalStatus: 1 });
 PricingRuleSchema.index({ createdBy: 1 });
 
 // Validation
-PricingRuleSchema.pre('validate', function() {
+PricingRuleSchema.pre('validate', function (this: any) {
   // Ensure valid date range
   if (this.validUntil && this.validFrom >= this.validUntil) {
     this.invalidate('validUntil', 'Valid until date must be after valid from date');
   }
-  
+
   // Ensure quantity tiers don't overlap
   if (this.quantityTiers && this.quantityTiers.length > 1) {
-    const sortedTiers = this.quantityTiers.sort((a, b) => a.minQuantity - b.minQuantity);
+    const sortedTiers = this.quantityTiers.sort((a: any, b: any) => a.minQuantity - b.minQuantity);
     for (let i = 0; i < sortedTiers.length - 1; i++) {
       const current = sortedTiers[i];
       const next = sortedTiers[i + 1];
@@ -291,7 +291,7 @@ PricingRuleSchema.pre('validate', function() {
 });
 
 // Middleware to update usage statistics
-PricingRuleSchema.methods.updateUsage = function(value: number) {
+PricingRuleSchema.methods.updateUsage = function (value: number) {
   this.usage.timesApplied += 1;
   this.usage.totalValue += value;
   this.usage.averagePrice = this.usage.totalValue / this.usage.timesApplied;
@@ -300,7 +300,7 @@ PricingRuleSchema.methods.updateUsage = function(value: number) {
 };
 
 // Static methods
-PricingRuleSchema.statics.findApplicableRules = function(
+PricingRuleSchema.statics.findApplicableRules = function (
   materialType: MaterialType,
   subType?: string,
   condition?: MaterialCondition,
@@ -317,7 +317,7 @@ PricingRuleSchema.statics.findApplicableRules = function(
       { validUntil: { $gte: new Date() } }
     ]
   };
-  
+
   if (subType) {
     query.$or = [
       { subTypes: { $exists: false } },
@@ -325,7 +325,7 @@ PricingRuleSchema.statics.findApplicableRules = function(
       { subTypes: subType }
     ];
   }
-  
+
   if (condition) {
     query.$or = [
       { conditions: { $exists: false } },
@@ -333,7 +333,7 @@ PricingRuleSchema.statics.findApplicableRules = function(
       { conditions: condition }
     ];
   }
-  
+
   if (location) {
     query.$or = [
       { locations: { $exists: false } },
@@ -341,11 +341,11 @@ PricingRuleSchema.statics.findApplicableRules = function(
       { locations: location }
     ];
   }
-  
+
   return this.find(query).sort({ priority: -1 });
 };
 
-PricingRuleSchema.statics.findByMaterialType = function(materialType: MaterialType) {
+PricingRuleSchema.statics.findByMaterialType = function (materialType: MaterialType) {
   return this.find({ materialType, isActive: true });
 };
 
