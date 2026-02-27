@@ -4,10 +4,23 @@ import { useAuth } from '../../hooks/useAuth';
 import { useMaterial } from '../../hooks/useMaterial';
 import ProcessingQueue from '../../components/dashboard/ProcessingQueue';
 import BundleCreator from '../../components/dashboard/BundleCreator';
+import NearbyBuyersMap from '../../components/dashboard/NearbyBuyersMap';
 
 const BranchDashboard: React.FC = () => {
   const { user } = useAuth();
   const { materials } = useMaterial();
+  const [userLocation, setUserLocation] = React.useState<{ lat: number; lng: number } | null>(null);
+
+  React.useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude }),
+        () => setUserLocation({ lat: 6.5244, lng: 3.3792 })
+      );
+    } else {
+      setUserLocation({ lat: 6.5244, lng: 3.3792 });
+    }
+  }, []);
 
   // Filter materials for quick stats
   const pendingMaterials = materials.filter(m => m.status === 'pending');
@@ -78,6 +91,15 @@ const BranchDashboard: React.FC = () => {
           <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full uppercase tracking-widest">Real-time</span>
         </div>
         <ProcessingQueue />
+      </div>
+
+      {/* Map Section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between px-2">
+          <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase">Nearby Pending Uploads</h2>
+          <span className="text-[10px] font-bold text-orange-600 bg-orange-50 px-3 py-1 rounded-full uppercase tracking-widest">Geographical View</span>
+        </div>
+        <NearbyBuyersMap userLocation={userLocation} viewMode="branch" />
       </div>
 
       {/* Aggregation & Bundling Section */}

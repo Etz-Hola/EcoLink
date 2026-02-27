@@ -130,7 +130,7 @@ const CollectorDashboard: React.FC = () => {
           <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase">Nearby Collection Centers</h2>
           <span className="text-[10px] font-bold text-green-600 bg-green-50 px-3 py-1 rounded-full uppercase tracking-widest">Live Updates</span>
         </div>
-        <NearbyBuyersMap userLocation={userLocation} />
+        <NearbyBuyersMap userLocation={userLocation} viewMode="collector" />
       </div>
 
       {/* Upload Section */}

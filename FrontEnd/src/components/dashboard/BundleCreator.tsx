@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PackageCheck, Plus, Trash2, Box, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -13,14 +13,39 @@ export default function BundleCreator() {
     const [items, setItems] = useState<BundleItem[]>([]);
     const [bundleName, setBundleName] = useState('');
     const [creating, setCreating] = useState(false);
+    const [availableItems, setAvailableItems] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    // This would normally come from API (accepted items in processing)
-    const availableItems = [
-        { id: 'm1', type: 'PET', weightKg: 45, quality: 'treated_clean' },
-        { id: 'm2', type: 'HDPE', weightKg: 120, quality: 'raw_dirty' },
-        { id: 'm3', type: 'Aluminum', weightKg: 350, quality: 'treated_clean' },
-        { id: 'm4', type: 'PET', weightKg: 85, quality: 'treated_clean' },
-    ];
+    useEffect(() => {
+        const fetchAvailableMaterials = async () => {
+            try {
+                const token = localStorage.getItem('ecolink_token');
+                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+
+                const res = await fetch(`${apiUrl}/materials/pending?status=approved`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+
+                if (!res.ok) throw new Error();
+
+                const data = await res.json();
+                if (data.success) {
+                    setAvailableItems(data.data.map((m: any) => ({
+                        id: m._id,
+                        type: m.materialType,
+                        weightKg: m.weight,
+                        quality: m.condition
+                    })));
+                }
+            } catch (err) {
+                toast.error('Failed to load available materials');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchAvailableMaterials();
+    }, []);
 
     const addToBundle = (item: { id: string; type: string; weightKg: number; quality: string }) => {
         if (items.some(i => i.materialId === item.id)) {
@@ -55,7 +80,7 @@ export default function BundleCreator() {
             const token = localStorage.getItem('ecolink_token');
             const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
-            const res = await fetch(`${apiUrl}/bundles/create`, {
+            const res = await fetch(`${apiUrl}/bundles`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -64,7 +89,7 @@ export default function BundleCreator() {
                 body: JSON.stringify({
                     name: bundleName,
                     materialIds: items.map(i => i.materialId),
-                    totalWeight: calculateTotalWeight(),
+                    description: `Bundle of ${items.length} materials`
                 }),
             });
 
@@ -73,6 +98,8 @@ export default function BundleCreator() {
             toast.success(`Bundle "${bundleName}" created! (${calculateTotalWeight()} kg) 📦`);
             setItems([]);
             setBundleName('');
+            // Refresh available items
+            setAvailableItems(prev => prev.filter(a => !items.some(i => i.materialId === a.id)));
         } catch {
             toast.error('Failed to create bundle');
         } finally {
@@ -106,8 +133,8 @@ export default function BundleCreator() {
                             <div
                                 key={item.id}
                                 className={`group border-2 rounded-3xl p-5 transition-all cursor-pointer ${items.some(i => i.materialId === item.id)
-                                        ? 'bg-purple-50 border-purple-200'
-                                        : 'bg-white border-gray-50 hover:border-purple-100 hover:shadow-md'
+                                    ? 'bg-purple-50 border-purple-200'
+                                    : 'bg-white border-gray-50 hover:border-purple-100 hover:shadow-md'
                                     }`}
                                 onClick={() => addToBundle(item)}
                             >
