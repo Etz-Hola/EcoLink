@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Leaf, Recycle, TrendingUp, Users, Shield, Award, MapPin, Box } from 'lucide-react';
+import { ArrowRight, Leaf, Recycle, TrendingUp, Users, Shield } from 'lucide-react';
+
 import { Link } from 'react-router-dom';
 import Footer from '../components/layout/Footer';
 
@@ -36,7 +37,7 @@ const Landing: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-white dark:from-neutral-950 dark:to-neutral-900 overflow-hidden">
       {/* Hero Section */}
-      <section className="relative pt-32 pb-40 md:pt-48 md:pb-56 px-6 lg:px-12">
+      <section className="relative pt-16 pb-24 md:pt-20 md:pb-32 px-6 lg:px-12">
         <div className="absolute inset-0 opacity-40 pointer-events-none">
           <div className="absolute inset-0 bg-gradient-to-r from-primary-500/10 via-accent-500/10 to-primary-500/10 animate-gradient-x" />
         </div>
@@ -94,14 +95,13 @@ const Landing: React.FC = () => {
         </div>
       </section>
 
-      {/* Trust / Stats bar */}
-      <section className="py-16 bg-white/60 dark:bg-neutral-900/60 backdrop-blur-xl border-y border-neutral-200/50 dark:border-neutral-800/50">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+      <section className="py-14 bg-gray-950">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { value: '2M+', label: 'Tons of plastic waste/year in NG' },
-            { value: '₦500–800', label: 'Avg clean PET price/kg' },
-            { value: 'On-chain', label: 'NFT batch tracking' },
-            { value: 'Eco-points', label: 'Tokenized rewards' },
+            { value: '2M+', label: 'Tons plastic waste/yr in NG', from: 'from-green-400', to: 'to-emerald-500', glow: 'shadow-green-500/20' },
+            { value: '₦800', label: 'Avg clean PET price/kg', from: 'from-amber-400', to: 'to-orange-500', glow: 'shadow-amber-500/20' },
+            { value: '100%', label: 'On-chain NFT tracking', from: 'from-indigo-400', to: 'to-purple-500', glow: 'shadow-indigo-500/20' },
+            { value: 'Eco+', label: 'Tokenized reward points', from: 'from-rose-400', to: 'to-pink-500', glow: 'shadow-rose-500/20' },
           ].map((stat, i) => (
             <motion.div
               key={i}
@@ -109,9 +109,11 @@ const Landing: React.FC = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
+              className={`relative overflow-hidden rounded-2xl bg-white/5 border border-white/8 p-6 text-center shadow-xl ${stat.glow}`}
             >
-              <p className="text-4xl md:text-5xl font-black text-primary-600">{stat.value}</p>
-              <p className="mt-2 text-sm md:text-base text-neutral-600 dark:text-neutral-400 font-medium">{stat.label}</p>
+              <div className={`absolute inset-0 bg-gradient-to-br ${stat.from} ${stat.to} opacity-5 pointer-events-none`} />
+              <p className={`text-4xl md:text-5xl font-black bg-gradient-to-r ${stat.from} ${stat.to} bg-clip-text text-transparent`}>{stat.value}</p>
+              <p className="mt-2 text-xs md:text-sm text-white/50 font-medium leading-snug">{stat.label}</p>
             </motion.div>
           ))}
         </div>
