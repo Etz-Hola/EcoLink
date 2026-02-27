@@ -8,7 +8,7 @@ interface QueueItem {
     materialType: string;
     weightKg: number;
     quality: string;
-    status: 'pending' | 'accepted' | 'rejected' | 'processing' | 'processed';
+    status: 'pending' | 'accepted' | 'rejected' | 'processing' | 'processed' | 'approved';
     submittedAt: string;
     photoUrl?: string;
 }
@@ -24,7 +24,7 @@ export default function ProcessingQueue() {
                 const token = localStorage.getItem('ecolink_token');
                 const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
-                const res = await fetch(`${apiUrl}/branches/queue`, {
+                const res = await fetch(`${apiUrl}/materials/pending`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
@@ -33,8 +33,19 @@ export default function ProcessingQueue() {
                 if (!res.ok) throw new Error();
 
                 const data = await res.json();
-                // Assuming data structure matches backend API
-                setQueue(data.success ? (data.data || []) : []);
+                if (data.success) {
+                    const mapped = (data.data || []).map((m: any) => ({
+                        id: m._id,
+                        collectorName: m.submittedBy?.username || m.submittedBy?.businessName || 'Anonymous',
+                        materialType: m.materialType,
+                        weightKg: m.weight,
+                        quality: m.condition,
+                        status: m.status,
+                        submittedAt: m.createdAt,
+                        photoUrl: m.images?.[0]?.url
+                    }));
+                    setQueue(mapped);
+                }
             } catch (err) {
                 toast.error('Failed to load processing queue');
             } finally {
@@ -45,22 +56,24 @@ export default function ProcessingQueue() {
         fetchQueue();
     }, []);
 
-    const handleAction = async (id: string, action: 'accept' | 'reject') => {
+    const handleAction = async (id: string, action: 'accept' | 'reject', offeredPrice?: number) => {
         try {
             const token = localStorage.getItem('ecolink_token');
             const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
-            const res = await fetch(`${apiUrl}/materials/${id}/${action}`, {
+            const status = action === 'accept' ? 'approved' : 'rejected';
+            const res = await fetch(`${apiUrl}/materials/${id}/review`, {
                 method: 'PATCH',
                 headers: {
+                    'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`,
                 },
+                body: JSON.stringify({ status, offeredPrice })
             });
 
             if (!res.ok) throw new Error();
 
-            const newStatus = action === 'accept' ? 'accepted' : 'rejected';
-            setQueue(prev => prev.map(item => item.id === id ? { ...item, status: newStatus } : item));
+            setQueue(prev => prev.map(item => item.id === id || (item as any)._id === id ? { ...item, status } : item));
             toast.success(`Material ${action}ed successfully`);
         } catch {
             toast.error(`Failed to ${action} material`);

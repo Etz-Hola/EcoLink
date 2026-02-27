@@ -139,3 +139,17 @@
 2026-02-27 16:57:06:576 [31merror[39m: [31mDatabase connection failed: queryTxt ESERVFAIL cluster0.ksak8ks.mongodb.net[39m
 2026-02-27 16:58:11:5811 [31merror[39m: [31mDatabase connection failed: getaddrinfo ENOTFOUND ac-ldiwg5m-shard-00-01.ksak8ks.mongodb.net[39m
 2026-02-27 17:07:59:759 [31merror[39m: [31mUncaught Exception: listen EADDRINUSE: address already in use :::5001[39m
+2026-02-27 17:54:31:5431 [31merror[39m: [31mDatabase connection failed: querySrv ESERVFAIL _mongodb._tcp.cluster0.ksak8ks.mongodb.net[39m
+2026-02-27 17:54:31:5431 [31merror[39m: [31mDatabase connection failed: querySrv ESERVFAIL _mongodb._tcp.cluster0.ksak8ks.mongodb.net[39m
+2026-02-27 17:55:00:550 [31merror[39m: [31mDatabase connection failed: querySrv ESERVFAIL _mongodb._tcp.cluster0.ksak8ks.mongodb.net[39m
+2026-02-27 17:55:00:550 [31merror[39m: [31mDatabase connection failed: querySrv ESERVFAIL _mongodb._tcp.cluster0.ksak8ks.mongodb.net[39m
+2026-02-27 17:56:14:5614 [31merror[39m: [31mUncaught Exception: listen EADDRINUSE: address already in use :::5001[39m
+2026-02-27 17:58:07:587 [31merror[39m: [31mDatabase connection failed: queryTxt ESERVFAIL cluster0.ksak8ks.mongodb.net[39m
+2026-02-27 18:24:29:2429 [31merror[39m: [31mUncaught Exception: listen EADDRINUSE: address already in use :::5001[39m
+2026-02-27 18:28:42:2842 [31merror[39m: [31mDatabase connection failed: querySrv ESERVFAIL _mongodb._tcp.cluster0.ksak8ks.mongodb.net[39m
+2026-02-27 18:35:30:3530 [31merror[39m: [31mDatabase connection failed: querySrv ESERVFAIL _mongodb._tcp.cluster0.ksak8ks.mongodb.net[39m
+2026-02-27 18:38:36:3836 [31merror[39m: [31mUncaught Exception: listen EADDRINUSE: address already in use :::5001[39m
+2026-02-27 18:40:54:4054 [31merror[39m: [31mUncaught Exception: listen EADDRINUSE: address already in use :::5001[39m
+2026-02-27 18:51:01:511 [31merror[39m: [31mUncaught Exception: listen EADDRINUSE: address already in use :::5001[39m
+2026-02-27 18:51:39:5139 [31merror[39m: [31mUncaught Exception: listen EADDRINUSE: address already in use :::5001[39m
+2026-02-27 22:05:42:542 [31merror[39m: [31mDatabase connection failed: querySrv ECONNREFUSED _mongodb._tcp.cluster0.ksak8ks.mongodb.net[39m

@@ -79,6 +79,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (token && userData) {
       try {
         const user = JSON.parse(userData);
+        // Ensure name is always populated
+        if (!user.name && (user.firstName || user.lastName)) {
+          user.name = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+        }
         dispatch({ type: 'LOGIN_SUCCESS', payload: { user, token } });
       } catch (error) {
         localStorage.removeItem('ecolink_token');
@@ -86,6 +90,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     }
   }, []);
+
+  // Helper to normalize user object (backend returns firstName+lastName, frontend expects name)
+  const normalizeUser = (rawUser: any) => {
+    const name = rawUser.name || `${rawUser.firstName || ''} ${rawUser.lastName || ''}`.trim() || rawUser.username || 'User';
+    return { ...rawUser, name, id: rawUser._id || rawUser.id };
+  };
 
   const login = async (email: string, password: string): Promise<void> => {
     dispatch({ type: 'LOGIN_START' });
@@ -103,11 +113,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error(data.message || 'Login failed');
       }
 
-      const { user, tokens } = data;
-      localStorage.setItem('ecolink_token', tokens.accessToken);
+      const user = normalizeUser(data.user);
+      localStorage.setItem('ecolink_token', data.tokens.accessToken);
       localStorage.setItem('ecolink_user', JSON.stringify(user));
 
-      dispatch({ type: 'LOGIN_SUCCESS', payload: { user, token: tokens.accessToken } });
+      dispatch({ type: 'LOGIN_SUCCESS', payload: { user, token: data.tokens.accessToken } });
     } catch (error: any) {
       dispatch({ type: 'LOGIN_FAILURE' });
       throw error;
@@ -132,16 +142,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error(data.message || 'Registration failed');
       }
 
-      const { user, tokens } = data;
-      localStorage.setItem('ecolink_token', tokens.accessToken);
+      const user = normalizeUser(data.user);
+      localStorage.setItem('ecolink_token', data.tokens.accessToken);
       localStorage.setItem('ecolink_user', JSON.stringify(user));
 
-      dispatch({ type: 'LOGIN_SUCCESS', payload: { user, token: tokens.accessToken } });
+      dispatch({ type: 'LOGIN_SUCCESS', payload: { user, token: data.tokens.accessToken } });
     } catch (error: any) {
       dispatch({ type: 'LOGIN_FAILURE' });
       throw error;
     }
   };
+
 
   const googleLogin = async (idToken: string, role?: string): Promise<void> => {
     dispatch({ type: 'LOGIN_START' });
@@ -158,11 +169,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error(data.message || 'Google login failed');
       }
 
-      const { user, tokens } = data;
-      localStorage.setItem('ecolink_token', tokens.accessToken);
+      const user = normalizeUser(data.user);
+      localStorage.setItem('ecolink_token', data.tokens.accessToken);
       localStorage.setItem('ecolink_user', JSON.stringify(user));
 
-      dispatch({ type: 'LOGIN_SUCCESS', payload: { user, token: tokens.accessToken } });
+      dispatch({ type: 'LOGIN_SUCCESS', payload: { user, token: data.tokens.accessToken } });
     } catch (error: any) {
       dispatch({ type: 'LOGIN_FAILURE' });
       throw error;
@@ -190,11 +201,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error(data.message || 'Wallet login failed');
       }
 
-      const { user, tokens } = data;
-      localStorage.setItem('ecolink_token', tokens.accessToken);
+      const user = normalizeUser(data.user);
+      localStorage.setItem('ecolink_token', data.tokens.accessToken);
       localStorage.setItem('ecolink_user', JSON.stringify(user));
 
-      dispatch({ type: 'LOGIN_SUCCESS', payload: { user, token: tokens.accessToken } });
+      dispatch({ type: 'LOGIN_SUCCESS', payload: { user, token: data.tokens.accessToken } });
     } catch (error: any) {
       dispatch({ type: 'LOGIN_FAILURE' });
       throw error;

@@ -1,8 +1,21 @@
 import React from 'react';
 import { Package, TrendingUp, Truck, ShoppingCart, ArrowUpRight, Search } from 'lucide-react';
 import Button from '../../components/common/Button';
+import NearbyBuyersMap from '../../components/dashboard/NearbyBuyersMap';
 
 const ExporterDashboard: React.FC = () => {
+    const [userLocation, setUserLocation] = React.useState<{ lat: number; lng: number } | null>(null);
+
+    React.useEffect(() => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude }),
+                () => setUserLocation({ lat: 6.5244, lng: 3.3792 })
+            );
+        } else {
+            setUserLocation({ lat: 6.5244, lng: 3.3792 });
+        }
+    }, []);
     const stats = [
         { label: 'Active Purchases', value: '12', icon: ShoppingCart, color: 'text-blue-600', bg: 'bg-blue-50' },
         { label: 'Bundles Verified', value: '450', icon: Package, color: 'text-green-600', bg: 'bg-green-50' },
@@ -46,6 +59,15 @@ const ExporterDashboard: React.FC = () => {
                         <p className="text-3xl font-black text-gray-900 mt-1">{stat.value}</p>
                     </div>
                 ))}
+            </div>
+
+            {/* Map Section */}
+            <div className="space-y-4">
+                <div className="flex items-center justify-between px-2">
+                    <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase">Available Export Bundles</h2>
+                    <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-3 py-1 rounded-full uppercase tracking-widest">Global Supply</span>
+                </div>
+                <NearbyBuyersMap userLocation={userLocation} viewMode="exporter" />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

@@ -1,10 +1,16 @@
 import React from 'react';
+import { motion } from 'framer-motion';
+import { ArrowRight, Leaf, Recycle, TrendingUp, Users, Shield } from 'lucide-react';
+
 import { Link } from 'react-router-dom';
-import { ArrowRight, Leaf, Recycle, TrendingUp, Users, Shield, Award } from 'lucide-react';
-import Button from '../components/common/Button';
 import Footer from '../components/layout/Footer';
 
 const Landing: React.FC = () => {
+  const fadeInUp = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+  };
+
   const features = [
     {
       icon: <Recycle className="h-6 w-6" />,
@@ -28,127 +34,170 @@ const Landing: React.FC = () => {
     }
   ];
 
-  const stats = [
-    { value: '10,000+', label: 'Active Collectors' },
-    { value: '500+', label: 'Processing Branches' },
-    { value: '2.5M kg', label: 'Materials Recycled' },
-    { value: '₦45M+', label: 'Payments Made' }
-  ];
-
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-white dark:from-neutral-950 dark:to-neutral-900 overflow-hidden">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-green-50 to-blue-50 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-8">
-              <div className="space-y-4">
-                <h1 className="text-4xl md:text-6xl font-bold text-gray-900">
-                  Turn Your
-                  <span className="block text-green-600">Waste Into Wealth</span>
-                </h1>
-                <p className="text-xl text-gray-600 max-w-2xl">
-                  Connect with Nigeria's largest recycling network. Upload materials, get instant pricing, and earn money while saving the planet.
-                </p>
-              </div>
+      <section className="relative pt-16 pb-24 md:pt-20 md:pb-32 px-6 lg:px-12">
+        <div className="absolute inset-0 opacity-40 pointer-events-none">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary-500/10 via-accent-500/10 to-primary-500/10 animate-gradient-x" />
+        </div>
 
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button
-                  size="lg"
-                  className="px-8 py-4 text-lg"
-                  rightIcon={<ArrowRight className="h-5 w-5" />}
-                >
-                  <Link to="/register">Get Started Free</Link>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="px-8 py-4 text-lg"
-                >
-                  <Link to="/how-it-works">How It Works</Link>
-                </Button>
-              </div>
+        <div className="relative max-w-7xl mx-auto text-center">
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={fadeInUp}
+            transition={{ duration: 0.6 }}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-500/10 backdrop-blur-sm rounded-full border border-primary-500/20 mb-6"
+          >
+            <Leaf className="h-5 w-5 text-primary-500" />
+            <span className="text-sm font-bold text-primary-700">Sustainable • On-chain • Nigeria-first</span>
+          </motion.div>
 
-              <div className="flex items-center space-x-6 pt-4">
-                <div className="flex items-center space-x-2">
-                  <Award className="h-5 w-5 text-yellow-500" />
-                  <span className="text-sm text-gray-600">Trusted Platform</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Shield className="h-5 w-5 text-green-500" />
-                  <span className="text-sm text-gray-600">Secure Payments</span>
-                </div>
-              </div>
-            </div>
+          <motion.h1
+            initial="hidden"
+            animate="visible"
+            variants={fadeInUp}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-5xl md:text-8xl font-black tracking-tight bg-gradient-to-r from-neutral-900 via-primary-600 to-accent-600 bg-clip-text text-transparent mb-8 pb-2"
+          >
+            Turn Waste Into Wealth
+          </motion.h1>
 
-            <div className="relative">
-              <div className="bg-white rounded-2xl shadow-xl p-8 transform rotate-3">
-                <img
-                  src="https://images.pexels.com/photos/3850512/pexels-photo-3850512.jpeg?auto=compress&cs=tinysrgb&w=500"
-                  alt="Recycling materials"
-                  className="w-full h-64 object-cover rounded-lg"
-                />
-                <div className="mt-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-600">Plastic Bottles</span>
-                    <span className="text-green-600 font-bold">₦150/kg</span>
-                  </div>
-                  <div className="bg-gray-200 rounded-full h-2">
-                    <div className="bg-green-500 h-2 rounded-full w-3/4"></div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="absolute -bottom-4 -left-4 bg-blue-500 text-white p-4 rounded-lg shadow-lg">
-                <div className="text-2xl font-bold">₦1,250</div>
-                <div className="text-sm opacity-90">Earned Today</div>
-              </div>
-            </div>
-          </div>
+          <motion.p
+            initial="hidden"
+            animate="visible"
+            variants={fadeInUp}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="text-xl md:text-2xl text-neutral-600 dark:text-neutral-300 max-w-3xl mx-auto mb-12 leading-relaxed"
+          >
+            The smart recycling platform that connects collectors, branches and exporters with transparent pricing, on-chain traceability and real rewards.
+          </motion.p>
+
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={fadeInUp}
+            transition={{ duration: 0.6, delay: 0.6 }}
+            className="flex flex-col sm:flex-row gap-5 justify-center"
+          >
+            <Link
+              to="/register"
+              className="group relative px-10 py-5 bg-primary-600 hover:bg-primary-700 text-white font-bold text-lg rounded-2xl shadow-2xl shadow-primary-500/30 transition-all hover:-translate-y-1 hover:shadow-primary-500/50 flex items-center justify-center"
+            >
+              Get Started Free
+              <ArrowRight className="inline ml-3 group-hover:translate-x-1 transition-transform" />
+            </Link>
+            <button className="px-10 py-5 bg-white dark:bg-neutral-800 border-2 border-neutral-200 dark:border-neutral-700 rounded-2xl font-bold text-lg hover:border-primary-500 transition-colors">
+              Watch 30s Demo
+            </button>
+          </motion.div>
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-green-600 mb-2">
-                  {stat.value}
-                </div>
-                <div className="text-gray-600 text-sm md:text-base">
-                  {stat.label}
-                </div>
-              </div>
-            ))}
-          </div>
+      <section className="py-14 bg-gray-950">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { value: '2M+', label: 'Tons plastic waste/yr in NG', from: 'from-green-400', to: 'to-emerald-500', glow: 'shadow-green-500/20' },
+            { value: '₦800', label: 'Avg clean PET price/kg', from: 'from-amber-400', to: 'to-orange-500', glow: 'shadow-amber-500/20' },
+            { value: '100%', label: 'On-chain NFT tracking', from: 'from-indigo-400', to: 'to-purple-500', glow: 'shadow-indigo-500/20' },
+            { value: 'Eco+', label: 'Tokenized reward points', from: 'from-rose-400', to: 'to-pink-500', glow: 'shadow-rose-500/20' },
+          ].map((stat, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.1 }}
+              className={`relative overflow-hidden rounded-2xl bg-white/5 border border-white/8 p-6 text-center shadow-xl ${stat.glow}`}
+            >
+              <div className={`absolute inset-0 bg-gradient-to-br ${stat.from} ${stat.to} opacity-5 pointer-events-none`} />
+              <p className={`text-4xl md:text-5xl font-black bg-gradient-to-r ${stat.from} ${stat.to} bg-clip-text text-transparent`}>{stat.value}</p>
+              <p className="mt-2 text-xs md:text-sm text-white/50 font-medium leading-snug">{stat.label}</p>
+            </motion.div>
+          ))}
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+      <section className="py-32 bg-neutral-50 dark:bg-neutral-950">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-20">
+            <h2 className="text-3xl md:text-5xl font-black text-neutral-900 dark:text-white mb-6">
               Everything You Need to Start Recycling
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-neutral-600 dark:text-neutral-400 max-w-3xl mx-auto">
               Our platform makes it easy to turn your recyclable materials into income while contributing to a sustainable future.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
-              <div key={index} className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center text-green-600 mb-4">
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="bg-white dark:bg-neutral-900 rounded-[2.5rem] p-10 border border-neutral-100 dark:border-neutral-800 hover:border-primary-500/50 hover:shadow-2xl hover:shadow-primary-500/5 transition-all group"
+              >
+                <div className="w-16 h-16 bg-primary-50 dark:bg-primary-900/20 rounded-2xl flex items-center justify-center text-primary-600 mb-8 group-hover:scale-110 transition-transform">
                   {feature.icon}
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                <h3 className="text-2xl font-black text-neutral-900 dark:text-white mb-4">
                   {feature.title}
                 </h3>
-                <p className="text-gray-600 text-sm">
+                <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
                   {feature.description}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="py-32 bg-white dark:bg-neutral-900">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-20">
+            <h2 className="text-3xl md:text-5xl font-black text-neutral-900 dark:text-white mb-6">
+              Simple. Smart. Sustainable.
+            </h2>
+            <p className="text-xl text-neutral-600 dark:text-neutral-400">
+              Get started in just 3 easy steps
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
+            {[
+              {
+                step: '01',
+                title: 'Upload Materials',
+                desc: 'Take photos of your recyclable materials and upload them with weight and condition details.',
+                color: 'bg-primary-500'
+              },
+              {
+                step: '02',
+                title: 'Get Pricing',
+                desc: 'Receive instant, market-based pricing for your materials based on type, quality, and current demand.',
+                color: 'bg-accent-500'
+              },
+              {
+                step: '03',
+                title: 'Get Paid',
+                desc: 'Schedule pickup or drop-off at nearby branches, and get paid directly to your account.',
+                color: 'bg-primary-600'
+              }
+            ].map((item, i) => (
+              <div key={i} className="relative">
+                <div className={`w-14 h-14 ${item.color} text-white rounded-2xl flex items-center justify-center text-xl font-black mb-8 shadow-xl shadow-primary-500/20`}>
+                  {item.step}
+                </div>
+                <h3 className="text-3xl font-black text-neutral-900 dark:text-white mb-4">
+                  {item.title}
+                </h3>
+                <p className="text-xl text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                  {item.desc}
                 </p>
               </div>
             ))}
@@ -156,83 +205,31 @@ const Landing: React.FC = () => {
         </div>
       </section>
 
-      {/* How It Works Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Simple. Smart. Sustainable.
-            </h2>
-            <p className="text-xl text-gray-600">
-              Get started in just 3 easy steps
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-green-500 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-                1
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Upload Materials
-              </h3>
-              <p className="text-gray-600">
-                Take photos of your recyclable materials and upload them to our platform with weight and condition details.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-16 h-16 bg-blue-500 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-                2
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Get Pricing
-              </h3>
-              <p className="text-gray-600">
-                Receive instant, market-based pricing for your materials based on type, quality, and current demand.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-16 h-16 bg-purple-500 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-                3
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Get Paid
-              </h3>
-              <p className="text-gray-600">
-                Schedule pickup or drop-off at nearby branches, and get paid directly to your account or mobile wallet.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-green-600 to-blue-600">
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <div className="space-y-6">
-            <Leaf className="h-16 w-16 text-white mx-auto" />
-            <h2 className="text-3xl md:text-4xl font-bold text-white">
-              Ready to Make a Difference?
+      <section className="py-32 px-6">
+        <div className="max-w-6xl mx-auto glass dark:bg-neutral-900/80 p-16 md:p-24 text-center relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 to-accent-500/5 -z-10" />
+          <div className="relative z-10 space-y-10">
+            <Leaf className="h-20 w-20 text-primary-500 mx-auto animate-float" />
+            <h2 className="text-4xl md:text-7xl font-black text-neutral-900 dark:text-white leading-tight">
+              Ready to Make a<br /> <span className="gradient-text">Difference?</span>
             </h2>
-            <p className="text-xl text-green-100 max-w-2xl mx-auto">
+            <p className="text-2xl text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto">
               Join thousands of Nigerians who are earning money while creating a cleaner, more sustainable future.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-              <Button
-                size="lg"
-                className="px-8 py-4 text-lg bg-white text-green-600 hover:bg-gray-100"
+            <div className="flex flex-col sm:flex-row gap-6 justify-center pt-6">
+              <Link
+                to="/register"
+                className="px-12 py-6 bg-primary-600 hover:bg-primary-700 text-white font-black text-xl rounded-2xl shadow-2xl transition-all hover:-translate-y-1"
               >
-                <Link to="/register">Start Recycling Today</Link>
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                className="px-8 py-4 text-lg border-white text-white hover:bg-white hover:text-green-600"
+                Start Recycling Today
+              </Link>
+              <Link
+                to="/contact"
+                className="px-12 py-6 bg-white dark:bg-neutral-800 border-2 border-neutral-200 dark:border-neutral-700 rounded-2xl font-black text-xl hover:border-primary-500 transition-colors"
               >
-                <Link to="/contact">Contact Us</Link>
-              </Button>
+                Contact Us
+              </Link>
             </div>
           </div>
         </div>

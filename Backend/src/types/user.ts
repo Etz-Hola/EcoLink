@@ -5,6 +5,8 @@ export enum UserRole {
   BRANCH = 'branch',
   BUYER = 'buyer',
   ORGANIZATION = 'organization',
+  HOTEL = 'hotel',
+  EXPORTER = 'exporter',
   ADMIN = 'admin',
   PENDING = 'pending'
 }

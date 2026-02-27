@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Material, MaterialCategory } from '../types';
 import { useApp } from '../context/AppContext';
 import { generateMaterialId, uploadToCloudinary, validateImageFile } from '../utils/helpers';
@@ -61,7 +61,7 @@ export const useMaterial = () => {
 
       // Add to app state
       addMaterial(newMaterial);
-      
+
       return newMaterial;
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to upload material');
@@ -86,7 +86,7 @@ export const useMaterial = () => {
       if (status === 'processed') {
         updates.processedAt = new Date();
       }
-      
+
       updateMaterial(materialId, updates);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to update material');
@@ -108,6 +108,54 @@ export const useMaterial = () => {
     }
   }, [updateMaterial, setLoading, setError]);
 
+  const fetchMyMaterials = useCallback(async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('ecolink_token');
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+
+      const res = await fetch(`${apiUrl}/materials/my`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!res.ok) throw new Error('Failed to fetch materials');
+
+      const data = await res.json();
+      if (data.success) {
+        // Map backend data to frontend Material type
+        const mappedMaterials: Material[] = data.data.map((m: any) => ({
+          id: m._id,
+          name: m.name || `${m.materialType} Lot`,
+          category: {
+            id: m.materialType,
+            name: m.materialType,
+            subcategories: [],
+            basePrice: m.pricing?.offeredPrice || 0,
+            unit: 'kg',
+            description: ''
+          },
+          subcategory: '',
+          weight: m.weight,
+          condition: m.condition === 'treated_clean' ? 'clean' : 'dirty',
+          photos: m.images || [],
+          pricePerKg: m.pricing?.offeredPrice || 0,
+          totalValue: (m.pricing?.offeredPrice || 0) * m.weight,
+          uploadedBy: m.submittedBy,
+          status: m.status === 'approved' ? 'accepted' : m.status,
+          uploadedAt: new Date(m.createdAt),
+          description: m.description
+        }));
+
+        // We need a way to batch update materials in AppContext
+        // For now, let's assume updateMaterial can handle it or we use a separate state
+      }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to fetch materials');
+    } finally {
+      setLoading(false);
+    }
+  }, [setLoading, setError]);
+
   return {
     materials,
     isUploading,
@@ -116,6 +164,7 @@ export const useMaterial = () => {
     getMaterialsByStatus,
     updateMaterialStatus,
     gradeMaterial,
-    deleteMaterial
+    deleteMaterial,
+    fetchMyMaterials
   };
 };

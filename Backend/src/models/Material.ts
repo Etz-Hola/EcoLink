@@ -89,6 +89,10 @@ const PricingSchema = new Schema({
     default: 1,
     min: 0
   },
+  offeredPrice: {
+    type: Number,
+    min: 0
+  },
   finalPrice: {
     type: Number,
     required: true,
@@ -314,10 +318,13 @@ MaterialSchema.pre('save', function (this: any) {
 
   // Calculate final price
   if (this.pricing) {
-    this.pricing.finalPrice = this.pricing.basePrice *
+    const baseCalculated = this.pricing.basePrice *
       this.pricing.conditionMultiplier *
       this.pricing.qualityMultiplier *
       this.pricing.marketMultiplier;
+
+    // If branch has offered a specific price, use that as the final price basis
+    this.pricing.finalPrice = this.pricing.offeredPrice || baseCalculated;
   }
 });
 

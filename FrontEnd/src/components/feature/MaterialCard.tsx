@@ -1,5 +1,6 @@
 import React from 'react';
-import { Package, Calendar, MapPin, DollarSign } from 'lucide-react';
+import { Package, Calendar, MapPin, DollarSign, ChevronRight, Info } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Material } from '../../types';
 import { formatPrice, formatWeight, formatDate, getMaterialStatusColor, getConditionColor } from '../../utils/helpers';
 import Button from '../common/Button';
@@ -18,103 +19,115 @@ const MaterialCard: React.FC<MaterialCardProps> = ({
   showActions = true
 }) => {
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
-      {/* Image */}
-      {material.photos.length > 0 && (
-        <div className="aspect-video relative overflow-hidden rounded-t-lg">
+    <motion.div
+      whileHover={{ y: -8 }}
+      className="bg-white rounded-[2rem] shadow-sm border border-gray-100 hover:shadow-2xl hover:shadow-green-500/5 transition-all overflow-hidden group flex flex-col h-full"
+    >
+      {/* Image Container */}
+      <div className="aspect-[16/10] relative overflow-hidden">
+        {material.photos && material.photos.length > 0 ? (
           <img
             src={material.photos[0]}
             alt={material.name}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
           />
-          <div className="absolute top-2 right-2">
-            <span className={`px-2 py-1 text-xs font-medium rounded-full ${getMaterialStatusColor(material.status)}`}>
-              {material.status.charAt(0).toUpperCase() + material.status.slice(1)}
-            </span>
+        ) : (
+          <div className="w-full h-full bg-gray-50 flex items-center justify-center">
+            <Package className="w-12 h-12 text-gray-200" />
           </div>
-        </div>
-      )}
+        )}
 
-      <div className="p-4">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-3">
-          <div>
-            <h3 className="font-semibold text-lg text-gray-900 mb-1">{material.name}</h3>
-            <div className="flex items-center space-x-2">
-              <span className={`px-2 py-1 text-xs font-medium rounded ${getConditionColor(material.condition)}`}>
-                {material.condition}
+        {/* Status Badge */}
+        <div className="absolute top-4 right-4">
+          <span className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full backdrop-blur-md border border-white/20 shadow-lg ${getMaterialStatusColor(material.status)} bg-opacity-90`}>
+            {material.status}
+          </span>
+        </div>
+
+        {/* Condition Overlay */}
+        <div className="absolute bottom-4 left-4">
+          <span className={`px-3 py-1 text-[10px] font-bold rounded-lg border border-white/20 shadow-md ${getConditionColor(material.condition)} bg-opacity-90 backdrop-blur-sm`}>
+            {material.condition.toUpperCase()}
+          </span>
+        </div>
+      </div>
+
+      <div className="p-6 flex flex-col flex-1">
+        {/* Header Info */}
+        <div className="flex justify-between items-start mb-4">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[10px] font-black text-green-600 uppercase tracking-widest">
+                {material.category?.name || 'Material'}
               </span>
-              {material.qualityGrade && (
-                <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded">
-                  Grade {material.qualityGrade}
-                </span>
-              )}
+              <span className="w-1 h-1 bg-gray-300 rounded-full" />
+              <span className="text-[10px] font-bold text-gray-400">
+                {material.subcategory}
+              </span>
             </div>
+            <h3 className="text-xl font-black text-gray-900 group-hover:text-green-600 transition-colors line-clamp-1">
+              {material.name}
+            </h3>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-bold text-green-600">
+            <p className="text-xl font-black text-gray-900 leading-none">
               {formatPrice(material.totalValue)}
-            </div>
-            <div className="text-sm text-gray-500">
+            </p>
+            <p className="text-[10px] font-bold text-gray-400 mt-1">
               {formatPrice(material.pricePerKg)}/kg
-            </div>
+            </p>
           </div>
         </div>
 
-        {/* Details */}
-        <div className="space-y-2 mb-4">
-          <div className="flex items-center text-sm text-gray-600">
-            <Package className="h-4 w-4 mr-2" />
-            <span>{formatWeight(material.weight)} • {material.subcategory}</span>
+        {/* Progress Tracker (User Request) */}
+        <div className="mt-2 mb-6 space-y-3">
+          <div className="flex justify-between text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+            <span>Progress Status</span>
+            <span className="text-green-600">{material.status === 'pending' ? 'In Review' : material.status === 'accepted' ? 'Awaiting Pickup' : material.status}</span>
           </div>
-          
-          <div className="flex items-center text-sm text-gray-600">
-            <Calendar className="h-4 w-4 mr-2" />
-            <span>Uploaded {formatDate(material.uploadedAt)}</span>
+          <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden flex gap-0.5">
+            <div className={`h-full transition-all duration-500 ${material.status !== 'rejected' ? 'bg-green-500 w-1/3' : 'bg-red-500 w-1/3'}`} />
+            <div className={`h-full transition-all duration-500 ${['accepted', 'processed'].includes(material.status) ? 'bg-green-500 w-1/3' : 'bg-gray-200 w-1/3'}`} />
+            <div className={`h-full transition-all duration-500 ${['processed'].includes(material.status) ? 'bg-green-500 w-1/3' : 'bg-gray-200 w-1/3'}`} />
           </div>
-
-          {material.branchId && (
-            <div className="flex items-center text-sm text-gray-600">
-              <MapPin className="h-4 w-4 mr-2" />
-              <span>Assigned to branch</span>
-            </div>
-          )}
         </div>
 
-        {/* Description */}
-        {material.description && (
-          <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-            {material.description}
-          </p>
-        )}
+        {/* Stats Row */}
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-xl">
+            <Package className="w-3.5 h-3.5 text-gray-400" />
+            <span className="text-[10px] font-bold text-gray-600">{formatWeight(material.weight)}</span>
+          </div>
+          <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-xl">
+            <Calendar className="w-3.5 h-3.5 text-gray-400" />
+            <span className="text-[10px] font-bold text-gray-600">{formatDate(material.uploadedAt).split(',')[0]}</span>
+          </div>
+        </div>
 
         {/* Actions */}
         {showActions && (
-          <div className="flex space-x-2">
+          <div className="flex gap-3 mt-auto">
             {onView && (
-              <Button
-                variant="outline"
-                size="sm"
+              <button
                 onClick={() => onView(material)}
-                className="flex-1"
+                className="flex-1 py-3 bg-gray-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-green-600 transition-colors flex items-center justify-center gap-2 group/btn"
               >
                 View Details
-              </Button>
+                <ChevronRight className="w-3 h-3 group-hover/btn:translate-x-1 transition-transform" />
+              </button>
             )}
             {onEdit && material.status === 'pending' && (
-              <Button
-                variant="secondary"
-                size="sm"
+              <button
                 onClick={() => onEdit(material)}
-                className="flex-1"
+                className="px-4 py-3 bg-gray-100 text-gray-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-200 transition-colors"
               >
                 Edit
-              </Button>
+              </button>
             )}
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 };
 
