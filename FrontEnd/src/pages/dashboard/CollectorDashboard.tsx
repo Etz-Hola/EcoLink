@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { Package, TrendingUp, Clock, DollarSign, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
-import { useMaterial } from '../../hooks/useMaterial';
 import { formatPrice, formatWeight } from '../../utils/helpers';
 import MaterialCard from '../../components/feature/MaterialCard';
 import Button from '../../components/common/Button';
@@ -11,53 +9,75 @@ import NearbyBuyersMap from '../../components/dashboard/NearbyBuyersMap';
 import UploadMaterialsForm from '../../components/dashboard/UploadMaterialsForm';
 
 const CollectorDashboard: React.FC = () => {
-  const { user } = useAuth();
-  const { getMaterialsByUser } = useMaterial();
-
+  const [materials, setMaterials] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState('all');
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
+  // Fetch materials
+  const fetchMaterials = async () => {
+    try {
+      const token = localStorage.getItem('ecolink_token');
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+      const res = await fetch(`${apiUrl}/materials/my`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMaterials(data.data.map((m: any) => ({
+          id: m._id,
+          name: m.name || `${m.materialType} Batch`,
+          category: { name: m.materialType },
+          subcategory: m.quality || 'Standard',
+          weight: m.weight,
+          condition: m.condition === 'treated_clean' ? 'clean' : 'dirty',
+          photos: m.images || [],
+          status: m.status, // approved, rejected, pending, bundled, sold
+          pricePerKg: m.pricing?.offeredPrice || 0,
+          totalValue: (m.pricing?.offeredPrice || 0) * m.weight,
+          uploadedAt: new Date(m.createdAt)
+        })));
+      }
+    } catch (err) {
+      console.error('Failed to fetch materials', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   React.useEffect(() => {
-    // Attempt to get user location
+    // Get location
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          });
-        },
-        () => {
-          // Default to Lagos, Nigeria if blocked
-          setUserLocation({ lat: 6.5244, lng: 3.3792 });
-        }
+        (position) => setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude }),
+        () => setUserLocation({ lat: 6.5244, lng: 3.3792 })
       );
     } else {
       setUserLocation({ lat: 6.5244, lng: 3.3792 });
     }
+
+    fetchMaterials();
   }, []);
 
-  const userMaterials = getMaterialsByUser(user?.id || '');
-  const pendingMaterials = userMaterials.filter(m => m.status === 'pending');
-  const acceptedMaterials = userMaterials.filter(m => m.status === 'accepted');
-  const processedMaterials = userMaterials.filter(m => m.status === 'processed');
-
-  const totalValue = userMaterials.reduce((sum, m) => sum + m.totalValue, 0);
-  const totalWeight = userMaterials.reduce((sum, m) => sum + m.weight, 0);
+  const pendingMaterials = materials.filter(m => m.status === 'pending');
+  const approvedMaterials = materials.filter(m => m.status === 'approved');
+  const rejectedMaterials = materials.filter(m => m.status === 'rejected');
+  const totalValue = materials.reduce((sum, m) => sum + m.totalValue, 0);
+  const totalWeight = materials.reduce((sum, m) => sum + m.weight, 0);
 
   const tabs = [
-    { id: 'all', label: 'All Materials', count: userMaterials.length },
+    { id: 'all', label: 'All Materials', count: materials.length },
     { id: 'pending', label: 'Pending', count: pendingMaterials.length },
-    { id: 'accepted', label: 'Accepted', count: acceptedMaterials.length },
-    { id: 'processed', label: 'Processed', count: processedMaterials.length }
+    { id: 'approved', label: 'Approved', count: approvedMaterials.length },
+    { id: 'rejected', label: 'Rejected', count: rejectedMaterials.length }
   ];
 
   const getFilteredMaterials = () => {
     switch (selectedTab) {
       case 'pending': return pendingMaterials;
-      case 'accepted': return acceptedMaterials;
-      case 'processed': return processedMaterials;
-      default: return userMaterials;
+      case 'approved': return approvedMaterials;
+      case 'rejected': return rejectedMaterials;
+      default: return materials;
     }
   };
 
@@ -78,7 +98,7 @@ const CollectorDashboard: React.FC = () => {
     },
     {
       label: 'Materials Uploaded',
-      value: userMaterials.length.toString(),
+      value: materials.length.toString(),
       icon: <TrendingUp className="h-5 w-5" />,
       color: 'text-purple-600',
       bg: 'bg-purple-50'
@@ -174,7 +194,7 @@ const CollectorDashboard: React.FC = () => {
                   {getFilteredMaterials().map((material) => (
                     <MaterialCard
                       key={material.id}
-                      material={material}
+                      material={material as any}
                       onView={(material) => console.log('View material:', material)}
                     />
                   ))}
@@ -212,15 +232,15 @@ const CollectorDashboard: React.FC = () => {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
             <div className="space-y-3">
-              {processedMaterials.slice(0, 3).map((material) => (
+              {approvedMaterials.slice(0, 3).map((material) => (
                 <div key={material.id} className="flex items-center space-x-3 text-sm">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                   <span className="text-gray-600">
-                    {material.name} was processed
+                    {material.name} was approved
                   </span>
                 </div>
               ))}
-              {processedMaterials.length === 0 && (
+              {approvedMaterials.length === 0 && (
                 <p className="text-gray-500 text-sm">No recent activity</p>
               )}
             </div>

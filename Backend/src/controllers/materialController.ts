@@ -10,19 +10,77 @@ export class MaterialController {
      */
     static async uploadMaterials(req: Request, res: Response, next: NextFunction) {
         try {
-            const { materials } = req.body; // Array of material data
-            // In a real app, we'd handle multiple files from req.files
+            const user = (req as any).user;
+            let materialsData: any[] = [];
 
-            if (!materials || !Array.isArray(materials)) {
-                throw new AppError('Materials data is required', 400);
+            // Handle both JSON and Multipart
+            if (req.body.materials && Array.isArray(req.body.materials)) {
+                materialsData = req.body.materials;
+            } else {
+                // Reconstruct materials from FormData keys like materials[0][type]
+                const materialsMap: Record<number, any> = {};
+                Object.keys(req.body).forEach(key => {
+                    const match = key.match(/^materials\[(\d+)\]\[(\w+)\]$/);
+                    if (match) {
+                        const index = parseInt(match[1]!);
+                        const field = match[2]!;
+                        if (!materialsMap[index]) materialsMap[index] = {};
+                        materialsMap[index][field] = req.body[key];
+                    }
+                });
+                materialsData = Object.values(materialsMap);
             }
 
-            const createdMaterials = await Promise.all(materials.map(async (m: any) => {
+            if (materialsData.length === 0) {
+                // Fallback: check if it's a simple object
+                if (req.body.type && req.body.weightKg) {
+                    materialsData = [req.body];
+                } else {
+                    throw new AppError('No materials data provided', 400);
+                }
+            }
+
+            // Default location if user has one
+            const defaultLocation = user.location || {
+                type: 'Point',
+                coordinates: [3.3792, 6.5244], // Lagos
+                address: 'Lagos Island',
+                city: 'Lagos',
+                state: 'Lagos'
+            };
+
+            const createdMaterials = await Promise.all(materialsData.map(async (m: any) => {
+                const materialType = (m.type || 'plastic').toLowerCase();
+
+                // Map frontend values to backend enums
+                let backMaterialType: any = 'plastic';
+                if (materialType === 'pet' || materialType === 'hdpe') backMaterialType = 'plastic';
+                else if (materialType === 'aluminum' || materialType === 'steel' || materialType === 'metal') backMaterialType = 'metal';
+                else if (materialType === 'paper' || materialType === 'organic') backMaterialType = 'household';
+
                 return await Material.create({
-                    ...m,
-                    submittedBy: (req as any).user._id,
-                    currentOwner: (req as any).user._id,
-                    status: MaterialStatus.PENDING
+                    title: `${materialType.toUpperCase()} Materials from ${user.username}`,
+                    description: m.description || `Batch of ${materialType} materials submitted by ${user.username}`,
+                    materialType: backMaterialType,
+                    subType: m.subType || (materialType === 'pet' ? 'pet' : materialType === 'hdpe' ? 'hdpe' : materialType === 'aluminum' ? 'aluminum' : materialType === 'paper' ? 'paper' : 'other'),
+                    condition: m.quality === 'treated_clean' ? 'clean' : 'dirty',
+                    weight: parseFloat(m.weightKg) || parseFloat(m.weight) || 1,
+                    status: MaterialStatus.PENDING,
+                    submittedBy: user._id,
+                    currentOwner: user._id,
+                    pickupLocation: defaultLocation,
+                    pricing: {
+                        basePrice: 100,
+                        finalPrice: 100,
+                        currency: 'NGN'
+                    },
+                    images: [{
+                        url: 'https://images.unsplash.com/photo-1591193520257-c030ea05fa81?q=80&w=300&h=200&auto=format&fit=crop',
+                        publicId: 'placeholder',
+                        filename: 'placeholder.jpg',
+                        size: 1024,
+                        mimeType: 'image/jpeg'
+                    }]
                 });
             }));
 

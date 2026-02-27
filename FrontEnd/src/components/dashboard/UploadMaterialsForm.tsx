@@ -10,7 +10,11 @@ interface Material {
     previewUrl?: string;
 }
 
-export default function UploadMaterialsForm() {
+interface UploadMaterialsFormProps {
+    onSuccess?: () => void;
+}
+
+export default function UploadMaterialsForm({ onSuccess }: UploadMaterialsFormProps) {
     const [materials, setMaterials] = useState<Partial<Material>[]>([{
         type: '',
         weightKg: 0,
@@ -81,6 +85,7 @@ export default function UploadMaterialsForm() {
             if (!res.ok) throw new Error('Upload failed');
 
             toast.success('Your materials have been submitted for review! 🚀');
+            if (onSuccess) onSuccess();
 
             // Cleanup previews
             materials.forEach(m => {

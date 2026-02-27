@@ -451,3 +451,43 @@
 2026-02-27 17:58:10:5810 [32minfo[39m: [32mConnected to MongoDB[39m
 2026-02-27 17:58:10:5810 [32minfo[39m: [32mRedis URL not provided, skipping Redis connection (dev mode)[39m
 2026-02-27 17:58:10:5810 [32minfo[39m: [32mServer running on port 5001 in development mode[39m
+2026-02-27 18:04:23:423 [32minfo[39m: [32m::1 - - [27/Feb/2026:17:04:23 +0000] "POST /api/v1/auth/login HTTP/1.1" 200 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-27 18:04:26:426 [32minfo[39m: [32m::1 - - [27/Feb/2026:17:04:26 +0000] "GET /api/v1/bundles/available HTTP/1.1" 200 36 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-27 18:04:40:440 [32minfo[39m: [32m::1 - - [27/Feb/2026:17:04:40 +0000] "GET /api/v1/bundles/available HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-27 18:04:54:454 [32minfo[39m: [32m::1 - - [27/Feb/2026:17:04:54 +0000] "GET /api/v1/bundles/available HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-27 18:05:55:555 [32minfo[39m: [32m::1 - - [27/Feb/2026:17:05:55 +0000] "POST /api/v1/auth/register HTTP/1.1" 400 574 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-27 18:06:53:653 [32minfo[39m: [32m::1 - - [27/Feb/2026:17:06:53 +0000] "POST /api/v1/auth/login HTTP/1.1" 401 411 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-27 18:06:58:658 [32minfo[39m: [32m::1 - - [27/Feb/2026:17:06:58 +0000] "POST /api/v1/auth/login HTTP/1.1" 401 411 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-27 18:07:51:751 [32minfo[39m: [32mSending welcome email to pol1@gmail.com (pol)[39m
+2026-02-27 18:07:51:751 [32minfo[39m: [32m::1 - - [27/Feb/2026:17:07:51 +0000] "POST /api/v1/auth/register HTTP/1.1" 201 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-27 18:07:53:753 [32minfo[39m: [32m::1 - - [27/Feb/2026:17:07:53 +0000] "GET /api/v1/branches/nearby?lat=6.4474&lng=3.3903&radius=50 HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-27 18:16:12:1612 [32minfo[39m: [32m::1 - - [27/Feb/2026:17:16:12 +0000] "GET /api/v1/branches/nearby?lat=6.4474&lng=3.3903&radius=50 HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-27 18:17:28:1728 [32minfo[39m: [32m::1 - - [27/Feb/2026:17:17:28 +0000] "POST /api/v1/materials/upload HTTP/1.1" 400 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-27 18:17:41:1741 [32minfo[39m: [32m::1 - - [27/Feb/2026:17:17:41 +0000] "GET /api/v1/branches/nearby?lat=6.4474&lng=3.3903&radius=50 HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-27 18:18:00:180 [32minfo[39m: [32m::1 - - [27/Feb/2026:17:18:00 +0000] "GET /api/v1/branches/nearby?lat=6.4474&lng=3.3903&radius=50 HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-27 18:18:02:182 [32minfo[39m: [32m::1 - - [27/Feb/2026:17:18:02 +0000] "GET /api/v1/branches/nearby?lat=6.4474&lng=3.3903&radius=50 HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-27 18:18:13:1813 [32minfo[39m: [32m::1 - - [27/Feb/2026:17:18:13 +0000] "GET /api/v1/branches/nearby?lat=6.4474&lng=3.3903&radius=50 HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-27 18:24:29:2429 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-27 18:24:50:2450 [32minfo[39m: [32m::1 - - [27/Feb/2026:17:24:50 +0000] "GET /api/v1/materials/my HTTP/1.1" 404 45 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-27 18:24:50:2450 [32minfo[39m: [32m::1 - - [27/Feb/2026:17:24:50 +0000] "GET /api/v1/materials/my HTTP/1.1" 404 45 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-27 18:24:52:2452 [32minfo[39m: [32m::1 - - [27/Feb/2026:17:24:52 +0000] "GET /api/v1/branches/nearby?lat=6.4474&lng=3.3903&radius=50 HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-27 18:26:06:266 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-27 18:26:06:266 [32minfo[39m: [32mRedis URL not provided, skipping Redis connection (dev mode)[39m
+2026-02-27 18:26:06:266 [32minfo[39m: [32mServer running on port 5001 in development mode[39m
+2026-02-27 18:26:55:2655 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-27 18:26:55:2655 [32minfo[39m: [32mRedis URL not provided, skipping Redis connection (dev mode)[39m
+2026-02-27 18:26:55:2655 [32minfo[39m: [32mServer running on port 5001 in development mode[39m
+2026-02-27 18:27:26:2726 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-27 18:27:26:2726 [32minfo[39m: [32mRedis URL not provided, skipping Redis connection (dev mode)[39m
+2026-02-27 18:27:26:2726 [32minfo[39m: [32mServer running on port 5001 in development mode[39m
+2026-02-27 18:27:50:2750 [32minfo[39m: [32m::1 - - [27/Feb/2026:17:27:50 +0000] "GET /api/v1/materials/my HTTP/1.1" 200 36 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-27 18:27:51:2751 [32minfo[39m: [32m::1 - - [27/Feb/2026:17:27:51 +0000] "GET /api/v1/branches/nearby?lat=6.4474&lng=3.3903&radius=50 HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-27 18:28:42:2842 [31merror[39m: [31mDatabase connection failed: querySrv ESERVFAIL _mongodb._tcp.cluster0.ksak8ks.mongodb.net[39m
+2026-02-27 18:35:30:3530 [31merror[39m: [31mDatabase connection failed: querySrv ESERVFAIL _mongodb._tcp.cluster0.ksak8ks.mongodb.net[39m
+2026-02-27 18:38:14:3814 [32minfo[39m: [32m::1 - - [27/Feb/2026:17:38:14 +0000] "POST /api/v1/auth/login HTTP/1.1" 200 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-27 18:38:19:3819 [32minfo[39m: [32m::1 - - [27/Feb/2026:17:38:19 +0000] "GET /api/v1/bundles/available HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-27 18:38:36:3836 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-27 18:39:00:390 [32minfo[39m: [32m::1 - - [27/Feb/2026:17:39:00 +0000] "GET /api/v1/bundles/available HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-27 18:40:54:4054 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-27 18:51:01:511 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-02-27 18:51:39:5139 [32minfo[39m: [32mConnected to MongoDB[39m
