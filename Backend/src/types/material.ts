@@ -54,6 +54,7 @@ export enum MaterialStatus {
   IN_TRANSIT = 'in_transit',
   DELIVERED = 'delivered',
   PROCESSED = 'processed',
+  BUNDLED = 'bundled',
   SOLD = 'sold'
 }
 
@@ -80,6 +81,7 @@ export interface IPricing {
   conditionMultiplier: number;
   qualityMultiplier: number;
   marketMultiplier: number;
+  offeredPrice?: number; // Price offered by branch during review
   finalPrice: number;
   currency: string;
   lastUpdated: Date;
@@ -87,7 +89,7 @@ export interface IPricing {
 
 export interface IMaterial extends Document {
   _id: Types.ObjectId;
-  
+
   // Basic Information
   title: string;
   description: string;
@@ -95,7 +97,7 @@ export interface IMaterial extends Document {
   subType: PlasticType | MetalType | HouseholdType;
   condition: MaterialCondition;
   status: MaterialStatus;
-  
+
   // Physical Properties
   weight: number; // in kg
   estimatedVolume?: number; // in cubic meters
@@ -105,16 +107,16 @@ export interface IMaterial extends Document {
     width: number;
     height: number;
   };
-  
+
   // Images
   images: IMaterialImage[];
-  
+
   // Quality Assessment
   qualityAssessment?: IQualityAssessment;
-  
+
   // Pricing
   pricing: IPricing;
-  
+
   // Location & Logistics
   pickupLocation: {
     type: 'Point';
@@ -123,28 +125,28 @@ export interface IMaterial extends Document {
     city: string;
     state: string;
   };
-  
+
   // Ownership & Processing
   submittedBy: Types.ObjectId; // User who submitted
   currentOwner: Types.ObjectId; // Current owner
   processingBranch?: Types.ObjectId; // Branch handling this material
   assignedTransporter?: Types.ObjectId; // Transporter for pickup
-  
+
   // Treatment Information
   requiresTreatment: boolean;
   treatmentType?: string[];
   treatmentCost?: number;
   treatmentNotes?: string;
-  
+
   // Batch Information
   batchId?: string;
   isPartOfBatch: boolean;
   batchWeight?: number;
-  
+
   // Analytics
   views: number;
   interestedBuyers: Types.ObjectId[];
-  
+
   // Timestamps
   submittedAt: Date;
   approvedAt?: Date;
@@ -152,7 +154,7 @@ export interface IMaterial extends Document {
   deliveredAt?: Date;
   processedAt?: Date;
   soldAt?: Date;
-  
+
   createdAt: Date;
   updatedAt: Date;
 }
