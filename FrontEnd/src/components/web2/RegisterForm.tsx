@@ -1,26 +1,75 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
-import { User as UserIcon, Mail, Lock, Eye, EyeOff, Chrome, Wallet, AlertCircle } from 'lucide-react';
+import { User as UserIcon, Mail, Lock, Eye, EyeOff, Chrome, Wallet, AlertCircle, ArrowRight, CheckCircle } from 'lucide-react';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useSignMessage } from 'wagmi';
 import { useAuth } from '../../hooks/useAuth';
 import { useWallet } from '../../hooks/useWallet';
-import Input from '../common/Input';
-import Button from '../common/Button';
+
+const fadeUp: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  show: (i = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.45,
+      delay: i * 0.06,
+      ease: [0.22, 1, 0.36, 1] as any
+    }
+  }),
+};
+
+const ACCOUNT_TYPES = [
+  {
+    value: 'collector',
+    label: 'Individual Collector',
+    desc: 'Collect and sell recyclable materials',
+    icon: '♻️',
+    color: 'border-green-400 bg-green-50',
+    active: 'border-green-500 bg-green-50 ring-2 ring-green-500/20',
+  },
+  {
+    value: 'organization',
+    label: 'Company / Organization / Hotel',
+    desc: 'Business-level material collection',
+    icon: '🏢',
+    color: 'border-gray-200 bg-white',
+    active: 'border-indigo-500 bg-indigo-50 ring-2 ring-indigo-500/20',
+  },
+  {
+    value: 'branch',
+    label: 'Local Branch / Aggregation Hub',
+    desc: 'Accept and process materials',
+    icon: '🏭',
+    color: 'border-gray-200 bg-white',
+    active: 'border-amber-500 bg-amber-50 ring-2 ring-amber-500/20',
+  },
+  {
+    value: 'buyer',
+    label: 'Final Company (Exporter / Provider)',
+    desc: 'Buy and export processed materials',
+    icon: '🚢',
+    color: 'border-gray-200 bg-white',
+    active: 'border-rose-500 bg-rose-50 ring-2 ring-rose-500/20',
+  },
+];
 
 const RegisterForm: React.FC = () => {
+  const [step, setStep] = useState<1 | 2>(1);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     password: '',
     confirmPassword: '',
-    role: 'collector' as 'collector' | 'organization' | 'hotel' | 'branch' | 'buyer' | 'exporter'
+    role: 'collector' as string,
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
 
   const { register, googleLogin, walletLogin, getNonce } = useAuth();
   const navigate = useNavigate();
@@ -28,7 +77,6 @@ const RegisterForm: React.FC = () => {
   const { signMessageAsync } = useSignMessage();
   const [showWalletList, setShowWalletList] = useState(false);
 
-  // Navigate to the correct dashboard based on role
   const navigateToDashboard = (role: string) => {
     if (role === 'branch') navigate('/branch');
     else navigate('/home');
@@ -36,32 +84,22 @@ const RegisterForm: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-
     if (name === 'phone') {
-      const val = value.replace(/\D/g, ''); // only digits
-      if (val.length <= 10) {
-        setFormData(prev => ({ ...prev, [name]: val }));
-      }
+      const digits = value.replace(/\D/g, '');
+      if (digits.length <= 11) setFormData(p => ({ ...p, phone: digits }));
       return;
     }
-
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(p => ({ ...p, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setError(null);
-
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
-      setIsLoading(false);
       return;
     }
-
+    setIsLoading(true);
     try {
       await register({
         firstName: formData.name.split(' ')[0],
@@ -70,32 +108,27 @@ const RegisterForm: React.FC = () => {
         phone: formData.phone,
         password: formData.password,
         role: formData.role,
-        username: formData.email.split('@')[0]
+        username: formData.email.split('@')[0],
       });
-      toast.success(`Welcome to EcoLink! Taking you to your dashboard...`);
+      toast.success('Welcome to EcoLink! 🎉');
       navigateToDashboard(formData.role);
     } catch (err: any) {
-      const message = err.message || 'Registration failed. Please try again.';
-      setError(message);
-      toast.error(message);
+      setError(err.message || 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
-
   const handleGoogleSignup = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
+    onSuccess: async (resp) => {
       setIsLoading(true);
       setError(null);
       try {
-        await googleLogin(tokenResponse.access_token, formData.role);
-        toast.success('Successfully signed up with Google!');
+        await googleLogin(resp.access_token, formData.role);
+        toast.success('Signed up with Google!');
         navigateToDashboard(formData.role);
       } catch (err: any) {
-        const message = err.message || 'Google registration failed';
-        setError(message);
-        toast.error(message);
+        setError(err.message || 'Google registration failed');
       } finally {
         setIsLoading(false);
       }
@@ -104,235 +137,381 @@ const RegisterForm: React.FC = () => {
   });
 
   const handleWalletSignup = async (connector?: any) => {
-    setError(null);
     let walletAddress = address;
-
+    setError(null);
     try {
       if (!isConnected) {
-        if (!connector && connectors.length > 1) {
-          setShowWalletList(prev => !prev);
-          return;
-        }
-        // Connect and get fresh address
+        if (!connector && connectors.length > 1) { setShowWalletList(p => !p); return; }
         const connectedAddress = await connect(connector);
-        if (connectedAddress) {
-          walletAddress = connectedAddress as `0x${string}`;
-        }
-        // Small delay to ensure Wagmi state is synced
-        await new Promise(resolve => setTimeout(resolve, 500));
+        if (connectedAddress) walletAddress = connectedAddress as `0x${string}`;
+        await new Promise(r => setTimeout(r, 500));
       }
-
-      if (!walletAddress) {
-        throw new Error('No wallet address found. Please try connecting again.');
-      }
-
+      if (!walletAddress) throw new Error('No wallet address found.');
       setShowWalletList(false);
       setIsLoading(true);
       const nonce = await getNonce();
       const message = `Sign in to EcoLink\nNonce: ${nonce}`;
       const signature = await signMessageAsync({ message });
       await walletLogin(walletAddress, message, signature, formData.role);
-      toast.success('Successfully signed up with Wallet!');
+      toast.success('Signed up with Wallet!');
       navigateToDashboard(formData.role);
-
     } catch (err: any) {
-      const message = err.message || 'Wallet registration failed';
-      setError(message);
-      toast.error(message);
+      setError(err.message || 'Wallet registration failed');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const inputCls = (name: string) =>
+    `w-full bg-gray-50 border rounded-xl px-4 py-3 text-sm font-medium text-gray-900 placeholder-gray-400 transition-all duration-200 outline-none ${focusedField === name
+      ? 'border-green-500 ring-4 ring-green-500/10 bg-white'
+      : 'border-gray-200 hover:border-gray-300'
+    }`;
+
+  const selectedType = ACCOUNT_TYPES.find(t => t.value === formData.role)!;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            Join EcoLink Today
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Start your sustainable recycling journey
-          </p>
-        </div>
+    <div className="min-h-screen flex">
+      {/* ── Left panel ── */}
+      <div className="hidden lg:flex lg:w-5/12 xl:w-1/2 flex-col relative overflow-hidden bg-gray-950">
+        <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-green-500/10 blur-3xl" />
+        <div className="absolute top-1/2 -right-24 w-72 h-72 rounded-full bg-emerald-400/8 blur-3xl" />
+        <div className="absolute -bottom-24 left-1/4 w-64 h-64 rounded-full bg-green-600/10 blur-3xl" />
 
-        <div className="mt-8 space-y-6 bg-white p-8 rounded-2xl shadow-xl">
-          {error && (
-            <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded flex items-start">
-              <AlertCircle className="w-5 h-5 mr-3 shrink-0" />
-              <p className="text-sm">{error}</p>
-            </div>
-          )}
+        <div className="relative z-10 flex-1 flex flex-col justify-center px-10 pb-12">
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <h2 className="text-4xl xl:text-5xl font-black text-white leading-tight mb-5">
+              Start Your<br /><span className="text-green-400">Eco Journey</span>
+            </h2>
+            <p className="text-white/50 font-medium max-w-sm text-base leading-relaxed">
+              Sign up now and join a growing network of collectors, branches and exporters building a sustainable Nigeria.
+            </p>
+          </motion.div>
 
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 gap-4">
-                <Input
-                  type="text"
-                  name="name"
-                  label="Full Name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder="Enter your full name"
-                  required
-                  leftIcon={<UserIcon className="h-4 w-4" />}
-                />
-              </div>
-
-              <Input
-                type="email"
-                name="email"
-                label="Email Address"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="Enter your email"
-                required
-                leftIcon={<Mail className="h-4 w-4" />}
-              />
-
-              <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">Phone Number</label>
-                <div className="flex">
-                  <span className="inline-flex items-center px-3 py-2 border border-r-0 border-gray-300 bg-gray-50 text-gray-500 rounded-l-xl text-sm font-semibold">
-                    +234
-                  </span>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    placeholder="8034567890"
-                    required
-                    className="flex-1 block w-full rounded-none rounded-r-xl border-gray-300 focus:border-green-500 focus:ring-green-500 sm:text-sm transition-all py-3 px-4"
-                  />
-                </div>
-                <p className="text-[10px] text-gray-400 font-medium">Enter your number without 0 or +234</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Account Type
-                </label>
-                <select
-                  name="role"
-                  value={formData.role}
-                  onChange={handleChange}
-                  className="w-full rounded-xl border-gray-200 py-3 px-4 focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all outline-none font-medium"
-                  required
-                >
-                  <option value="collector">Individual Collector</option>
-                  <option value="organization">Company / Organization / Hotel</option>
-                  <option value="branch">Local Branch (Aggregation Hub)</option>
-                  <option value="buyer">Final Company (Exporter / Provider)</option>
-                </select>
-              </div>
-
-              <Input
-                type={showPassword ? 'text' : 'password'}
-                name="password"
-                label="Password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Create a password"
-                required
-                leftIcon={<Lock className="h-4 w-4" />}
-                rightIcon={
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                }
-              />
-
-              <Input
-                type={showPassword ? 'text' : 'password'}
-                name="confirmPassword"
-                label="Confirm Password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                placeholder="Confirm your password"
-                required
-                leftIcon={<Lock className="h-4 w-4" />}
-              />
-            </div>
-
-            <div className="flex items-center">
-              <input
-                id="agree-terms"
-                name="agree-terms"
-                type="checkbox"
-                className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                required
-              />
-              <label htmlFor="agree-terms" className="ml-2 block text-sm text-gray-600 font-medium font-medium">
-                I agree to the <Link to="/terms" className="text-green-600 hover:text-green-500 font-bold">Terms</Link> and <Link to="/privacy" className="text-green-600 hover:text-green-500 font-bold">Privacy</Link>
-              </label>
-            </div>
-
-            <Button
-              type="submit"
-              fullWidth
-              isLoading={isLoading}
-              className="py-3 rounded-xl shadow-lg shadow-green-200"
-            >
-              Create Account
-            </Button>
-          </form>
-
-          <div className="relative my-8 text-center">
-            <div className="absolute inset-0 flex items-center md:hidden lg:flex"><div className="w-full border-t border-gray-100"></div></div>
-            <span className="relative px-4 text-xs text-gray-400 bg-white font-bold uppercase tracking-widest">or sign up with</span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <button
-              onClick={() => handleGoogleSignup()}
-              className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-gray-100 hover:bg-gray-50 hover:border-gray-200 transition-all font-semibold text-gray-700 shadow-sm"
-            >
-              <Chrome className="w-5 h-5 text-red-500" />
-              Google
-            </button>
-            <div className="relative">
-              <button
-                onClick={() => handleWalletSignup()}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-gray-100 hover:bg-gray-50 hover:border-gray-200 transition-all font-semibold text-gray-700 shadow-sm"
+          {/* Why join cards */}
+          <div className="space-y-3 mt-10">
+            {[
+              { icon: '💰', title: 'Earn Real Money', body: 'Get paid market rates for your recyclables' },
+              { icon: '📍', title: 'Local Pickup', body: 'Nearest branch comes to your location' },
+              { icon: '🔗', title: 'On-chain Traceability', body: 'Every batch tracked transparently' },
+            ].map((item, i) => (
+              <motion.div
+                key={i}
+                custom={i}
+                variants={fadeUp}
+                initial="hidden"
+                animate="show"
+                className="flex items-start gap-3 bg-white/5 border border-white/8 rounded-xl p-4"
               >
-                <Wallet className="w-5 h-5 text-blue-500" />
-                Wallet
-              </button>
+                <span className="text-xl flex-shrink-0 mt-0.5">{item.icon}</span>
+                <div>
+                  <p className="text-sm font-black text-white">{item.title}</p>
+                  <p className="text-xs text-white/40 font-medium mt-0.5">{item.body}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </div>
 
-              {showWalletList && (
-                <div className="absolute bottom-full left-0 w-full mb-2 bg-white rounded-xl shadow-2xl border border-gray-100 p-2 z-50">
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2 py-1 mb-1 border-b border-gray-50">
-                    Connect Wallet
-                  </div>
-                  {connectors.map((connector) => (
-                    <button
-                      key={connector.uid}
-                      onClick={() => handleWalletSignup(connector)}
-                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-green-50 flex items-center gap-2 transition-all group"
+      {/* ── Right panel ── */}
+      <div className="flex-1 flex flex-col justify-center items-center px-6 sm:px-10 py-10 bg-gradient-to-br from-primary-100/70 via-white to-primary-50/40">
+        <div className="w-full max-w-md">
+
+          <motion.div variants={fadeUp} custom={0} initial="hidden" animate="show">
+            <h1 className="text-3xl font-black text-gray-900 mb-1">Create your account</h1>
+            <p className="text-gray-400 font-medium mb-6 text-sm">Join thousands earning from recycling</p>
+          </motion.div>
+
+          {/* Step indicator */}
+          <motion.div
+            variants={fadeUp} custom={0.5} initial="hidden" animate="show"
+            className="flex items-center gap-3 mb-6"
+          >
+            {[1, 2].map(s => (
+              <div key={s} className="flex items-center gap-2">
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black transition-all duration-300 ${step > s
+                  ? 'bg-green-500 text-white'
+                  : step === s
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-gray-100 text-gray-400'
+                  }`}>
+                  {step > s ? <CheckCircle className="w-4 h-4" /> : s}
+                </div>
+                <span className={`text-xs font-bold ${step === s ? 'text-gray-900' : 'text-gray-400'}`}>
+                  {s === 1 ? 'Account Type' : 'Your Details'}
+                </span>
+                {s < 2 && <div className={`w-8 h-0.5 rounded-full ${step > 1 ? 'bg-green-500' : 'bg-gray-200'}`} />}
+              </div>
+            ))}
+          </motion.div>
+
+          {/* Error */}
+          <AnimatePresence>
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm mb-5"
+              >
+                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span className="font-medium">{error}</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence mode="wait">
+            {/* ─ Step 1: Account Type ─ */}
+            {step === 1 && (
+              <motion.div
+                key="step1"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-4">
+                  Choose your account type
+                </p>
+                <div className="space-y-3">
+                  {ACCOUNT_TYPES.map((type, i) => (
+                    <motion.button
+                      key={type.value}
+                      custom={i}
+                      variants={fadeUp}
+                      initial="hidden"
+                      animate="show"
+                      type="button"
+                      onClick={() => setFormData(p => ({ ...p, role: type.value }))}
+                      className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all duration-200 ${formData.role === type.value ? type.active : 'border-gray-100 bg-white hover:border-gray-200'
+                        }`}
                     >
-                      {connector.icon && <img src={connector.icon} alt={connector.name} className="w-4 h-4 rounded" />}
-                      <span className="text-sm font-semibold text-gray-700 group-hover:text-green-600 truncate">{connector.name}</span>
-                    </button>
+                      <span className="text-2xl flex-shrink-0">{type.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-black text-gray-900">{type.label}</p>
+                        <p className="text-xs font-medium text-gray-400 mt-0.5">{type.desc}</p>
+                      </div>
+                      {formData.role === type.value && (
+                        <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                      )}
+                    </motion.button>
                   ))}
                 </div>
-              )}
-            </div>
-          </div>
 
-          <div className="text-center pt-2">
-            <span className="text-gray-500 text-sm">Already have an account? </span>
-            <Link
-              to="/login"
-              className="font-bold text-green-600 hover:text-green-500 text-sm"
-            >
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setStep(2)}
+                  className="w-full mt-6 flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-green-500/25 transition-all"
+                >
+                  Continue <ArrowRight className="w-4 h-4" />
+                </motion.button>
+              </motion.div>
+            )}
+
+            {/* ─ Step 2: Personal Details ─ */}
+            {step === 2 && (
+              <motion.div
+                key="step2"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              >
+                {/* Selected role chip */}
+                <div className="flex items-center gap-2 mb-5 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                  <span className="text-lg">{selectedType.icon}</span>
+                  <div>
+                    <p className="text-xs font-black text-gray-500 uppercase tracking-wider">Signing up as</p>
+                    <p className="text-sm font-black text-gray-900">{selectedType.label}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="ml-auto text-xs font-bold text-green-600 hover:text-green-700"
+                  >
+                    Change
+                  </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  {/* Name */}
+                  <motion.div variants={fadeUp} custom={1} initial="hidden" animate="show">
+                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">Full Name</label>
+                    <div className="relative">
+                      <UserIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        onFocus={() => setFocusedField('name')}
+                        onBlur={() => setFocusedField(null)}
+                        placeholder="Your full name"
+                        required
+                        className={`${inputCls('name')} pl-10`}
+                      />
+                    </div>
+                  </motion.div>
+
+                  {/* Email */}
+                  <motion.div variants={fadeUp} custom={2} initial="hidden" animate="show">
+                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">Email</label>
+                    <div className="relative">
+                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        name="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        onFocus={() => setFocusedField('email')}
+                        onBlur={() => setFocusedField(null)}
+                        placeholder="you@email.com"
+                        required
+                        className={`${inputCls('email')} pl-10`}
+                      />
+                    </div>
+                  </motion.div>
+
+                  {/* Phone */}
+                  <motion.div variants={fadeUp} custom={3} initial="hidden" animate="show">
+                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">Phone (Optional)</label>
+                    <input
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      onFocus={() => setFocusedField('phone')}
+                      onBlur={() => setFocusedField(null)}
+                      placeholder="08012345678"
+                      className={inputCls('phone')}
+                    />
+                  </motion.div>
+
+                  {/* Password row */}
+                  <motion.div variants={fadeUp} custom={4} initial="hidden" animate="show" className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">Password</label>
+                      <div className="relative">
+                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                          name="password"
+                          type={showPassword ? 'text' : 'password'}
+                          value={formData.password}
+                          onChange={handleChange}
+                          onFocus={() => setFocusedField('password')}
+                          onBlur={() => setFocusedField(null)}
+                          placeholder="Min 6 chars"
+                          required
+                          className={`${inputCls('password')} pl-10 pr-9`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">Confirm</label>
+                      <input
+                        name="confirmPassword"
+                        type={showPassword ? 'text' : 'password'}
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        onFocus={() => setFocusedField('confirmPassword')}
+                        onBlur={() => setFocusedField(null)}
+                        placeholder="Repeat password"
+                        required
+                        className={inputCls('confirmPassword')}
+                      />
+                    </div>
+                  </motion.div>
+
+                  <motion.div variants={fadeUp} custom={5} initial="hidden" animate="show" className="flex gap-3 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setStep(1)}
+                      className="flex-1 py-3 border-2 border-gray-200 text-gray-600 font-bold rounded-xl hover:bg-gray-50 transition-all text-sm"
+                    >
+                      Back
+                    </button>
+                    <motion.button
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.98 }}
+                      type="submit"
+                      disabled={isLoading}
+                      className="flex-[2] flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-green-500/20 transition-all disabled:opacity-60 text-sm"
+                    >
+                      {isLoading ? (
+                        <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <>Create Account <ArrowRight className="w-4 h-4" /></>
+                      )}
+                    </motion.button>
+                  </motion.div>
+                </form>
+
+                {/* Divider */}
+                <div className="relative my-5">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-100" />
+                  </div>
+                  <div className="relative flex justify-center">
+                    <span className="bg-white px-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">or sign up with</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleGoogleSignup()}
+                    className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-sm font-bold text-gray-700 transition-all"
+                  >
+                    <Chrome className="w-4 h-4 text-red-500" /> Google
+                  </button>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => handleWalletSignup()}
+                      className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-sm font-bold text-gray-700 transition-all"
+                    >
+                      <Wallet className="w-4 h-4 text-indigo-500" /> Wallet
+                    </button>
+                    {showWalletList && (
+                      <div className="absolute bottom-full left-0 w-full mb-2 bg-white rounded-xl shadow-2xl border border-gray-100 p-2 z-50">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2 pb-2 border-b border-gray-50 mb-1">Choose wallet</p>
+                        {connectors.map(c => (
+                          <button
+                            key={c.uid}
+                            type="button"
+                            onClick={() => handleWalletSignup(c)}
+                            className="w-full text-left px-3 py-2 rounded-lg hover:bg-green-50 flex items-center gap-2 group"
+                          >
+                            {c.icon && <img src={c.icon} alt={c.name} className="w-4 h-4 rounded" />}
+                            <span className="text-sm font-semibold text-gray-700 group-hover:text-green-700 truncate">{c.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <p className="text-center text-sm text-gray-400 font-medium mt-6">
+            Already have an account?{' '}
+            <Link to="/login" className="font-black text-green-600 hover:text-green-700 transition-colors">
               Sign in
             </Link>
-          </div>
+          </p>
         </div>
       </div>
     </div>
