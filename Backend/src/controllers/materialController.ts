@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import Material from '../models/Material';
 import { MaterialStatus } from '../types/material';
 import { AppError } from '../utils/logger';
-import { Types } from 'mongoose';
 
 export class MaterialController {
     /**
@@ -11,6 +10,22 @@ export class MaterialController {
     static async uploadMaterials(req: Request, res: Response, next: NextFunction) {
         try {
             const user = (req as any).user;
+
+            // Extract location from request body (sent from frontend geolocation)
+            const lat = parseFloat(req.body.lat) || 6.5244;
+            const lng = parseFloat(req.body.lng) || 3.3792;
+            const address = req.body.address || (user.location?.address) || 'Lagos Island';
+            const city = req.body.city || (user.location?.city) || 'Lagos';
+            const state = req.body.state || (user.location?.state) || 'Lagos';
+
+            const pickupLocation = {
+                type: 'Point' as const,
+                coordinates: [lng, lat] as [number, number],
+                address,
+                city,
+                state
+            };
+
             let materialsData: any[] = [];
 
             // Handle both JSON and Multipart
@@ -32,43 +47,62 @@ export class MaterialController {
             }
 
             if (materialsData.length === 0) {
-                // Fallback: check if it's a simple object
-                if (req.body.type && req.body.weightKg) {
+                // Fallback: treat the body itself as a single material
+                if (req.body.type || req.body.weightKg || req.body.weight) {
                     materialsData = [req.body];
                 } else {
                     throw new AppError('No materials data provided', 400);
                 }
             }
 
-            // Default location if user has one
-            const defaultLocation = user.location || {
-                type: 'Point',
-                coordinates: [3.3792, 6.5244], // Lagos
-                address: 'Lagos Island',
-                city: 'Lagos',
-                state: 'Lagos'
-            };
-
             const createdMaterials = await Promise.all(materialsData.map(async (m: any) => {
-                const materialType = (m.type || 'plastic').toLowerCase();
+                const frontendType = (m.type || 'plastic').toLowerCase();
+                const subType = m.subType || m.subtype || (
+                    frontendType === 'pet' || frontendType === 'hdpe' ? frontendType :
+                        frontendType === 'aluminum' || frontendType === 'steel' ? frontendType : 'other'
+                );
 
-                // Map frontend values to backend enums
-                let backMaterialType: any = 'plastic';
-                if (materialType === 'pet' || materialType === 'hdpe') backMaterialType = 'plastic';
-                else if (materialType === 'aluminum' || materialType === 'steel' || materialType === 'metal') backMaterialType = 'metal';
-                else if (materialType === 'paper' || materialType === 'organic') backMaterialType = 'household';
+                // Map to valid backend enums
+                let backMaterialType: string;
+                if (['plastic', 'pet', 'hdpe', 'pvc', 'ldpe', 'pp', 'ps'].includes(frontendType)) {
+                    backMaterialType = 'plastic';
+                } else if (['metal', 'aluminum', 'copper', 'steel', 'iron'].includes(frontendType)) {
+                    backMaterialType = 'metal';
+                } else {
+                    backMaterialType = 'household';
+                }
+
+                // Map subType to valid enums
+                const validPlastics = ['pet', 'hdpe', 'pvc', 'ldpe', 'pp', 'ps', 'other'];
+                const validMetals = ['aluminum', 'copper', 'steel', 'brass', 'scrap'];
+                const validHousehold = ['paper', 'cardboard', 'glass', 'textile', 'organic', 'other'];
+
+                let validSubType = 'other';
+                if (backMaterialType === 'plastic' && validPlastics.includes(subType)) validSubType = subType;
+                else if (backMaterialType === 'plastic') validSubType = 'other';
+                else if (backMaterialType === 'metal' && validMetals.includes(subType)) validSubType = subType;
+                else if (backMaterialType === 'metal') validSubType = 'scrap';
+                else if (backMaterialType === 'household' && validHousehold.includes(subType)) validSubType = subType;
+                else if (backMaterialType === 'household') validSubType = 'other';
+
+                const condition = m.quality === 'treated_clean' || m.condition === 'clean' ? 'clean' :
+                    m.condition === 'treated' ? 'treated' :
+                        m.condition === 'untreated' ? 'untreated' : 'dirty';
+
+                const weight = parseFloat(m.weightKg) || parseFloat(m.weight) || 1;
+                const userName = user.firstName || user.username || 'User';
 
                 return await Material.create({
-                    title: `${materialType.toUpperCase()} Materials from ${user.username}`,
-                    description: m.description || `Batch of ${materialType} materials submitted by ${user.username}`,
+                    title: `${backMaterialType.charAt(0).toUpperCase()}${backMaterialType.slice(1)} - ${validSubType.toUpperCase()} by ${userName}`,
+                    description: m.description || `${validSubType.toUpperCase()} materials submitted by ${userName} from ${city}`,
                     materialType: backMaterialType,
-                    subType: m.subType || (materialType === 'pet' ? 'pet' : materialType === 'hdpe' ? 'hdpe' : materialType === 'aluminum' ? 'aluminum' : materialType === 'paper' ? 'paper' : 'other'),
-                    condition: m.quality === 'treated_clean' ? 'clean' : 'dirty',
-                    weight: parseFloat(m.weightKg) || parseFloat(m.weight) || 1,
+                    subType: validSubType,
+                    condition,
+                    weight,
                     status: MaterialStatus.PENDING,
                     submittedBy: user._id,
                     currentOwner: user._id,
-                    pickupLocation: defaultLocation,
+                    pickupLocation,
                     pricing: {
                         basePrice: 100,
                         finalPrice: 100,
@@ -100,7 +134,9 @@ export class MaterialController {
     static async getMyMaterials(req: Request, res: Response, next: NextFunction) {
         try {
             const userId = (req as any).user._id;
-            const materials = await Material.find({ submittedBy: userId }).sort({ createdAt: -1 });
+            const materials = await Material.find({ submittedBy: userId })
+                .sort({ createdAt: -1 })
+                .populate('submittedBy', 'firstName lastName username email');
 
             res.status(200).json({
                 success: true,
@@ -130,7 +166,9 @@ export class MaterialController {
                 };
             }
 
-            const materials = await Material.find(query).populate('submittedBy', 'username businessName').sort({ createdAt: -1 });
+            const materials = await Material.find(query)
+                .populate('submittedBy', 'firstName lastName username businessName')
+                .sort({ createdAt: -1 });
 
             res.status(200).json({
                 success: true,

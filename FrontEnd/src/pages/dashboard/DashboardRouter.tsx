@@ -1,9 +1,10 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
 import CollectorDashboard from './CollectorDashboard';
 import BranchDashboard from './BranchDashboard';
-import OrganizationDashboard from './OrganizationDashboard';
 import ExporterDashboard from './ExporterDashboard';
+
 
 const DashboardRouter: React.FC = () => {
     const { user } = useAuth();
@@ -16,30 +17,48 @@ const DashboardRouter: React.FC = () => {
         );
     }
 
-    switch (user.role) {
-        case 'collector':
-            return <CollectorDashboard />;
-        case 'branch':
-            return <BranchDashboard />;
-        case 'organization':
-            return <OrganizationDashboard />;
-        case 'buyer':
-            return <ExporterDashboard />;
-        case 'admin':
-            return (
-                <div className="p-8 text-center bg-white rounded-xl shadow-sm border border-gray-100">
-                    <h2 className="text-2xl font-bold text-gray-900">Admin Dashboard</h2>
-                    <p className="text-gray-600 mt-2">Manage users and global platform settings.</p>
-                </div>
-            );
-        default:
-            return (
-                <div className="p-8 text-center bg-white rounded-xl shadow-sm border border-gray-100">
-                    <h2 className="text-2xl font-bold text-gray-900">Dashboard Not Found</h2>
-                    <p className="text-gray-600 mt-2">We couldn't find a specialized dashboard for your role: {user.role}</p>
-                </div>
-            );
+    // COLLECTOR types — individual, organizations, hotels all use the same collector dashboard
+    if (['collector', 'organization', 'hotel'].includes(user.role)) {
+        return <CollectorDashboard />;
     }
+
+    // BRANCH / AGGREGATION HUB
+    if (user.role === 'branch') {
+        return <BranchDashboard />;
+    }
+
+    // FINAL COMPANIES — exporters and buyers
+    if (['buyer', 'exporter'].includes(user.role)) {
+        return <ExporterDashboard />;
+    }
+
+    // ADMIN
+    if (user.role === 'admin') {
+        return (
+            <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100"
+            >
+                <h2 className="text-2xl font-black text-gray-900">Admin Dashboard</h2>
+                <p className="text-gray-500 mt-2 font-medium">Manage users and global platform settings.</p>
+            </motion.div>
+        );
+    }
+
+    // FALLBACK
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100"
+        >
+            <h2 className="text-2xl font-black text-gray-900">Setup Required</h2>
+            <p className="text-gray-500 mt-2 font-medium">
+                Your account role "{user.role}" isn't fully set up yet. Please contact support.
+            </p>
+        </motion.div>
+    );
 };
 
 export default DashboardRouter;

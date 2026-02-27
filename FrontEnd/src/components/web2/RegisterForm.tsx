@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
-import { User as UserIcon, Mail, Lock, Phone, Eye, EyeOff, Chrome, Wallet, AlertCircle } from 'lucide-react';
+import { User as UserIcon, Mail, Lock, Eye, EyeOff, Chrome, Wallet, AlertCircle } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useSignMessage } from 'wagmi';
 import { useAuth } from '../../hooks/useAuth';
@@ -16,7 +16,7 @@ const RegisterForm: React.FC = () => {
     phone: '',
     password: '',
     confirmPassword: '',
-    role: 'collector' as 'collector' | 'organization' | 'branch' | 'buyer'
+    role: 'collector' as 'collector' | 'organization' | 'hotel' | 'branch' | 'buyer' | 'exporter'
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -27,6 +27,12 @@ const RegisterForm: React.FC = () => {
   const { isConnected, address, connect, connectors } = useWallet();
   const { signMessageAsync } = useSignMessage();
   const [showWalletList, setShowWalletList] = useState(false);
+
+  // Navigate to the correct dashboard based on role
+  const navigateToDashboard = (role: string) => {
+    if (role === 'branch') navigate('/branch');
+    else navigate('/home');
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -66,12 +72,8 @@ const RegisterForm: React.FC = () => {
         role: formData.role,
         username: formData.email.split('@')[0]
       });
-      toast.success('Registration successful! Welcome to EcoLink.');
-      if (formData.role === 'branch') {
-        navigate('/branch');
-      } else {
-        navigate('/home');
-      }
+      toast.success(`Welcome to EcoLink! Taking you to your dashboard...`);
+      navigateToDashboard(formData.role);
     } catch (err: any) {
       const message = err.message || 'Registration failed. Please try again.';
       setError(message);
@@ -81,6 +83,7 @@ const RegisterForm: React.FC = () => {
     }
   };
 
+
   const handleGoogleSignup = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       setIsLoading(true);
@@ -88,11 +91,7 @@ const RegisterForm: React.FC = () => {
       try {
         await googleLogin(tokenResponse.access_token, formData.role);
         toast.success('Successfully signed up with Google!');
-        if (formData.role === 'branch') {
-          navigate('/branch');
-        } else {
-          navigate('/home');
-        }
+        navigateToDashboard(formData.role);
       } catch (err: any) {
         const message = err.message || 'Google registration failed';
         setError(message);

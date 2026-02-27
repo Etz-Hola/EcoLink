@@ -1,171 +1,122 @@
 import React, { useState, useEffect } from 'react';
-import { Package, TrendingUp, Clock, DollarSign, Plus, LayoutDashboard, ChevronRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { formatPrice, formatWeight, formatDate } from '../../utils/helpers';
-import MaterialCard from '../../components/feature/MaterialCard';
-import Button from '../../components/common/Button';
-import EcoPointsDisplay from '../../components/web3/EcoPointsDisplay';
-import NearbyBuyersMap from '../../components/dashboard/NearbyBuyersMap';
-import UploadMaterialsForm from '../../components/dashboard/UploadMaterialsForm';
+import {
+  TrendingUp, Package, Clock, CheckCircle, Upload,
+  MapPin, Leaf, ChevronRight, AlertCircle
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  pending: { label: 'In Review', color: 'text-amber-600', bg: 'bg-amber-50' },
+  accepted: { label: 'Accepted', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+  processed: { label: 'Processed', color: 'text-indigo-600', bg: 'bg-indigo-50' },
+  rejected: { label: 'Rejected', color: 'text-rose-600', bg: 'bg-rose-50' },
+};
+
+const container = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.08 } }
+};
+const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
 
 const CollectorDashboard: React.FC = () => {
   const { user } = useAuth();
   const [materials, setMaterials] = useState<any[]>([]);
-  const [selectedTab, setSelectedTab] = useState('all');
-
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-
-  // Animation variants
-  const fadeIn = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 }
-  };
-
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  // Fetch materials
-  const fetchMaterials = async () => {
-    try {
-      const token = localStorage.getItem('ecolink_token');
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
-      const res = await fetch(`${apiUrl}/materials/my`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (data.success) {
-        setMaterials(data.data.map((m: any) => ({
-          id: m._id,
-          name: m.name || `${m.materialType} Batch`,
-          category: { name: m.materialType },
-          subcategory: m.quality || 'Standard',
-          weight: m.weight,
-          condition: m.condition === 'treated_clean' ? 'clean' : 'dirty',
-          photos: m.images || [],
-          status: m.status, // accepted, rejected, pending, processed
-          pricePerKg: m.pricing?.offeredPrice || 0,
-          totalValue: (m.pricing?.offeredPrice || 0) * m.weight,
-          uploadedAt: new Date(m.createdAt)
-        })));
-      }
-    } catch (err) {
-      console.error('Failed to fetch materials', err);
-    }
-  };
-
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Get location
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude }),
-        () => setUserLocation({ lat: 6.5244, lng: 3.3792 })
-      );
-    } else {
-      setUserLocation({ lat: 6.5244, lng: 3.3792 });
-    }
-
+    const fetchMaterials = async () => {
+      try {
+        const token = localStorage.getItem('ecolink_token');
+        const res = await fetch(`${API_URL}/materials/my`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.success) setMaterials(data.data);
+      } catch (err) {
+        setError('Could not load your materials. Please refresh.');
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchMaterials();
   }, []);
 
-  const pendingMaterials = materials.filter(m => m.status === 'pending');
-  const approvedMaterials = materials.filter(m => m.status === 'accepted');
-  const rejectedMaterials = materials.filter(m => m.status === 'rejected');
-  const totalValue = materials.reduce((sum, m) => sum + m.totalValue, 0);
-  const totalWeight = materials.reduce((sum, m) => sum + m.weight, 0);
-
-  const tabs = [
-    { id: 'all', label: 'All Materials', count: materials.length },
-    { id: 'pending', label: 'Pending', count: pendingMaterials.length },
-    { id: 'approved', label: 'Approved', count: approvedMaterials.length },
-    { id: 'rejected', label: 'Rejected', count: rejectedMaterials.length }
-  ];
-
-  const getFilteredMaterials = () => {
-    switch (selectedTab) {
-      case 'pending': return pendingMaterials;
-      case 'approved': return approvedMaterials;
-      case 'rejected': return rejectedMaterials;
-      default: return materials;
-    }
+  const stats = {
+    total: materials.length,
+    pending: materials.filter(m => m.status === 'pending').length,
+    accepted: materials.filter(m => m.status === 'accepted').length,
+    totalWeight: materials.reduce((sum, m) => sum + (m.weight || 0), 0),
   };
 
-  const stats = [
+  const firstName = user?.firstName || user?.name?.split(' ')[0] || 'Collector';
+  const recentMaterials = materials.slice(0, 5);
+
+  const statCards = [
     {
-      label: 'Total Value',
-      value: formatPrice(totalValue),
-      icon: <DollarSign className="h-5 w-5" />,
-      color: 'text-green-600',
-      bg: 'bg-green-500/10',
-      border: 'border-green-500/20'
+      label: 'Total Uploads', value: stats.total, icon: Package,
+      gradient: 'from-green-600 to-emerald-500', bg: 'from-green-50 to-emerald-50'
     },
     {
-      label: 'Total Weight',
-      value: formatWeight(totalWeight),
-      icon: <Package className="h-5 w-5" />,
-      color: 'text-blue-600',
-      bg: 'bg-blue-500/10',
-      border: 'border-blue-500/20'
+      label: 'In Review', value: stats.pending, icon: Clock,
+      gradient: 'from-amber-500 to-orange-400', bg: 'from-amber-50 to-orange-50'
     },
     {
-      label: 'Materials Uploaded',
-      value: materials.length.toString(),
-      icon: <TrendingUp className="h-5 w-5" />,
-      color: 'text-purple-600',
-      bg: 'bg-purple-500/10',
-      border: 'border-purple-500/20'
+      label: 'Accepted', value: stats.accepted, icon: CheckCircle,
+      gradient: 'from-indigo-600 to-purple-500', bg: 'from-indigo-50 to-purple-50'
     },
     {
-      label: 'Pending Review',
-      value: pendingMaterials.length.toString(),
-      icon: <Clock className="h-5 w-5" />,
-      color: 'text-orange-600',
-      bg: 'bg-orange-500/10',
-      border: 'border-orange-500/20'
-    }
+      label: 'Total Weight (kg)', value: stats.totalWeight.toFixed(1), icon: TrendingUp,
+      gradient: 'from-rose-500 to-pink-500', bg: 'from-rose-50 to-pink-50'
+    },
   ];
 
   return (
-    <div className="space-y-10 pb-20">
+    <div className="max-w-7xl mx-auto space-y-8 pb-16">
       {/* Welcome Header */}
       <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={fadeIn}
-        className="relative p-8 rounded-[2.5rem] bg-gradient-to-br from-green-600 to-green-800 text-white overflow-hidden shadow-2xl shadow-green-900/20"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="relative overflow-hidden rounded-3xl p-8 bg-gradient-to-br from-gray-900 via-green-950 to-gray-900"
       >
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-32 -mt-32" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-black/10 rounded-full blur-3xl -ml-32 -mb-32" />
+        {/* Decorative circles */}
+        <div className="absolute -top-12 -right-12 w-48 h-48 bg-green-500/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-emerald-400/10 rounded-full blur-3xl" />
 
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold uppercase tracking-wider mb-4 border border-white/20">
-              <LayoutDashboard className="w-3 h-3" />
-              Individual Collector
+        <div className="relative">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 rounded-xl bg-green-500/20 flex items-center justify-center">
+              <Leaf className="w-4 h-4 text-green-400" />
             </div>
-            <h1 className="text-4xl md:text-5xl font-black mb-2 tracking-tight">
-              Welcome back, <span className="text-green-200">{user?.name?.split(' ')[0] || 'Recycler'}</span>!
-            </h1>
-            <p className="text-green-50/80 text-lg max-w-xl font-medium">
-              You've recycled <span className="text-white font-bold">{formatWeight(totalWeight)}</span> so far.
-              Keep up the great work for a cleaner Nigeria! 🇳🇬
-            </p>
+            <span className="text-green-400 font-bold text-sm uppercase tracking-widest">Individual Collector</span>
           </div>
-          <div className="flex gap-4">
+          <h1 className="text-3xl md:text-4xl font-black text-white mb-2">
+            Welcome back, <span className="text-green-400">{firstName}!</span>
+          </h1>
+          <p className="text-gray-400 font-medium max-w-lg">
+            Track your materials, see their status, and contribute to a cleaner Nigeria. Every kilogram counts.
+          </p>
+          <div className="flex flex-wrap gap-3 mt-6">
             <Link to="/materials/upload">
-              <button className="px-8 py-4 bg-white text-green-700 font-bold rounded-2xl shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 flex items-center gap-2">
-                <Plus className="w-5 h-5" />
-                Upload Materials
-              </button>
+              <motion.button
+                whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+                className="flex items-center gap-2 px-5 py-2.5 bg-green-500 hover:bg-green-400 text-white rounded-xl font-bold text-sm transition-colors shadow-lg shadow-green-900/40"
+              >
+                <Upload className="w-4 h-4" /> Upload Material
+              </motion.button>
+            </Link>
+            <Link to="/materials">
+              <motion.button
+                whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+                className="flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-sm transition-colors border border-white/10"
+              >
+                <Package className="w-4 h-4" /> My Materials
+              </motion.button>
             </Link>
           </div>
         </div>
@@ -173,197 +124,138 @@ const CollectorDashboard: React.FC = () => {
 
       {/* Stats Grid */}
       <motion.div
-        variants={container}
-        initial="hidden"
-        animate="show"
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+        variants={container} initial="hidden" animate="show"
+        className="grid grid-cols-2 lg:grid-cols-4 gap-4"
       >
-        {stats.map((stat, index) => (
-          <motion.div
-            key={index}
-            variants={fadeIn}
-            className={`glass-card p-6 rounded-3xl border ${stat.border} hover:shadow-2xl transition-all group bg-white shadow-sm border-gray-100`}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">{stat.label}</p>
-                <p className="text-3xl font-black text-gray-900 group-hover:scale-105 transition-transform origin-left">{stat.value}</p>
+        {statCards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <motion.div
+              key={card.label}
+              variants={item}
+              whileHover={{ scale: 1.02, y: -2 }}
+              className={`bg-gradient-to-br ${card.bg} border border-white rounded-2xl p-5 shadow-sm`}
+            >
+              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${card.gradient} flex items-center justify-center mb-4 shadow-sm`}>
+                <Icon className="w-5 h-5 text-white" />
               </div>
-              <div className={`p-4 rounded-2xl ${stat.bg} ${stat.color} transition-colors group-hover:bg-opacity-20`}>
-                {stat.icon}
-              </div>
-            </div>
-            <div className="mt-4 flex items-center text-[10px] font-bold text-gray-400">
-              <span>View detailed analytics</span>
-              <ChevronRight className="w-3 h-3 ml-1 group-hover:translate-x-1 transition-transform" />
-            </div>
-          </motion.div>
-        ))}
+              <p className="text-3xl font-black text-gray-900">{card.value}</p>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mt-1">{card.label}</p>
+            </motion.div>
+          );
+        })}
       </motion.div>
 
-      {/* Nearby Buyers Map */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between px-2">
-          <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase">Nearby Collection Centers</h2>
-          <span className="text-[10px] font-bold text-green-600 bg-green-50 px-3 py-1 rounded-full uppercase tracking-widest">Live Updates</span>
+      {/* Materials Table */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+      >
+        <div className="flex items-center justify-between p-6 border-b border-gray-50">
+          <h2 className="text-lg font-black text-gray-900">Recent Materials</h2>
+          <Link to="/materials" className="flex items-center gap-1 text-sm font-bold text-green-600 hover:text-green-700 transition-colors">
+            View All <ChevronRight className="w-4 h-4" />
+          </Link>
         </div>
-        <NearbyBuyersMap userLocation={userLocation} viewMode="collector" />
-      </div>
 
-      {/* Upload Section */}
-      <div className="space-y-4 pt-8">
-        <div className="flex items-center justify-between px-2">
-          <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase">Ready to Recycle?</h2>
-        </div>
-        <UploadMaterialsForm />
-      </div>
-
-      {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Materials Section */}
-        <div className="lg:col-span-3 space-y-6">
-          <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
-            {/* Tabs */}
-            <div className="border-b border-gray-100 bg-gray-50/50">
-              <nav className="flex space-x-8 px-8 py-2">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setSelectedTab(tab.id)}
-                    className={`relative py-4 px-2 font-bold text-sm transition-all ${selectedTab === tab.id
-                      ? 'text-green-600'
-                      : 'text-gray-400 hover:text-gray-600'
-                      }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      {tab.label}
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] ${selectedTab === tab.id ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                        {tab.count}
-                      </span>
-                    </div>
-                    {selectedTab === tab.id && (
-                      <motion.div
-                        layoutId="activeTab"
-                        className="absolute bottom-0 left-0 right-0 h-1 bg-green-500 rounded-t-full"
-                      />
-                    )}
-                  </button>
-                ))}
-              </nav>
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+            <p className="mt-4 text-sm font-medium text-gray-400">Loading your materials...</p>
+          </div>
+        ) : error ? (
+          <div className="flex items-center gap-3 p-6 text-rose-600">
+            <AlertCircle className="w-5 h-5" />
+            <p className="text-sm font-medium">{error}</p>
+          </div>
+        ) : materials.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Package className="w-8 h-8 text-gray-300" />
             </div>
-
-            {/* Materials Grid */}
-            <div className="p-8">
-              {getFilteredMaterials().length > 0 ? (
-                <motion.div
-                  variants={container}
-                  initial="hidden"
-                  animate="show"
-                  className="grid grid-cols-1 md:grid-cols-2 gap-8"
-                >
-                  {getFilteredMaterials().map((material) => (
-                    <motion.div key={material.id} variants={fadeIn}>
-                      <MaterialCard
-                        material={material as any}
-                        onView={(material) => console.log('View material:', material)}
-                      />
-                    </motion.div>
+            <h3 className="text-base font-bold text-gray-700 mb-1">No materials yet</h3>
+            <p className="text-sm text-gray-400 mb-4">Upload your first material to get started.</p>
+            <Link to="/materials/upload" className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl text-sm font-bold">
+              <Upload className="w-4 h-4" /> Get Started
+            </Link>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50/70">
+                  {['Material', 'Type', 'Weight', 'Location', 'Status', 'Date'].map(h => (
+                    <th key={h} className="px-6 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">{h}</th>
                   ))}
-                </motion.div>
-              ) : (
-                <div className="text-center py-20">
-                  <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Package className="h-10 w-10 text-gray-300" />
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">
-                    {selectedTab === 'all' ? 'No materials uploaded yet' : `No ${selectedTab} materials`}
-                  </h3>
-                  <p className="text-gray-500 max-w-sm mx-auto mb-8">
-                    {selectedTab === 'all'
-                      ? 'Get started by uploading your first recyclable material. Every small action counts!'
-                      : `You don't have any ${selectedTab} materials at the moment.`
-                    }
-                  </p>
-                  {selectedTab === 'all' && (
-                    <Button
-                      size="lg"
-                      className="rounded-2xl"
-                      leftIcon={<Plus className="h-5 w-5" />}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {recentMaterials.map((m, i) => {
+                  const sc = STATUS_CONFIG[m.status] || STATUS_CONFIG.pending;
+                  return (
+                    <motion.tr
+                      key={m._id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.4 + i * 0.06 }}
+                      className="hover:bg-gray-50/60 transition-colors"
                     >
-                      <Link to="/materials/upload">Upload Your First Material</Link>
-                    </Button>
-                  )}
-                </div>
-              )}
-            </div>
+                      <td className="px-6 py-4">
+                        <div>
+                          <p className="text-sm font-bold text-gray-900 line-clamp-1">{m.title || `${m.materialType} Batch`}</p>
+                          <p className="text-[10px] text-gray-400 font-medium">{m.subType}</p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="px-2.5 py-1 bg-gray-100 text-gray-700 rounded-full text-[10px] font-black uppercase tracking-wider capitalize">
+                          {m.materialType}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm font-bold text-gray-700">{m.weight?.toFixed(1)} kg</td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-1 text-[11px] font-medium text-gray-500">
+                          <MapPin className="w-3 h-3" />
+                          {m.pickupLocation?.city || m.pickupLocation?.address?.split(',')[0] || '—'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wide ${sc.bg} ${sc.color}`}>
+                          {sc.label}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-[11px] font-medium text-gray-400">
+                        {new Date(m.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </td>
+                    </motion.tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-        </div>
+        )}
+      </motion.div>
 
-        {/* Sidebar */}
-        <div className="space-y-6">
-          <EcoPointsDisplay />
-
-          {/* Recent Activity */}
-          <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 p-8">
-            <h3 className="text-lg font-black text-gray-900 mb-6 flex items-center justify-between">
-              Recent Activity
-              <span className="p-2 bg-gray-50 rounded-lg">
-                <Clock className="w-4 h-4 text-gray-400" />
-              </span>
-            </h3>
-            <div className="space-y-6">
-              {approvedMaterials.slice(0, 3).map((material) => (
-                <div key={material.id} className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <TrendingUp className="w-5 h-5 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-gray-900 leading-tight mb-1">
-                      {material.name} Approved
-                    </p>
-                    <p className="text-[10px] font-medium text-gray-400">
-                      {formatDate(material.uploadedAt)}
-                    </p>
-                  </div>
-                </div>
-              ))}
-              {approvedMaterials.length === 0 && (
-                <div className="text-center py-6">
-                  <p className="text-sm font-medium text-gray-400 italic">No recent activity</p>
-                </div>
-              )}
-            </div>
+      {/* Quick Tips */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.6 }}
+        className="grid grid-cols-1 md:grid-cols-3 gap-4"
+      >
+        {[
+          { icon: '📸', title: 'Better Photos = Better Price', body: 'Clear, well-lit photos help branches assess your materials faster.' },
+          { icon: '⚖️', title: 'Accurate Weight Matters', body: 'Inaccurate weight estimates can lead to pricing disputes. Use a scale.' },
+          { icon: '📍', title: 'Share Your Location', body: 'Enabling your location helps the nearest branch find and pick up your materials quickly.' },
+        ].map((tip, i) => (
+          <div key={i} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+            <div className="text-2xl mb-3">{tip.icon}</div>
+            <h3 className="font-black text-gray-900 text-sm mb-1">{tip.title}</h3>
+            <p className="text-xs font-medium text-gray-400 leading-relaxed">{tip.body}</p>
           </div>
-
-          {/* Eco Tips */}
-          <div className="relative rounded-[2rem] p-8 bg-green-900 text-white overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-16 -mt-16 group-hover:bg-white/10 transition-colors" />
-            <div className="relative z-10">
-              <h4 className="text-xl font-black mb-4 flex items-center gap-2">
-                <span className="text-2xl">🌱</span> Eco Tips
-              </h4>
-              <ul className="space-y-4">
-                {[
-                  'Sort materials by type for better prices',
-                  'Clean containers before uploading',
-                  'Bundle similar items together',
-                  'Take clear photos from multiple angles'
-                ].map((tip, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm font-medium text-green-100/90 leading-relaxed group/item hover:text-white transition-colors">
-                    <span className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-bold flex-shrink-0 group-hover/item:bg-white/20">
-                      {i + 1}
-                    </span>
-                    {tip}
-                  </li>
-                ))}
-              </ul>
-              <button className="w-full mt-8 py-3 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-bold uppercase tracking-widest transition-colors border border-white/10">
-                View All Tips
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+        ))}
+      </motion.div>
     </div>
   );
 };
