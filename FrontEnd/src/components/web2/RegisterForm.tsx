@@ -220,7 +220,7 @@ const RegisterForm: React.FC = () => {
 
       {/* ── Right panel ── */}
       <div className="flex-1 flex flex-col justify-center items-center px-6 sm:px-10 py-10 bg-gradient-to-br from-primary-100/70 via-white to-primary-50/40">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md"> 
 
           <motion.div variants={fadeUp} custom={0} initial="hidden" animate="show">
             <h1 className="text-3xl font-black text-gray-900 mb-1">Create your account</h1>
