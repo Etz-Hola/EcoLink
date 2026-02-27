@@ -5,7 +5,6 @@ import { injected, metaMask } from 'wagmi/connectors';
 export const config = createConfig({
     chains: [mainnet, celo, celoAlfajores],
     connectors: [
-        injected(),
         metaMask(),
     ],
     transports: {
