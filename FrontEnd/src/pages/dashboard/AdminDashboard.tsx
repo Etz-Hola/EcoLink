@@ -1,25 +1,41 @@
 import React, { useState } from 'react';
 import { BarChart3, Users, Package, DollarSign, TrendingUp, Calendar } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
-import { useMaterial } from '../hooks/useMaterial';
-import { formatPrice, formatWeight } from '../utils/helpers';
+import { useAuth } from '../../context/AuthContext';
+import { useMaterial } from '../../hooks/useMaterial';
+import { formatPrice, formatWeight } from '../../utils/helpers';
 
 const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
   const { materials } = useMaterial();
-  
+
   const [dateRange, setDateRange] = useState('7d');
-  
-  // Mock data - in real app, this would come from analytics API
-  const totalUsers = 1234;
-  const activeBranches = 45;
-  const totalRevenue = 2500000;
-  const materialsProcessed = materials.filter(m => m.status === 'processed').length;
-  
+
+  const [statsData, setStatsData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const token = localStorage.getItem('ecolink_token');
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+        const res = await fetch(`${apiUrl}/admin/stats`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.success) setStatsData(data.data);
+      } catch (err) {
+        console.error('Failed to fetch admin stats', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
   const stats = [
     {
       label: 'Total Users',
-      value: totalUsers.toLocaleString(),
+      value: statsData?.counts.users.toLocaleString() || '0',
       change: '+12%',
       positive: true,
       icon: <Users className="h-5 w-5" />,
@@ -27,8 +43,8 @@ const AdminDashboard: React.FC = () => {
       bg: 'bg-blue-50'
     },
     {
-      label: 'Active Branches',
-      value: activeBranches.toString(),
+      label: 'Total Materials',
+      value: statsData?.counts.materials.toString() || '0',
       change: '+3 new',
       positive: true,
       icon: <Package className="h-5 w-5" />,
@@ -36,8 +52,8 @@ const AdminDashboard: React.FC = () => {
       bg: 'bg-green-50'
     },
     {
-      label: 'Total Revenue',
-      value: formatPrice(totalRevenue),
+      label: 'Active Bundles',
+      value: statsData?.counts.bundles.toString() || '0',
       change: '+18%',
       positive: true,
       icon: <DollarSign className="h-5 w-5" />,
@@ -46,7 +62,7 @@ const AdminDashboard: React.FC = () => {
     },
     {
       label: 'Materials Processed',
-      value: materialsProcessed.toString(),
+      value: materials.filter(m => m.status === 'processed').length.toString(),
       change: '+25%',
       positive: true,
       icon: <BarChart3 className="h-5 w-5" />,
@@ -80,7 +96,7 @@ const AdminDashboard: React.FC = () => {
             Overview of platform performance and key metrics.
           </p>
         </div>
-        
+
         {/* Date Range Selector */}
         <div className="mt-4 sm:mt-0">
           <select
@@ -144,7 +160,7 @@ const AdminDashboard: React.FC = () => {
                   <span>{material.percentage}% of total</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
+                  <div
                     className="bg-green-500 h-2 rounded-full transition-all duration-300"
                     style={{ width: `${material.percentage}%` }}
                   />

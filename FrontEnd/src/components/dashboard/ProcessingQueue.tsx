@@ -8,7 +8,7 @@ interface QueueItem {
     materialType: string;
     weightKg: number;
     quality: string;
-    status: 'pending' | 'accepted' | 'rejected' | 'processing' | 'processed';
+    status: 'pending' | 'accepted' | 'rejected' | 'processing' | 'processed' | 'approved';
     submittedAt: string;
     photoUrl?: string;
 }
