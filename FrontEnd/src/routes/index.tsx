@@ -5,12 +5,10 @@ import { useAuth } from '../hooks/useAuth';
 // Pages
 import Landing from '../pages/Landing';
 import MaterialUpload from '../pages/MaterialUpload';
-import CollectorDashboard from '../pages/dashboard/CollectorDashboard';
+import MyMaterials from '../pages/MyMaterials';
 import Profile from '../pages/Profile';
 import LoginForm from '../components/web2/LoginForm';
 import RegisterForm from '../components/web2/RegisterForm';
-import BranchDashboard from '../pages/dashboard/BranchDashboard';
-import RoleSelection from '../pages/RoleSelection';
 import DashboardRouter from '../pages/dashboard/DashboardRouter';
 
 // Layout Components
@@ -34,36 +32,32 @@ const AppRoutes: React.FC = () => {
     );
   }
 
-  // Handle pending role
-  if (user?.role === 'pending') {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <Routes>
-          <Route path="/role-selection" element={<RoleSelection />} />
-          <Route path="*" element={<Navigate to="/role-selection" replace />} />
-        </Routes>
-      </div>
-    );
-  }
+  // Determine the user's home route based on their role
+  const homeRoute = () => {
+    switch (user?.role) {
+      case 'branch': return '/branch';
+      case 'admin': return '/admin';
+      default: return '/home';
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       <div className="flex">
         <Sidebar />
-        <main className="flex-1 p-6 md:p-8">
+        <main className="flex-1 p-6 md:p-8 min-h-[calc(100vh-64px)]">
           <Routes>
-            <Route path="/" element={<Navigate to={user?.role === 'branch' ? '/branch' : '/home'} replace />} />
+            <Route path="/" element={<Navigate to={homeRoute()} replace />} />
             <Route path="/home" element={<DashboardRouter />} />
-            <Route path="/branch" element={<BranchDashboard />} />
+            <Route path="/branch" element={<DashboardRouter />} />
+            <Route path="/admin" element={<DashboardRouter />} />
             <Route path="/materials/upload" element={<MaterialUpload />} />
-            <Route path="/materials" element={<CollectorDashboard />} />
+            <Route path="/materials" element={<MyMaterials />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/role-selection" element={<Navigate to="/" replace />} />
-            <Route path="/login" element={<Navigate to="/home" replace />} />
-            <Route path="/register" element={<Navigate to="/home" replace />} />
-            <Route path="*" element={<Navigate to="/home" replace />} />
+            <Route path="/login" element={<Navigate to={homeRoute()} replace />} />
+            <Route path="/register" element={<Navigate to={homeRoute()} replace />} />
+            <Route path="*" element={<Navigate to={homeRoute()} replace />} />
           </Routes>
         </main>
       </div>
