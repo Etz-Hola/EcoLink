@@ -133,11 +133,8 @@ const RegisterForm: React.FC = () => {
       const signature = await signMessageAsync({ message });
       await walletLogin(walletAddress, message, signature, formData.role);
       toast.success('Successfully signed up with Wallet!');
-      if (formData.role === 'branch') {
-        navigate('/branch');
-      } else {
-        navigate('/home');
-      }
+      navigateToDashboard(formData.role);
+
     } catch (err: any) {
       const message = err.message || 'Wallet registration failed';
       setError(message);
