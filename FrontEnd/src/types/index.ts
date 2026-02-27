@@ -1,14 +1,29 @@
 export interface User {
   id: string;
-  name: string;
+  _id?: string;
+  name: string; // Synthesized from firstName + lastName
+  firstName: string;
+  lastName: string;
   email: string;
   phone?: string;
-  role: 'collector' | 'branch' | 'admin' | 'buyer' | 'organization' | 'pending';
+  role: 'collector' | 'branch' | 'admin' | 'buyer' | 'organization' | 'hotel' | 'exporter' | 'pending';
   isVerified: boolean;
   ecoPoints: number;
   walletAddress?: string;
   createdAt: Date;
   avatar?: string;
+  totalEarnings?: number;
+  totalMaterialsSubmitted?: number;
+  profileImage?: string;
+  businessName?: string;
+  location?: {
+    type: 'Point';
+    coordinates: [number, number];
+    address?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+  };
 }
 
 export interface Material {
@@ -28,6 +43,13 @@ export interface Material {
   processedAt?: Date;
   qualityGrade?: 'A' | 'B' | 'C' | 'D';
   description?: string;
+  pickupLocation?: {
+    type: 'Point';
+    coordinates: [number, number];
+    address?: string;
+    city?: string;
+    state?: string;
+  };
 }
 
 export interface MaterialCategory {

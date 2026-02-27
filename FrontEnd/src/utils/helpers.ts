@@ -32,7 +32,7 @@ export const calculatePrice = (
   const conditionMultiplier = CONDITION_MULTIPLIERS[condition];
   const qualityMultiplier = qualityGrade ? QUALITY_GRADES[qualityGrade].multiplier : 1.0;
   const treatmentBonus = condition === 'treated' ? basePrice * 0.2 : 0;
-  
+
   const totalValue = (basePrice * weight * conditionMultiplier * qualityMultiplier) + treatmentBonus;
   const logisticsCost = weight * 50; // ₦50 per kg
   const netValue = totalValue - logisticsCost;
@@ -62,7 +62,7 @@ export const truncateAddress = (address: string, length: number = 6): string => 
 export const validateImageFile = (file: File): boolean => {
   const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
   const maxSize = 5 * 1024 * 1024; // 5MB
-  
+
   return allowedTypes.includes(file.type) && file.size <= maxSize;
 };
 
@@ -70,7 +70,7 @@ export const uploadToCloudinary = async (file: File): Promise<string> => {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('upload_preset', 'ecolink-materials');
-  
+
   const response = await fetch(
     `https://api.cloudinary.com/v1_1/ecolink/image/upload`,
     {
@@ -78,7 +78,7 @@ export const uploadToCloudinary = async (file: File): Promise<string> => {
       body: formData
     }
   );
-  
+
   const data = await response.json();
   return data.secure_url;
 };
@@ -89,23 +89,24 @@ export const generateMaterialId = (): string => {
 
 export const getMaterialStatusColor = (status: Material['status']): string => {
   switch (status) {
-    case 'pending': return 'bg-yellow-100 text-yellow-800';
-    case 'accepted': return 'bg-green-100 text-green-800';
-    case 'rejected': return 'bg-red-100 text-red-800';
-    case 'processed': return 'bg-blue-100 text-blue-800';
-    default: return 'bg-gray-100 text-gray-800';
+    case 'pending': return 'bg-amber-500/20 text-amber-600 border-amber-500/20';
+    case 'accepted': return 'bg-emerald-500/20 text-emerald-600 border-emerald-500/20';
+    case 'rejected': return 'bg-rose-500/20 text-rose-600 border-rose-500/20';
+    case 'processed': return 'bg-indigo-500/20 text-indigo-600 border-indigo-500/20';
+    default: return 'bg-slate-500/20 text-slate-600 border-slate-500/20';
   }
 };
 
 export const getConditionColor = (condition: Material['condition']): string => {
   switch (condition) {
-    case 'clean': return 'bg-green-100 text-green-800';
-    case 'dirty': return 'bg-red-100 text-red-800';
-    case 'treated': return 'bg-blue-100 text-blue-800';
-    case 'untreated': return 'bg-orange-100 text-orange-800';
-    default: return 'bg-gray-100 text-gray-800';
+    case 'clean': return 'bg-emerald-500/20 text-emerald-600 border-emerald-500/20';
+    case 'dirty': return 'bg-rose-500/20 text-rose-600 border-rose-500/20';
+    case 'treated': return 'bg-indigo-500/20 text-indigo-600 border-indigo-500/20';
+    case 'untreated': return 'bg-orange-500/20 text-orange-600 border-orange-500/20';
+    default: return 'bg-slate-500/20 text-slate-600 border-slate-500/20';
   }
 };
+
 
 export const debounce = <T extends (...args: any[]) => any>(
   func: T,
