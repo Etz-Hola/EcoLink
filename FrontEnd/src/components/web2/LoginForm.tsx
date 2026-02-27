@@ -156,7 +156,7 @@ const LoginForm: React.FC = () => {
       </div>
 
       {/* ── Right panel (form) ── */}
-      <div className="flex-1 flex flex-col justify-center items-center px-6 sm:px-10 py-12 bg-gradient-to-br from-neutral-50 via-white to-neutral-50/50">
+      <div className="flex-1 flex flex-col justify-center items-center px-6 sm:px-10 py-12 bg-gradient-to-br from-primary-100/70 via-white to-primary-50/40">
         <div className="w-full max-w-md">
 
           <motion.div variants={fadeUp} custom={0} initial="hidden" animate="show">
