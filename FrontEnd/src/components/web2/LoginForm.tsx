@@ -1,16 +1,24 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, Chrome, Wallet, AlertCircle, ArrowRight, Leaf, Sparkles } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Mail, Lock, Eye, EyeOff, Chrome, Wallet, AlertCircle, ArrowRight, Sparkles } from 'lucide-react';
+import { motion, Variants } from 'framer-motion';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useSignMessage } from 'wagmi';
 import { useAuth } from '../../hooks/useAuth';
 import { useWallet } from '../../hooks/useWallet';
 
-const fadeUp = {
+const fadeUp: Variants = {
   hidden: { opacity: 0, y: 24 },
-  show: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.5, delay: i * 0.07, ease: [0.22, 1, 0.36, 1] } }),
+  show: (i = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5,
+      delay: i * 0.07,
+      ease: [0.22, 1, 0.36, 1] as any
+    }
+  }),
 };
 
 const LoginForm: React.FC = () => {
@@ -104,17 +112,7 @@ const LoginForm: React.FC = () => {
         <div className="absolute top-1/2 -right-24 w-72 h-72 rounded-full bg-emerald-400/8 blur-3xl" />
         <div className="absolute -bottom-24 left-1/4 w-64 h-64 rounded-full bg-green-600/10 blur-3xl" />
 
-        {/* Logo */}
-        <div className="relative z-10 p-10">
-          <Link to="/" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/30">
-              <Leaf className="h-4.5 w-4.5 text-white" />
-            </div>
-            <span className="font-black text-xl text-white">Eco<span className="text-green-400">Link</span></span>
-          </Link>
-        </div>
-
-        {/* Main copy */}
+        {/* Main copy - Centered vertically since logo is gone */}
         <div className="relative z-10 flex-1 flex flex-col justify-center px-10 pb-12">
           <motion.div
             initial={{ opacity: 0, x: -30 }}
@@ -158,15 +156,8 @@ const LoginForm: React.FC = () => {
       </div>
 
       {/* ── Right panel (form) ── */}
-      <div className="flex-1 flex flex-col justify-center items-center px-6 sm:px-10 py-12 bg-white">
+      <div className="flex-1 flex flex-col justify-center items-center px-6 sm:px-10 py-12 bg-gradient-to-br from-neutral-50 via-white to-neutral-50/50">
         <div className="w-full max-w-md">
-          {/* Mobile logo */}
-          <div className="lg:hidden mb-8 flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-              <Leaf className="h-4 w-4 text-white" />
-            </div>
-            <span className="font-black text-xl text-gray-900">Eco<span className="text-green-600">Link</span></span>
-          </div>
 
           <motion.div variants={fadeUp} custom={0} initial="hidden" animate="show">
             <h1 className="text-3xl font-black text-gray-900 mb-1">Welcome back</h1>

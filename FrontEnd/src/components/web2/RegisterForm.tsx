@@ -1,16 +1,24 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
-import { User as UserIcon, Mail, Lock, Eye, EyeOff, Chrome, Wallet, AlertCircle, ArrowRight, Leaf, CheckCircle } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { User as UserIcon, Mail, Lock, Eye, EyeOff, Chrome, Wallet, AlertCircle, ArrowRight, CheckCircle } from 'lucide-react';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useSignMessage } from 'wagmi';
 import { useAuth } from '../../hooks/useAuth';
 import { useWallet } from '../../hooks/useWallet';
 
-const fadeUp = {
+const fadeUp: Variants = {
   hidden: { opacity: 0, y: 20 },
-  show: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.45, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] } }),
+  show: (i = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.45,
+      delay: i * 0.06,
+      ease: [0.22, 1, 0.36, 1] as any
+    }
+  }),
 };
 
 const ACCOUNT_TYPES = [
@@ -170,15 +178,6 @@ const RegisterForm: React.FC = () => {
         <div className="absolute top-1/2 -right-24 w-72 h-72 rounded-full bg-emerald-400/8 blur-3xl" />
         <div className="absolute -bottom-24 left-1/4 w-64 h-64 rounded-full bg-green-600/10 blur-3xl" />
 
-        <div className="relative z-10 p-10">
-          <Link to="/" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/30">
-              <Leaf className="h-4 w-4 text-white" />
-            </div>
-            <span className="font-black text-xl text-white">Eco<span className="text-green-400">Link</span></span>
-          </Link>
-        </div>
-
         <div className="relative z-10 flex-1 flex flex-col justify-center px-10 pb-12">
           <motion.div
             initial={{ opacity: 0, x: -30 }}
@@ -220,15 +219,8 @@ const RegisterForm: React.FC = () => {
       </div>
 
       {/* ── Right panel ── */}
-      <div className="flex-1 flex flex-col justify-center items-center px-6 sm:px-10 py-10 bg-white overflow-y-auto">
+      <div className="flex-1 flex flex-col justify-center items-center px-6 sm:px-10 py-10 bg-gradient-to-br from-neutral-50 via-white to-neutral-50/50 overflow-y-auto">
         <div className="w-full max-w-md">
-          {/* Mobile logo */}
-          <div className="lg:hidden mb-6 flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-              <Leaf className="h-4 w-4 text-white" />
-            </div>
-            <span className="font-black text-xl text-gray-900">Eco<span className="text-green-600">Link</span></span>
-          </div>
 
           <motion.div variants={fadeUp} custom={0} initial="hidden" animate="show">
             <h1 className="text-3xl font-black text-gray-900 mb-1">Create your account</h1>
@@ -243,10 +235,10 @@ const RegisterForm: React.FC = () => {
             {[1, 2].map(s => (
               <div key={s} className="flex items-center gap-2">
                 <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black transition-all duration-300 ${step > s
-                    ? 'bg-green-500 text-white'
-                    : step === s
-                      ? 'bg-gray-900 text-white'
-                      : 'bg-gray-100 text-gray-400'
+                  ? 'bg-green-500 text-white'
+                  : step === s
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-gray-100 text-gray-400'
                   }`}>
                   {step > s ? <CheckCircle className="w-4 h-4" /> : s}
                 </div>
