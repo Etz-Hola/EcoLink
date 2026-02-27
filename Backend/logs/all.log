@@ -439,3 +439,5 @@
 2026-02-27 17:29:22:2922 [32minfo[39m: [32m::1 - - [27/Feb/2026:16:29:22 +0000] "POST /api/v1/auth/login HTTP/1.1" 401 487 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
 2026-02-27 17:29:32:2932 [32minfo[39m: [32m::1 - - [27/Feb/2026:16:29:32 +0000] "POST /api/v1/auth/login HTTP/1.1" 500 398 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
 2026-02-27 17:29:47:2947 [32minfo[39m: [32m::1 - - [27/Feb/2026:16:29:47 +0000] "POST /api/v1/auth/login HTTP/1.1" 200 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-02-27 17:54:31:5431 [31merror[39m: [31mDatabase connection failed: querySrv ESERVFAIL _mongodb._tcp.cluster0.ksak8ks.mongodb.net[39m
+2026-02-27 17:54:31:5431 [31merror[39m: [31mDatabase connection failed: querySrv ESERVFAIL _mongodb._tcp.cluster0.ksak8ks.mongodb.net[39m
