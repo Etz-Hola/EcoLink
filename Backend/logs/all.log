@@ -411,3 +411,4 @@
 2026-02-20 19:59:51:5951 [32minfo[39m: [32mMongoose connected to MongoDB[39m
 2026-02-20 20:55:20:5520 [33mwarn[39m: [33mMongoose disconnected from MongoDB[39m
 2026-02-20 20:55:20:5520 [32minfo[39m: [32mMongoose connected to MongoDB[39m
+2026-02-27 16:24:57:2457 [31merror[39m: [31mDatabase connection failed: queryTxt ESERVFAIL cluster0.ksak8ks.mongodb.net[39m

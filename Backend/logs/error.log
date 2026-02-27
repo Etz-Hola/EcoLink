@@ -135,3 +135,4 @@
 2026-02-20 16:00:31:031 [31merror[39m: [31mUncaught Exception: listen EADDRINUSE: address already in use :::5001[39m
 2026-02-20 16:01:24:124 [31merror[39m: [31mUncaught Exception: listen EADDRINUSE: address already in use :::5001[39m
 2026-02-20 16:02:06:26 [31merror[39m: [31mUncaught Exception: listen EADDRINUSE: address already in use :::5001[39m
+2026-02-27 16:24:57:2457 [31merror[39m: [31mDatabase connection failed: queryTxt ESERVFAIL cluster0.ksak8ks.mongodb.net[39m
