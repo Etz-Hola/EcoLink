@@ -1,4 +1,9 @@
 import dotenv from 'dotenv';
+import dns from 'node:dns';
+
+// Fix for MongoDB DNS resolution issues in Node 20+
+dns.setDefaultResultOrder('ipv4first');
+
 // Load environment variables immediately
 dotenv.config();
 
