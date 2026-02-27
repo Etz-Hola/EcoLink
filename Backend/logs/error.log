@@ -144,3 +144,4 @@
 2026-02-27 17:55:00:550 [31merror[39m: [31mDatabase connection failed: querySrv ESERVFAIL _mongodb._tcp.cluster0.ksak8ks.mongodb.net[39m
 2026-02-27 17:55:00:550 [31merror[39m: [31mDatabase connection failed: querySrv ESERVFAIL _mongodb._tcp.cluster0.ksak8ks.mongodb.net[39m
 2026-02-27 17:56:14:5614 [31merror[39m: [31mUncaught Exception: listen EADDRINUSE: address already in use :::5001[39m
+2026-02-27 17:58:07:587 [31merror[39m: [31mDatabase connection failed: queryTxt ESERVFAIL cluster0.ksak8ks.mongodb.net[39m
