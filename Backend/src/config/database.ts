@@ -14,7 +14,7 @@ export const connectDatabase = async (): Promise<void> => {
     const options = {
       autoIndex: true,
       maxPoolSize: 10,
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 30000,
       socketTimeoutMS: 45000,
       family: 4,
     };
