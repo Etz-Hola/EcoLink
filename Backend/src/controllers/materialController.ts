@@ -1,3 +1,7 @@
+import { Request, Response, NextFunction } from 'express';
+import Material from '../models/Material';
+import { MaterialStatus } from '../types/material';
+import { AppError } from '../utils/logger';
 import { PaymentService } from '../services/paymentService';
 
 export class MaterialController {
@@ -209,7 +213,7 @@ export class MaterialController {
             if (status === MaterialStatus.PROCESSED && material.status !== MaterialStatus.PROCESSED) {
                 const branchId = (req as any).user.branchId || (req as any).user._id;
                 const collectorId = material.submittedBy;
-                const amount = material.totalValue || (material.weight * (material.pricing?.finalPrice || 0));
+                const amount = (material as any).totalValue || (material.weight * (material.pricing?.finalPrice || 0));
 
                 // background process or await if we want strict consistency
                 await PaymentService.processInternalTransfer(
