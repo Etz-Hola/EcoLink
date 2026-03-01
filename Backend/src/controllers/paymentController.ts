@@ -66,7 +66,7 @@ export class PaymentController {
                 await PaymentService.finalizeTopup(reference);
             }
 
-            res.status(200).send('Webhook handled');
+            return res.status(200).send('Webhook handled');
         } catch (error) {
             logger.error('Webhook error:', error);
             res.status(500).send('Webhook error');
