@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Home, Package, Truck, BarChart3, Users,
-  Settings, Leaf, Upload, MapPin, FileText, ChevronRight
+  Settings, Leaf, Upload, MapPin, FileText, ChevronRight, Wallet
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { classNames } from '../../utils/helpers';
@@ -32,6 +32,7 @@ const Sidebar: React.FC = () => {
       { name: 'Pending Materials', href: '/branch', icon: FileText },
     ] : []),
     { name: 'Logistics', href: '/logistics', icon: Truck },
+    { name: 'Wallet', href: '/wallet', icon: Wallet },
     { name: 'Nearby Branches', href: '/branches', icon: MapPin },
     { name: 'Profile', href: '/profile', icon: Settings },
   ];
