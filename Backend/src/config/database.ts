@@ -7,7 +7,11 @@ export const connectDatabase = async (): Promise<void> => {
       ? process.env.MONGODB_TEST_URI
       : process.env.MONGODB_URI;
 
+    logger.info(`Environment: ${process.env.NODE_ENV}`);
+    logger.info(`MongoDB URI present: ${!!mongoUri}`);
+
     if (!mongoUri) {
+      logger.error('Full Environment Variables:', JSON.stringify(Object.keys(process.env)));
       throw new Error('MongoDB URI is not defined in environment variables');
     }
 

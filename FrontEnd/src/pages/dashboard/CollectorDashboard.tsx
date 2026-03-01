@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   TrendingUp, Package, Clock, CheckCircle, Upload,
-  MapPin, Leaf, ChevronRight, AlertCircle
+  Leaf, ChevronRight, AlertCircle, Bell, Wallet, CreditCard
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { Material, Notification } from '../../types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
@@ -24,26 +25,35 @@ const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
 
 const CollectorDashboard: React.FC = () => {
   const { user } = useAuth();
-  const [materials, setMaterials] = useState<any[]>([]);
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchMaterials = async () => {
+    const fetchData = async () => {
       try {
         const token = localStorage.getItem('ecolink_token');
-        const res = await fetch(`${API_URL}/materials/my`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const data = await res.json();
-        if (data.success) setMaterials(data.data);
+        const headers = { Authorization: `Bearer ${token}` };
+
+        const [matRes, notifRes] = await Promise.all([
+          fetch(`${API_URL}/materials/my`, { headers }),
+          fetch(`${API_URL}/notifications`, { headers })
+        ]);
+
+        const matData = await matRes.json();
+        const notifData = await notifRes.json();
+
+        if (matData.success) setMaterials(matData.data);
+        if (notifData.success) setNotifications(notifData.data);
       } catch (err) {
-        setError('Could not load your materials. Please refresh.');
+        console.error('Error fetching dashboard data:', err);
+        setError('Could not load your dashboard. Please refresh.');
       } finally {
         setLoading(false);
       }
     };
-    fetchMaterials();
+    fetchData();
   }, []);
 
   const stats = {
@@ -75,52 +85,94 @@ const CollectorDashboard: React.FC = () => {
     },
   ];
 
+  const currentBalance = user?.balance || 0;
+
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-16">
-      {/* Welcome Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="relative overflow-hidden rounded-3xl p-8 bg-gradient-to-br from-gray-900 via-green-950 to-gray-900"
-      >
-        {/* Decorative circles */}
-        <div className="absolute -top-12 -right-12 w-48 h-48 bg-green-500/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-emerald-400/10 rounded-full blur-3xl" />
+      {/* Welcome & Balance Header */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="lg:col-span-2 relative overflow-hidden rounded-3xl p-8 bg-gradient-to-br from-gray-900 via-green-950 to-gray-900"
+        >
+          {/* Decorative circles */}
+          <div className="absolute -top-12 -right-12 w-48 h-48 bg-green-500/10 rounded-full blur-3xl" />
+          <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-emerald-400/10 rounded-full blur-3xl" />
 
-        <div className="relative">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-xl bg-green-500/20 flex items-center justify-center">
-              <Leaf className="w-4 h-4 text-green-400" />
+          <div className="relative">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-xl bg-green-500/20 flex items-center justify-center">
+                <Leaf className="w-4 h-4 text-green-400" />
+              </div>
+              <span className="text-green-400 font-bold text-sm uppercase tracking-widest">{user?.role === 'collector' ? 'Individual Collector' : user?.role?.toUpperCase()}</span>
             </div>
-            <span className="text-green-400 font-bold text-sm uppercase tracking-widest">Individual Collector</span>
+            <h1 className="text-3xl md:text-4xl font-black text-white mb-2">
+              Welcome back, <span className="text-green-400">{firstName}!</span>
+            </h1>
+            <p className="text-gray-400 font-medium max-w-lg">
+              Track your materials, see their status, and contribute to a cleaner Nigeria. Every kilogram counts.
+            </p>
+            <div className="flex flex-wrap gap-3 mt-6">
+              <Link to="/materials/upload">
+                <motion.button
+                  whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-green-500 hover:bg-green-400 text-white rounded-xl font-bold text-sm transition-colors shadow-lg shadow-green-900/40"
+                >
+                  <Upload className="w-4 h-4" /> Upload Material
+                </motion.button>
+              </Link>
+              <Link to="/wallet">
+                <motion.button
+                  whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-sm transition-colors border border-white/10"
+                >
+                  <Wallet className="w-4 h-4" /> Go to Wallet
+                </motion.button>
+              </Link>
+            </div>
           </div>
-          <h1 className="text-3xl md:text-4xl font-black text-white mb-2">
-            Welcome back, <span className="text-green-400">{firstName}!</span>
-          </h1>
-          <p className="text-gray-400 font-medium max-w-lg">
-            Track your materials, see their status, and contribute to a cleaner Nigeria. Every kilogram counts.
-          </p>
-          <div className="flex flex-wrap gap-3 mt-6">
-            <Link to="/materials/upload">
+        </motion.div>
+
+        {/* Premium Balance Card */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2 }}
+          className="relative overflow-hidden rounded-3xl p-8 bg-white border border-gray-100 shadow-xl shadow-gray-200/50 flex flex-col justify-between"
+        >
+          <div className="absolute top-0 right-0 p-8 opacity-5">
+            <CreditCard className="w-32 h-32 text-gray-900" />
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Available Balance</p>
+              <div className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center">
+                <Wallet className="w-5 h-5 text-emerald-600" />
+              </div>
+            </div>
+            <h2 className="text-4xl font-black text-gray-900">
+              ₦{currentBalance.toLocaleString()}
+            </h2>
+            <p className="text-xs font-bold text-emerald-600 mt-2 flex items-center gap-1">
+              <CheckCircle className="w-3 h-3" /> Securely managed by Paystack
+            </p>
+          </div>
+
+          <div className="mt-8">
+            <Link to="/wallet">
               <motion.button
-                whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
-                className="flex items-center gap-2 px-5 py-2.5 bg-green-500 hover:bg-green-400 text-white rounded-xl font-bold text-sm transition-colors shadow-lg shadow-green-900/40"
+                whileHover={{ x: 5 }}
+                className="flex items-center gap-2 text-sm font-black text-gray-900 group"
               >
-                <Upload className="w-4 h-4" /> Upload Material
+                Top Up Balance <ChevronRight className="w-4 h-4 text-emerald-500 group-hover:translate-x-1 transition-transform" />
               </motion.button>
             </Link>
-            <Link to="/materials">
-              <motion.button
-                whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
-                className="flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-sm transition-colors border border-white/10"
-              >
-                <Package className="w-4 h-4" /> My Materials
-              </motion.button>
-            </Link>
           </div>
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
 
       {/* Stats Grid */}
       <motion.div
@@ -146,96 +198,139 @@ const CollectorDashboard: React.FC = () => {
         })}
       </motion.div>
 
-      {/* Materials Table */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
-      >
-        <div className="flex items-center justify-between p-6 border-b border-gray-50">
-          <h2 className="text-lg font-black text-gray-900">Recent Materials</h2>
-          <Link to="/materials" className="flex items-center gap-1 text-sm font-bold text-green-600 hover:text-green-700 transition-colors">
-            View All <ChevronRight className="w-4 h-4" />
-          </Link>
-        </div>
-
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-16">
-            <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
-            <p className="mt-4 text-sm font-medium text-gray-400">Loading your materials...</p>
-          </div>
-        ) : error ? (
-          <div className="flex items-center gap-3 p-6 text-rose-600">
-            <AlertCircle className="w-5 h-5" />
-            <p className="text-sm font-medium">{error}</p>
-          </div>
-        ) : materials.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Package className="w-8 h-8 text-gray-300" />
-            </div>
-            <h3 className="text-base font-bold text-gray-700 mb-1">No materials yet</h3>
-            <p className="text-sm text-gray-400 mb-4">Upload your first material to get started.</p>
-            <Link to="/materials/upload" className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl text-sm font-bold">
-              <Upload className="w-4 h-4" /> Get Started
+      {/* Activity and Notifications */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Materials Table */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="lg:col-span-2 bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden"
+        >
+          <div className="flex items-center justify-between p-6 border-b border-gray-50">
+            <h2 className="text-lg font-black text-gray-900">Recent Materials</h2>
+            <Link to="/materials" className="flex items-center gap-1 text-sm font-bold text-green-600 hover:text-green-700 transition-colors">
+              View All <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-gray-50/70">
-                  {['Material', 'Type', 'Weight', 'Location', 'Status', 'Date'].map(h => (
-                    <th key={h} className="px-6 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {recentMaterials.map((m, i) => {
-                  const sc = STATUS_CONFIG[m.status] || STATUS_CONFIG.pending;
-                  return (
-                    <motion.tr
-                      key={m._id}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.4 + i * 0.06 }}
-                      className="hover:bg-gray-50/60 transition-colors"
-                    >
-                      <td className="px-6 py-4">
-                        <div>
-                          <p className="text-sm font-bold text-gray-900 line-clamp-1">{m.title || `${m.materialType} Batch`}</p>
-                          <p className="text-[10px] text-gray-400 font-medium">{m.subType}</p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="px-2.5 py-1 bg-gray-100 text-gray-700 rounded-full text-[10px] font-black uppercase tracking-wider capitalize">
-                          {m.materialType}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm font-bold text-gray-700">{m.weight?.toFixed(1)} kg</td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-1 text-[11px] font-medium text-gray-500">
-                          <MapPin className="w-3 h-3" />
-                          {m.pickupLocation?.city || m.pickupLocation?.address?.split(',')[0] || '—'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wide ${sc.bg} ${sc.color}`}>
-                          {sc.label}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-[11px] font-medium text-gray-400">
-                        {new Date(m.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                      </td>
-                    </motion.tr>
-                  );
-                })}
-              </tbody>
-            </table>
+
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+              <p className="mt-4 text-sm font-medium text-gray-400">Loading your materials...</p>
+            </div>
+          ) : error ? (
+            <div className="flex items-center gap-3 p-6 text-rose-600">
+              <AlertCircle className="w-5 h-5" />
+              <p className="text-sm font-medium">{error}</p>
+            </div>
+          ) : materials.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Package className="w-8 h-8 text-gray-300" />
+              </div>
+              <h3 className="text-base font-bold text-gray-700 mb-1">No materials yet</h3>
+              <p className="text-sm text-gray-400 mb-4">Upload your first material to get started.</p>
+              <Link to="/materials/upload" className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl text-sm font-bold">
+                <Upload className="w-4 h-4" /> Get Started
+              </Link>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-gray-50/70">
+                    {['Material', 'Type', 'Weight', 'Status', 'Date'].map(h => (
+                      <th key={h} className="px-6 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {recentMaterials.map((m, i) => {
+                    const sc = STATUS_CONFIG[m.status] || STATUS_CONFIG.pending;
+                    return (
+                      <motion.tr
+                        key={m._id}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.4 + i * 0.06 }}
+                        className="hover:bg-gray-50/60 transition-colors"
+                      >
+                        <td className="px-6 py-4">
+                          <div>
+                            <p className="text-sm font-bold text-gray-900 line-clamp-1">{m.title || `${m.materialType} Batch`}</p>
+                            <p className="text-[10px] text-gray-400 font-medium">{m.subType}</p>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="px-2.5 py-1 bg-gray-100 text-gray-700 rounded-full text-[10px] font-black uppercase tracking-wider capitalize">
+                            {m.materialType}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm font-bold text-gray-700">{m.weight?.toFixed(1)} kg</td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wide ${sc.bg} ${sc.color}`}>
+                            {sc.label}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-[11px] font-medium text-gray-400">
+                          {new Date(m.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </td>
+                      </motion.tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </motion.div>
+
+        {/* Notifications Column */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.5 }}
+          className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-black text-gray-900">Notifications</h2>
+            <Bell className="w-5 h-5 text-gray-400" />
           </div>
-        )}
-      </motion.div>
+
+          <div className="space-y-4">
+            {notifications.length === 0 ? (
+              <div className="text-center py-10">
+                <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Bell className="w-6 h-6 text-gray-200" />
+                </div>
+                <p className="text-xs font-bold text-gray-400">No new notifications</p>
+              </div>
+            ) : (
+              notifications.slice(0, 6).map((notif, idx) => (
+                <motion.div
+                  key={notif._id}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.6 + idx * 0.05 }}
+                  className={`p-4 rounded-2xl border ${notif.isRead ? 'bg-white border-gray-50' : 'bg-emerald-50/30 border-emerald-100'}`}
+                >
+                  <p className="text-xs font-black text-gray-900">{notif.title}</p>
+                  <p className="text-[11px] text-gray-500 font-medium mt-1 leading-relaxed">{notif.message}</p>
+                  <p className="text-[10px] text-gray-400 font-bold mt-2 uppercase tracking-tighter">
+                    {new Date(notif.createdAt).toLocaleDateString()} • {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </motion.div>
+              ))
+            )}
+
+            {notifications.length > 0 && (
+              <button className="w-full py-3 text-xs font-black text-gray-400 hover:text-gray-900 transition-colors border-t border-gray-50">
+                View Prior Notifications
+              </button>
+            )}
+          </div>
+        </motion.div>
+      </div>
 
       {/* Quick Tips */}
       <motion.div
