@@ -15,9 +15,9 @@ export const sendSMS = async (phone: string, message: string) => {
     return Promise.resolve();
 };
 
-export class NotificationService {
-    static async sendNotification(userId: string, data: { title: string; message: string; type: string }) {
+export const NotificationService = {
+    sendNotification: async (userId: string, data: { title: string; message: string; type: string }) => {
         logger.info(`Sending ${data.type} notification to user ${userId}: ${data.title} - ${data.message}`);
         return Promise.resolve();
     }
-}
+};
