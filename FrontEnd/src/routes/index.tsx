@@ -7,6 +7,7 @@ import Landing from '../pages/Landing';
 import MaterialUpload from '../pages/MaterialUpload';
 import MyMaterials from '../pages/MyMaterials';
 import Profile from '../pages/Profile';
+import Wallet from '../pages/Wallet';
 import LoginForm from '../components/web2/LoginForm';
 import RegisterForm from '../components/web2/RegisterForm';
 import DashboardRouter from '../pages/dashboard/DashboardRouter';
@@ -54,6 +55,7 @@ const AppRoutes: React.FC = () => {
             <Route path="/admin" element={<DashboardRouter />} />
             <Route path="/materials/upload" element={<MaterialUpload />} />
             <Route path="/materials" element={<MyMaterials />} />
+            <Route path="/wallet" element={<Wallet />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/login" element={<Navigate to={homeRoute()} replace />} />
             <Route path="/register" element={<Navigate to={homeRoute()} replace />} />
