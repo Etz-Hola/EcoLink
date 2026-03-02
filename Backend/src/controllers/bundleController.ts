@@ -18,18 +18,18 @@ export class BundleController {
                 throw new AppError('At least one material is required to create a bundle', 400);
             }
 
-            // Verify materials are accepted and belong to this branch (or aren't assigned yet)
+            // Verify materials are accepted/delivered and belong to this branch
             const materials = await Material.find({
                 _id: { $in: materialIds },
-                status: MaterialStatus.APPROVED
+                status: { $in: [MaterialStatus.APPROVED, MaterialStatus.DELIVERED] }
             });
 
             if (materials.length !== materialIds.length) {
-                throw new AppError('Some materials are not available for bundling', 400);
+                throw new AppError('Some materials are not available for bundling (must be approved or delivered)', 400);
             }
 
-            const totalWeight = materials.reduce((sum, m) => sum + (m.weight || 0), 0);
-            const totalPrice = materials.reduce((sum, m) => sum + (m.weight * (m.pricing?.finalPrice || 0)), 0);
+            const totalWeight = materials.reduce((sum, m: any) => sum + (m.weight || 0), 0);
+            const totalPrice = materials.reduce((sum, m: any) => sum + (m.weight * (m.pricing?.finalPrice || 0)), 0);
 
             const bundle = await Bundle.create({
                 name,
@@ -46,6 +46,19 @@ export class BundleController {
                 { _id: { $in: materialIds } },
                 { $set: { status: MaterialStatus.BUNDLED } }
             );
+
+            // Notify uploaders
+            const { NotificationService } = require('../services/notificationService');
+            for (const material of materials) {
+                await NotificationService.sendNotification({
+                    recipient: material.submittedBy,
+                    title: 'Material Bundled for Export',
+                    message: `Your material (${material.materialType}) has been bundled into "${name}" and is ready for export!`,
+                    type: 'info',
+                    relatedId: bundle._id,
+                    onModel: 'Bundle'
+                });
+            }
 
             res.status(201).json({
                 success: true,

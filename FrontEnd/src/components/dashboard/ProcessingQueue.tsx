@@ -94,6 +94,9 @@ export default function ProcessingQueue() {
             const token = localStorage.getItem('ecolink_token');
             const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
+            // Find item to get value for toast
+            const item = queue.find(i => i.id === id);
+
             const res = await fetch(`${apiUrl}/materials/${id}/verify`, {
                 method: 'PATCH',
                 headers: {
@@ -104,8 +107,14 @@ export default function ProcessingQueue() {
 
             if (!res.ok) throw new Error();
 
+            const data = await res.json();
+            const amount = data.data?.pricing?.finalPrice ? (data.data.weight * data.data.pricing.finalPrice) : 0;
+
             setQueue(prev => prev.map(item => item.id === id ? { ...item, status: 'delivered' } : item));
-            toast.success('Delivery verified and payment released!');
+            toast.success(`Verification Successful! ₦${amount.toLocaleString()} released to ${item?.collectorName}`, {
+                duration: 5000,
+                icon: '💸'
+            });
         } catch {
             toast.error('Failed to verify delivery');
         }
