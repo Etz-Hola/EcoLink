@@ -90,86 +90,126 @@ const CollectorDashboard: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-16">
       {/* Welcome & Balance Header */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <motion.div
-          initial={{ opacity: 0, y: -10 }}
+          initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="lg:col-span-2 relative overflow-hidden rounded-3xl p-8 bg-gradient-to-br from-gray-900 via-green-950 to-gray-900"
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="lg:col-span-8 relative overflow-hidden rounded-[2.5rem] p-10 bg-gradient-to-br from-[#061a14] via-[#0a261d] to-[#061a14] shadow-2xl shadow-emerald-950/20"
         >
-          {/* Decorative circles */}
-          <div className="absolute -top-12 -right-12 w-48 h-48 bg-green-500/10 rounded-full blur-3xl" />
-          <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-emerald-400/10 rounded-full blur-3xl" />
+          {/* Animated background elements */}
+          <motion.div
+            animate={{
+              scale: [1, 1.2, 1],
+              opacity: [0.1, 0.2, 0.1],
+              rotate: [0, 90, 0]
+            }}
+            transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+            className="absolute -top-24 -right-24 w-96 h-96 bg-emerald-500 rounded-full blur-[100px]"
+          />
+          <motion.div
+            animate={{
+              scale: [1, 1.3, 1],
+              opacity: [0.05, 0.15, 0.05],
+              x: [0, 50, 0]
+            }}
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            className="absolute -bottom-12 -left-12 w-64 h-64 bg-green-400 rounded-full blur-[80px]"
+          />
 
-          <div className="relative">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-xl bg-green-500/20 flex items-center justify-center">
-                <Leaf className="w-4 h-4 text-green-400" />
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-center shadow-inner">
+                <Leaf className="w-6 h-6 text-emerald-400 animate-pulse" />
               </div>
-              <span className="text-green-400 font-bold text-sm uppercase tracking-widest">{user?.role === 'collector' ? 'Individual Collector' : user?.role?.toUpperCase()}</span>
+              <div>
+                <span className="text-emerald-400 font-black text-xs uppercase tracking-[0.2em]">Verified Collector</span>
+                <div className="h-1 w-12 bg-emerald-500/30 rounded-full mt-1" />
+              </div>
             </div>
-            <h1 className="text-3xl md:text-4xl font-black text-white mb-2">
-              Welcome back, <span className="text-green-400">{firstName}!</span>
+
+            <h1 className="text-4xl md:text-5xl font-black text-white mb-4 leading-tight">
+               Hi! <span className="bg-gradient-to-r from-emerald-400 to-green-300 bg-clip-text text-transparent">{firstName}!</span>
             </h1>
-            <p className="text-gray-400 font-medium max-w-lg">
-              Track your materials, see their status, and contribute to a cleaner Nigeria. Every kilogram counts.
+            <p className="text-gray-400 font-medium max-w-xl text-lg leading-relaxed mb-8">
+              Your contribution is making a difference. We've tracked <span className="text-white font-bold">{materials.length} batches</span> of materials from your account. Keep it up!
             </p>
-            <div className="flex flex-wrap gap-3 mt-6">
+
+            <div className="flex flex-wrap gap-4">
               <Link to="/materials/upload">
                 <motion.button
-                  whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-green-500 hover:bg-green-400 text-white rounded-xl font-bold text-sm transition-colors shadow-lg shadow-green-900/40"
+                  whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}
+                  className="flex items-center gap-3 px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-gray-950 rounded-2xl font-black text-sm transition-all shadow-[0_10px_30px_-10px_rgba(16,185,129,0.5)]"
                 >
-                  <Upload className="w-4 h-4" /> Upload Material
+                  <Upload className="w-5 h-5" /> START UPLOADING
                 </motion.button>
               </Link>
               <Link to="/wallet">
                 <motion.button
-                  whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-sm transition-colors border border-white/10"
+                  whileHover={{ scale: 1.05, bg: "rgba(255,255,255,0.15)" }} whileTap={{ scale: 0.95 }}
+                  className="flex items-center gap-3 px-8 py-4 bg-white/10 backdrop-blur-md text-white rounded-2xl font-black text-sm transition-all border border-white/10"
                 >
-                  <Wallet className="w-4 h-4" /> Go to Wallet
+                  <Wallet className="w-5 h-5 text-emerald-400" /> VIEW WALLET
                 </motion.button>
               </Link>
             </div>
           </div>
         </motion.div>
 
-        {/* Premium Balance Card */}
+        {/* Unique Glassmorphism Balance Card */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2 }}
-          className="relative overflow-hidden rounded-3xl p-8 bg-white border border-gray-100 shadow-xl shadow-gray-200/50 flex flex-col justify-between"
+          transition={{ delay: 0.3, duration: 0.6 }}
+          className="lg:col-span-4 relative overflow-hidden rounded-[2.5rem] bg-white border border-gray-100 shadow-2xl shadow-gray-200/40 p-1"
         >
-          <div className="absolute top-0 right-0 p-8 opacity-5">
-            <CreditCard className="w-32 h-32 text-gray-900" />
-          </div>
+          <div className="h-full w-full rounded-[2.3rem] bg-gradient-to-b from-gray-50/50 to-white p-8 flex flex-col justify-between relative overflow-hidden">
+            {/* Background pattern */}
+            <div className="absolute top-0 right-0 p-4 opacity-[0.03] pointer-events-none">
+              <CreditCard className="w-56 h-56 -rotate-12 translate-x-12 -translate-y-12" />
+            </div>
 
-          <div>
-            <div className="flex items-center justify-between mb-6">
-              <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Available Balance</p>
-              <div className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center">
-                <Wallet className="w-5 h-5 text-emerald-600" />
+            <div>
+              <div className="flex items-center justify-between mb-8">
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Total Balance</p>
+                  <div className="h-1 w-8 bg-emerald-500 rounded-full" />
+                </div>
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                  <Wallet className="w-6 h-6 text-emerald-600" />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-black text-emerald-600">₦</span>
+                  <h2 className="text-5xl font-black text-gray-900 tracking-tight">
+                    {currentBalance.toLocaleString()}
+                  </h2>
+                </div>
+                <div className="flex items-center gap-2 py-1 px-3 bg-emerald-50 w-fit rounded-full">
+                  <CheckCircle className="w-3 h-3 text-emerald-600" />
+                  <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider">Live from Paystack</span>
+                </div>
               </div>
             </div>
-            <h2 className="text-4xl font-black text-gray-900">
-              ₦{currentBalance.toLocaleString()}
-            </h2>
-            <p className="text-xs font-bold text-emerald-600 mt-2 flex items-center gap-1">
-              <CheckCircle className="w-3 h-3" /> Securely managed by Paystack
-            </p>
-          </div>
 
-          <div className="mt-8">
-            <Link to="/wallet">
-              <motion.button
-                whileHover={{ x: 5 }}
-                className="flex items-center gap-2 text-sm font-black text-gray-900 group"
-              >
-                Top Up Balance <ChevronRight className="w-4 h-4 text-emerald-500 group-hover:translate-x-1 transition-transform" />
-              </motion.button>
-            </Link>
+            <div className="space-y-4 pt-8">
+              <Link to="/wallet">
+                <motion.button
+                  whileHover={{ gap: "1rem" }}
+                  className="w-full flex items-center justify-between p-4 bg-gray-900 hover:bg-emerald-600 text-white rounded-[1.25rem] transition-all duration-300 shadow-lg shadow-gray-900/10 group overflow-hidden relative"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <span className="text-xs font-black uppercase tracking-widest relative z-10">Manage Funds</span>
+                  <ChevronRight className="w-5 h-5 relative z-10 group-hover:translate-x-1 transition-transform" />
+                </motion.button>
+              </Link>
+
+              <p className="text-[9px] text-gray-400 text-center font-bold uppercase tracking-widest">
+                Last updated: {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </p>
+            </div>
           </div>
         </motion.div>
       </div>
