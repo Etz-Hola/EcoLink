@@ -73,6 +73,8 @@ export interface IUser extends Document {
   rating: number;
   reviewCount: number;
 
+  balance: number;
+
   // Settings
   notifications: {
     email: boolean;

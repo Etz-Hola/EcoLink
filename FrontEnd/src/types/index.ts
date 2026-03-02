@@ -11,6 +11,7 @@ export interface User {
   ecoPoints: number;
   walletAddress?: string;
   createdAt: Date;
+  balance?: number;
   avatar?: string;
   totalEarnings?: number;
   totalMaterialsSubmitted?: number;

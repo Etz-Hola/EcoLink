@@ -56,9 +56,10 @@ const UserSchema = new Schema<IUser>({
     trim: true,
     validate: {
       validator: function (phone: string) {
-        return !phone || /^\d{10}$/.test(phone);
+        // Allow 10 digits (normalized) or 11 digits (with leading 0)
+        return !phone || /^\d{10,11}$/.test(phone);
       },
-      message: 'Phone must be 10 digits (without +234)'
+      message: 'Phone must be 10 or 11 digits'
     }
   },
   walletAddress: {
@@ -184,6 +185,12 @@ const UserSchema = new Schema<IUser>({
     }
   },
 
+  balance: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+
   // Timestamps
   lastLogin: Date
 }, {
@@ -203,6 +210,16 @@ UserSchema.index({ createdAt: -1 });
 
 // Validation
 UserSchema.pre('validate', function (this: any) {
+  // Normalize phone number: Strip leading '0' from 11-digit numbers
+  if (this.phone) {
+    const cleaned = this.phone.replace(/\D/g, '');
+    if (cleaned.length === 11 && cleaned.startsWith('0')) {
+      this.phone = cleaned.substring(1);
+    } else if (cleaned.length === 10) {
+      this.phone = cleaned;
+    }
+  }
+
   // Ensure at least one authentication method is provided
   if (!this.email && !this.phone && !this.walletAddress) {
     this.invalidate('auth', 'At least one authentication method (email, phone, or wallet) is required');
