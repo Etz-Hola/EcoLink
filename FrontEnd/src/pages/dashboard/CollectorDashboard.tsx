@@ -14,6 +14,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
   pending: { label: 'In Review', color: 'text-amber-600', bg: 'bg-amber-50' },
   accepted: { label: 'Accepted', color: 'text-emerald-600', bg: 'bg-emerald-50' },
   processed: { label: 'Processed', color: 'text-indigo-600', bg: 'bg-indigo-50' },
+  delivered: { label: 'Paid & Delivered', color: 'text-emerald-600', bg: 'bg-emerald-50' },
   rejected: { label: 'Rejected', color: 'text-rose-600', bg: 'bg-rose-50' },
 };
 
@@ -129,7 +130,7 @@ const CollectorDashboard: React.FC = () => {
             </div>
 
             <h1 className="text-4xl md:text-5xl font-black text-white mb-4 leading-tight">
-               Hi! <span className="bg-gradient-to-r from-emerald-400 to-green-300 bg-clip-text text-transparent">{firstName}!</span>
+              Hi! <span className="bg-gradient-to-r from-emerald-400 to-green-300 bg-clip-text text-transparent">{firstName}!</span>
             </h1>
             <p className="text-gray-400 font-medium max-w-xl text-lg leading-relaxed mb-8">
               Your contribution is making a difference. We've tracked <span className="text-white font-bold">{materials.length} batches</span> of materials from your account. Keep it up!
@@ -146,7 +147,7 @@ const CollectorDashboard: React.FC = () => {
               </Link>
               <Link to="/wallet">
                 <motion.button
-                  whileHover={{ scale: 1.05, bg: "rgba(255,255,255,0.15)" }} whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                   className="flex items-center gap-3 px-8 py-4 bg-white/10 backdrop-blur-md text-white rounded-2xl font-black text-sm transition-all border border-white/10"
                 >
                   <Wallet className="w-5 h-5 text-emerald-400" /> VIEW WALLET
@@ -314,7 +315,7 @@ const CollectorDashboard: React.FC = () => {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-[11px] font-medium text-gray-400">
-                          {new Date(m.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          {m.createdAt ? new Date(m.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'N/A'}
                         </td>
                       </motion.tr>
                     );

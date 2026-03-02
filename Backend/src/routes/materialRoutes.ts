@@ -16,5 +16,6 @@ router.post('/upload', protect, authorize(UserRole.COLLECTOR, UserRole.ORGANIZAT
 router.get('/me', protect, MaterialController.getMyMaterials);
 router.get('/my', protect, MaterialController.getMyMaterials); // Alias for convenience
 router.patch('/:id/review', protect, authorize(UserRole.BRANCH, UserRole.ADMIN), MaterialController.reviewMaterial);
+router.patch('/:id/verify', protect, authorize(UserRole.BRANCH, UserRole.ADMIN), MaterialController.verifyMaterial);
 
 export default router;

@@ -209,25 +209,56 @@ export class MaterialController {
                 material.approvedAt = new Date();
             }
 
-            // Trigger payment when marked as processed
-            if (status === MaterialStatus.PROCESSED && material.status !== MaterialStatus.PROCESSED) {
-                const branchId = (req as any).user.branchId || (req as any).user._id;
-                const collectorId = material.submittedBy;
-                const amount = (material as any).totalValue || (material.weight * (material.pricing?.finalPrice || 0));
+            await material.save();
 
-                // background process or await if we want strict consistency
-                await PaymentService.processInternalTransfer(
-                    material._id.toString(),
-                    branchId.toString(),
-                    collectorId.toString(),
-                    amount
-                );
+            res.status(200).json({
+                success: true,
+                data: material
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * Verify physical delivery and trigger payment release
+     */
+    static async verifyMaterial(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { id } = req.params;
+            const branchId = (req as any).user.branchId || (req as any).user._id;
+
+            const material = await Material.findById(id);
+            if (!material) {
+                throw new AppError('Material not found', 404);
             }
+
+            // Ensure this branch is assigned or it's a valid intake
+            // For now, simplicity: if status is approved/accepted
+            if (material.status !== MaterialStatus.APPROVED && material.status !== 'accepted') {
+                throw new AppError('Material must be in approved status to verify delivery', 400);
+            }
+
+            material.status = MaterialStatus.DELIVERED;
+            material.deliveredAt = new Date();
+            material.currentOwner = (req as any).user.branchId || (req as any).user._id;
+
+            // Process Payment Release
+            const collectorId = material.submittedBy;
+            const amount = (material as any).totalValue || (material.weight * (material.pricing?.finalPrice || 0));
+
+            await PaymentService.processInternalTransfer(
+                material._id.toString(),
+                branchId.toString(),
+                collectorId.toString(),
+                amount
+            );
 
             await material.save();
 
             res.status(200).json({
                 success: true,
+                message: 'Delivery verified and payment released successfully',
                 data: material
             });
         } catch (error) {

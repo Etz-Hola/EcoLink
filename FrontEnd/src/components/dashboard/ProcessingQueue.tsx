@@ -8,7 +8,7 @@ interface QueueItem {
     materialType: string;
     weightKg: number;
     quality: string;
-    status: 'pending' | 'accepted' | 'rejected' | 'processing' | 'processed' | 'approved';
+    status: 'pending' | 'accepted' | 'rejected' | 'processing' | 'processed' | 'approved' | 'delivered';
     submittedAt: string;
     photoUrl?: string;
 }
@@ -34,7 +34,16 @@ export default function ProcessingQueue() {
 
                 const data = await res.json();
                 if (data.success) {
-                    const mapped = (data.data || []).map((m: any) => ({
+                    const mapped = (data.data || []).map((m: {
+                        _id: string;
+                        submittedBy?: { username?: string; businessName?: string };
+                        materialType: string;
+                        weight: number;
+                        condition: string;
+                        status: any;
+                        createdAt: string;
+                        images?: { url: string }[];
+                    }) => ({
                         id: m._id,
                         collectorName: m.submittedBy?.username || m.submittedBy?.businessName || 'Anonymous',
                         materialType: m.materialType,
@@ -46,7 +55,7 @@ export default function ProcessingQueue() {
                     }));
                     setQueue(mapped);
                 }
-            } catch (err) {
+            } catch {
                 toast.error('Failed to load processing queue');
             } finally {
                 setLoading(false);
@@ -73,10 +82,32 @@ export default function ProcessingQueue() {
 
             if (!res.ok) throw new Error();
 
-            setQueue(prev => prev.map(item => item.id === id || (item as any)._id === id ? { ...item, status } : item));
-            toast.success(`Material ${action}ed successfully`);
+            setQueue(prev => prev.map(item => item.id === id ? { ...item, status } : item));
+            toast.success(`Material ${action === 'accept' ? 'approved' : 'rejected'} successfully`);
         } catch {
             toast.error(`Failed to ${action} material`);
+        }
+    };
+
+    const handleVerify = async (id: string) => {
+        try {
+            const token = localStorage.getItem('ecolink_token');
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+
+            const res = await fetch(`${apiUrl}/materials/${id}/verify`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                }
+            });
+
+            if (!res.ok) throw new Error();
+
+            setQueue(prev => prev.map(item => item.id === id ? { ...item, status: 'delivered' } : item));
+            toast.success('Delivery verified and payment released!');
+        } catch {
+            toast.error('Failed to verify delivery');
         }
     };
 
@@ -179,11 +210,11 @@ export default function ProcessingQueue() {
                                     </td>
                                     <td className="px-8 py-6 text-right">
                                         {item.status === 'pending' ? (
-                                            <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity text-white">
                                                 <button
                                                     onClick={() => handleAction(item.id, 'accept')}
                                                     className="p-2 bg-green-50 text-green-600 rounded-xl hover:bg-green-600 hover:text-white transition-all shadow-sm"
-                                                    title="Verify & Accept"
+                                                    title="Quick Accept"
                                                 >
                                                     <CheckCircle className="h-5 w-5" />
                                                 </button>
@@ -193,6 +224,21 @@ export default function ProcessingQueue() {
                                                     title="Reject"
                                                 >
                                                     <XCircle className="h-5 w-5" />
+                                                </button>
+                                            </div>
+                                        ) : item.status === 'approved' || item.status === 'accepted' ? (
+                                            <div className="flex justify-end gap-2">
+                                                <button
+                                                    onClick={() => toast('Scheduling pickup... (Logistics API integration coming soon)', { icon: '📅' })}
+                                                    className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg font-bold text-[10px] uppercase tracking-wider hover:bg-blue-600 hover:text-white transition-all"
+                                                >
+                                                    Schedule
+                                                </button>
+                                                <button
+                                                    onClick={() => handleVerify(item.id)}
+                                                    className="px-3 py-1.5 bg-emerald-500 text-white rounded-lg font-bold text-[10px] uppercase tracking-wider hover:bg-emerald-600 transition-all shadow-sm"
+                                                >
+                                                    Verify Delivery
                                                 </button>
                                             </div>
                                         ) : (

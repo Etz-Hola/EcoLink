@@ -29,18 +29,25 @@ export interface User {
 
 export interface Material {
   id: string;
-  name: string;
-  category: MaterialCategory;
-  subcategory: string;
+  _id?: string;
+  name?: string;
+  title?: string;
+  category?: MaterialCategory;
+  materialType?: string;
+  subType?: string;
+  subcategory?: string;
   weight: number;
-  condition: 'clean' | 'dirty' | 'treated' | 'untreated';
-  photos: string[];
-  pricePerKg: number;
-  totalValue: number;
-  uploadedBy: string;
-  status: 'pending' | 'accepted' | 'rejected' | 'processed';
+  condition: string;
+  photos?: string[];
+  images?: Array<{ url: string; publicId: string }>;
+  pricePerKg?: number;
+  totalValue?: number;
+  uploadedBy?: string;
+  submittedBy?: string;
+  status: 'pending' | 'accepted' | 'rejected' | 'processed' | 'approved' | 'delivered';
   branchId?: string;
-  uploadedAt: Date;
+  uploadedAt?: Date;
+  createdAt?: string | Date;
   processedAt?: Date;
   qualityGrade?: 'A' | 'B' | 'C' | 'D';
   description?: string;
@@ -123,4 +130,13 @@ export interface AppState {
   currentMaterial: Material | null;
   isLoading: boolean;
   error: string | null;
+}
+
+export interface Notification {
+  _id: string;
+  title: string;
+  message: string;
+  type?: 'info' | 'success' | 'warning' | 'error';
+  isRead: boolean;
+  createdAt: string;
 }
