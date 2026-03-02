@@ -163,3 +163,6 @@
 2026-03-02 01:26:23:2623 [31merror[39m: [31mUncaught Exception: listen EADDRINUSE: address already in use :::5001[39m
 2026-03-02 01:38:31:3831 [31merror[39m: [31mUncaught Exception: listen EADDRINUSE: address already in use :::5001[39m
 2026-03-02 01:38:49:3849 [31merror[39m: [31mUncaught Exception: listen EADDRINUSE: address already in use :::5001[39m
+2026-03-02 01:54:24:5424 [31merror[39m: [31mUncaught Exception: listen EADDRINUSE: address already in use :::5001[39m
+2026-03-02 01:54:48:5448 [31merror[39m: [31mUncaught Exception: listen EADDRINUSE: address already in use :::5001[39m
+2026-03-02 01:55:29:5529 [31merror[39m: [31mFailed to save notification for user [object Object]: Cannot read properties of undefined (reading 'title')[39m

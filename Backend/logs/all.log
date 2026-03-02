@@ -1009,3 +1009,42 @@
 2026-03-02 01:42:32:4232 [32minfo[39m: [32m::1 - - [02/Mar/2026:00:42:32 +0000] "GET /api/v1/materials/pending HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
 2026-03-02 01:42:32:4232 [32minfo[39m: [32m::1 - - [02/Mar/2026:00:42:32 +0000] "GET /api/v1/materials/pending?status=approved HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
 2026-03-02 01:45:09:459 [33mwarn[39m: [33mMongoose disconnected from MongoDB[39m
+2026-03-02 01:48:50:4850 [32minfo[39m: [32mEnvironment: development[39m
+2026-03-02 01:48:50:4850 [32minfo[39m: [32mMongoDB URI present: true[39m
+2026-03-02 01:48:57:4857 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-03-02 01:48:57:4857 [32minfo[39m: [32mRedis URL not provided, skipping Redis connection (dev mode)[39m
+2026-03-02 01:48:57:4857 [32minfo[39m: [32mServer running on port 5001 in development mode[39m
+2026-03-02 01:54:22:5422 [32minfo[39m: [32mEnvironment: development[39m
+2026-03-02 01:54:22:5422 [32minfo[39m: [32mMongoDB URI present: true[39m
+2026-03-02 01:54:24:5424 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-03-02 01:54:30:5430 [32minfo[39m: [32m::1 - - [02/Mar/2026:00:54:30 +0000] "GET /api/v1/materials/pending?status=delivered HTTP/1.1" 200 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-03-02 01:54:46:5446 [32minfo[39m: [32mEnvironment: development[39m
+2026-03-02 01:54:46:5446 [32minfo[39m: [32mMongoDB URI present: true[39m
+2026-03-02 01:54:46:5446 [32minfo[39m: [32mEnvironment: development[39m
+2026-03-02 01:54:46:5446 [32minfo[39m: [32mMongoDB URI present: true[39m
+2026-03-02 01:54:48:5448 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-03-02 01:54:48:5448 [32minfo[39m: [32mRedis URL not provided, skipping Redis connection (dev mode)[39m
+2026-03-02 01:54:48:5448 [32minfo[39m: [32mServer running on port 5001 in development mode[39m
+2026-03-02 01:54:48:5448 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-03-02 01:55:05:555 [32minfo[39m: [32m::1 - - [02/Mar/2026:00:55:05 +0000] "GET /api/v1/materials/pending HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-03-02 01:55:05:555 [32minfo[39m: [32m::1 - - [02/Mar/2026:00:55:05 +0000] "GET /api/v1/materials/pending?status=delivered HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-03-02 01:55:05:555 [32minfo[39m: [32m::1 - - [02/Mar/2026:00:55:05 +0000] "GET /api/v1/materials/pending?lat=6.5244&lng=3.3792&radius=50 HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-03-02 01:55:06:556 [32minfo[39m: [32m::1 - - [02/Mar/2026:00:55:06 +0000] "GET /api/v1/materials/pending?status=delivered HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-03-02 01:55:06:556 [32minfo[39m: [32m::1 - - [02/Mar/2026:00:55:06 +0000] "GET /api/v1/materials/pending HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-03-02 01:55:16:5516 [32minfo[39m: [32m::1 - - [02/Mar/2026:00:55:16 +0000] "PATCH /api/v1/materials/69a4cae702089a7dcd4316a2/review HTTP/1.1" 200 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-03-02 01:55:29:5529 [31merror[39m: [31mFailed to save notification for user [object Object]: Cannot read properties of undefined (reading 'title')[39m
+2026-03-02 01:55:29:5529 [32minfo[39m: [32m::1 - - [02/Mar/2026:00:55:29 +0000] "POST /api/v1/bundles/create HTTP/1.1" 201 347 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-03-02 01:56:51:5651 [32minfo[39m: [32m::1 - - [02/Mar/2026:00:56:51 +0000] "POST /api/v1/auth/login HTTP/1.1" 401 487 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-03-02 01:56:57:5657 [32minfo[39m: [32m::1 - - [02/Mar/2026:00:56:57 +0000] "POST /api/v1/auth/login HTTP/1.1" 200 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-03-02 01:56:57:5657 [32minfo[39m: [32m::1 - - [02/Mar/2026:00:56:57 +0000] "GET /api/v1/notifications HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-03-02 01:56:57:5657 [32minfo[39m: [32m::1 - - [02/Mar/2026:00:56:57 +0000] "GET /api/v1/materials/my HTTP/1.1" 200 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-03-02 01:56:58:5658 [32minfo[39m: [32m::1 - - [02/Mar/2026:00:56:58 +0000] "GET /api/v1/notifications HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-03-02 01:56:58:5658 [32minfo[39m: [32m::1 - - [02/Mar/2026:00:56:58 +0000] "GET /api/v1/materials/my HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-03-02 01:57:26:5726 [32minfo[39m: [32m::1 - - [02/Mar/2026:00:57:26 +0000] "POST /api/v1/auth/login HTTP/1.1" 200 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-03-02 01:57:27:5727 [32minfo[39m: [32m::1 - - [02/Mar/2026:00:57:27 +0000] "GET /api/v1/notifications HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-03-02 01:57:27:5727 [32minfo[39m: [32m::1 - - [02/Mar/2026:00:57:27 +0000] "GET /api/v1/materials/my HTTP/1.1" 200 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-03-02 01:57:27:5727 [32minfo[39m: [32m::1 - - [02/Mar/2026:00:57:27 +0000] "GET /api/v1/notifications HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-03-02 01:57:28:5728 [32minfo[39m: [32m::1 - - [02/Mar/2026:00:57:28 +0000] "GET /api/v1/materials/my HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-03-02 01:57:42:5742 [32minfo[39m: [32m::1 - - [02/Mar/2026:00:57:42 +0000] "GET /api/v1/materials/my HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-03-02 01:57:42:5742 [32minfo[39m: [32m::1 - - [02/Mar/2026:00:57:42 +0000] "GET /api/v1/materials/my HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-03-02 02:00:41:041 [33mwarn[39m: [33mMongoose disconnected from MongoDB[39m

@@ -5,7 +5,7 @@ import { BundleStatus } from '../types/bundle';
 import { MaterialStatus } from '../types/material';
 import { AppError } from '../utils/logger';
 
-export class BundleController {
+export class BundleController { 
     /**
      * Create a bundle from accepted materials (Branch)
      */

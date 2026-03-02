@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 
 interface BundleItem {
     materialId: string;
-    type: string;
+    type: string; 
     weightKg: number;
     quality: string;
 }
