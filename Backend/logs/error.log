@@ -157,3 +157,9 @@
 2026-03-01 22:16:46:1646 [31merror[39m: [31mDatabase connection failed: querySrv ESERVFAIL _mongodb._tcp.cluster0.ksak8ks.mongodb.net[39m
 2026-03-02 00:20:20:2020 [31merror[39m: [31mUncaught Exception: listen EADDRINUSE: address already in use :::5001[39m
 2026-03-02 00:20:33:2033 [31merror[39m: [31mUncaught Exception: listen EADDRINUSE: address already in use :::5001[39m
+2026-03-02 01:24:24:2424 [31merror[39m: [31mUncaught Exception: listen EADDRINUSE: address already in use :::5001[39m
+2026-03-02 01:25:16:2516 [31merror[39m: [31mUncaught Exception: listen EADDRINUSE: address already in use :::5001[39m
+2026-03-02 01:26:05:265 [31merror[39m: [31mUncaught Exception: listen EADDRINUSE: address already in use :::5001[39m
+2026-03-02 01:26:23:2623 [31merror[39m: [31mUncaught Exception: listen EADDRINUSE: address already in use :::5001[39m
+2026-03-02 01:38:31:3831 [31merror[39m: [31mUncaught Exception: listen EADDRINUSE: address already in use :::5001[39m
+2026-03-02 01:38:49:3849 [31merror[39m: [31mUncaught Exception: listen EADDRINUSE: address already in use :::5001[39m

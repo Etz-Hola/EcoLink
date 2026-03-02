@@ -235,10 +235,14 @@ export class MaterialController {
 
             // Ensure this branch is assigned or it's a valid intake
             // For now, simplicity: if status is approved/accepted
-            if (material.status !== MaterialStatus.APPROVED && material.status !== 'accepted') {
-                throw new AppError('Material must be in approved status to verify delivery', 400);
-            }
+            // if (material.status !== MaterialStatus.APPROVED && material.status !== 'accepted') {
+            //     throw new AppError('Material must be in approved status to verify delivery', 400);
+            // }
 
+            if (material.status !== MaterialStatus.APPROVED) {
+                throw new AppError('Material must be in approved status to verify delivery', 400);
+            } 
+ 
             material.status = MaterialStatus.DELIVERED;
             material.deliveredAt = new Date();
             material.currentOwner = (req as any).user.branchId || (req as any).user._id;
