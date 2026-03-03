@@ -69,6 +69,49 @@ const CollectorDashboard: React.FC = () => {
   const firstName = user?.firstName || user?.name?.split(' ')[0] || 'Collector';
   const recentMaterials = materials.slice(0, 5);
 
+  // ── Schedule Pickup handler (real API) ──
+  const handleSchedulePickup = async (materialId: string) => {
+    const token = localStorage.getItem('ecolink_token');
+    try {
+      const res = await fetch(`${API_URL}/materials/${materialId}/schedule-pickup`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to schedule pickup');
+      toast.success('Pickup scheduled! The branch has been notified to arrange collection. 🚚', {
+        duration: 5000, icon: '📅'
+      });
+      // Optimistically update local status
+      setMaterials(prev => prev.map(m =>
+        m._id === materialId ? { ...m, status: 'pickup_scheduled' as Material['status'] } : m
+      ));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Could not schedule pickup';
+      toast.error(msg);
+    }
+  };
+
+  // ── Appeal handler (real API) ──
+  const handleAppeal = async (materialId: string) => {
+    const token = localStorage.getItem('ecolink_token');
+    try {
+      const res = await fetch(`${API_URL}/materials/${materialId}/appeal`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: 'Quality or condition dispute — requesting admin review' })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to submit appeal');
+      toast.success('Appeal submitted! Our admin team will review within 24 hours. 📋', {
+        duration: 6000, icon: '✅'
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Could not submit appeal';
+      toast.error(msg);
+    }
+  };
+
   const statCards = [
     {
       label: 'Total Uploads', value: stats.total, icon: Package,
@@ -331,9 +374,7 @@ const CollectorDashboard: React.FC = () => {
                         <td className="px-6 py-4">
                           {isAccepted && (
                             <button
-                              onClick={() => {
-                                toast.success('Pickup scheduled! The branch has been notified to proceed.', { icon: '📅', duration: 5000 });
-                              }}
+                              onClick={() => m._id && handleSchedulePickup(m._id)}
                               className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-wider hover:bg-emerald-700 transition-all shadow-sm whitespace-nowrap"
                             >
                               <Truck className="w-3 h-3" /> Schedule Pickup
@@ -341,7 +382,7 @@ const CollectorDashboard: React.FC = () => {
                           )}
                           {isRejected && (
                             <button
-                              onClick={() => toast('An appeal has been submitted. Our team will review shortly.', { icon: '📋', duration: 5000 })}
+                              onClick={() => m._id && handleAppeal(m._id)}
                               className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 text-rose-600 border border-rose-100 rounded-xl font-black text-[10px] uppercase tracking-wider hover:bg-rose-600 hover:text-white transition-all"
                             >
                               <MessageSquare className="w-3 h-3" /> Appeal
