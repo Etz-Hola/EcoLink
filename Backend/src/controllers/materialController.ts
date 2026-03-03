@@ -1,8 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import Material from '../models/Material';
+import User from '../models/User';
 import { MaterialStatus } from '../types/material';
 import { AppError } from '../utils/logger';
 import { PaymentService } from '../services/paymentService';
+import { NotificationService } from '../services/notificationService';
 
 export class MaterialController {
     /**
@@ -241,8 +243,8 @@ export class MaterialController {
 
             if (material.status !== MaterialStatus.APPROVED) {
                 throw new AppError('Material must be in approved status to verify delivery', 400);
-            } 
- 
+            }
+
             material.status = MaterialStatus.DELIVERED;
             material.deliveredAt = new Date();
             material.currentOwner = (req as any).user.branchId || (req as any).user._id;
@@ -264,6 +266,117 @@ export class MaterialController {
                 success: true,
                 message: 'Delivery verified and payment released successfully',
                 data: material
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * PATCH /materials/:id/schedule-pickup
+     * Called by Collector/Organization when they are ready for pickup.
+     * Notifies the relevant branch manager.
+     */
+    static async schedulePickup(req: Request, res: Response, next: NextFunction) {
+        try {
+            const material = await Material.findById(req.params.id)
+                .populate('submittedBy', 'username businessName firstName lastName')
+                .populate('branch', '_id');
+
+            if (!material) throw new AppError('Material not found', 404);
+
+            const user = (req as any).user;
+            // Only the uploader can schedule pickup
+            if (material.submittedBy._id.toString() !== user._id.toString()) {
+                throw new AppError('Not authorized to schedule pickup for this material', 403);
+            }
+
+            if (!['approved', 'accepted'].includes(material.status)) {
+                throw new AppError('Material must be accepted by a branch before scheduling pickup', 400);
+            }
+
+            material.status = 'pickup_scheduled' as any;
+            await material.save();
+
+            // Notify the branch manager (find admins/branches)
+            const branchId = (material as any).branch || (material as any).reviewedBy;
+            if (branchId) {
+                await NotificationService.sendNotification(branchId.toString(), {
+                    title: 'Pickup Scheduled 🚚',
+                    message: `Uploader has confirmed they are ready for pickup of ${material.materialType} (${material.weight}kg). Please arrange collection.`,
+                    type: 'material',
+                    metadata: { materialId: material._id.toString(), status: 'pickup_scheduled' }
+                });
+            }
+
+            // Also notify uploader/collector for confirmation
+            await NotificationService.sendNotification(user._id.toString(), {
+                title: 'Pickup Request Sent ✅',
+                message: `Your pickup request for ${material.materialType} (${material.weight}kg) has been submitted. The branch will contact you shortly.`,
+                type: 'material',
+                metadata: { materialId: material._id.toString(), status: 'pickup_scheduled' }
+            });
+
+            res.status(200).json({
+                success: true,
+                message: 'Pickup scheduled. Branch has been notified.',
+                data: material
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * POST /materials/:id/appeal
+     * Collector appeals a rejection. Creates an admin notification ticket.
+     */
+    static async appealMaterial(req: Request, res: Response, next: NextFunction) {
+        try {
+            const material = await Material.findById(req.params.id)
+                .populate('submittedBy', 'username businessName firstName lastName');
+
+            if (!material) throw new AppError('Material not found', 404);
+
+            const user = (req as any).user;
+            if (material.submittedBy._id.toString() !== user._id.toString()) {
+                throw new AppError('Not authorized to appeal this material', 403);
+            }
+
+            if (material.status !== MaterialStatus.REJECTED) {
+                throw new AppError('Only rejected materials can be appealed', 400);
+            }
+
+            const { reason } = req.body;
+
+            // Find all admins and notify them
+            const admins = await User.find({ role: 'admin' }).select('_id');
+            const appealNotifPromises = admins.map(admin =>
+                NotificationService.sendNotification(admin._id.toString(), {
+                    title: '⚠️ Rejection Appeal Received',
+                    message: `User ${user.username || user.businessName} is appealing the rejection of their ${material.materialType} (${material.weight}kg) upload.${reason ? ` Reason: ${reason}` : ''}`,
+                    type: 'material',
+                    metadata: {
+                        materialId: material._id.toString(),
+                        appealedBy: user._id.toString(),
+                        reason: reason || 'No reason provided'
+                    }
+                })
+            );
+            await Promise.all(appealNotifPromises);
+
+            // Notify the uploader that appeal was submitted
+            await NotificationService.sendNotification(user._id.toString(), {
+                title: 'Appeal Submitted 📋',
+                message: `Your appeal for the rejected ${material.materialType} (${material.weight}kg) upload has been submitted. Our admin team will review it within 24 hours.`,
+                type: 'material',
+                metadata: { materialId: material._id.toString() }
+            });
+
+            res.status(200).json({
+                success: true,
+                message: 'Appeal submitted successfully. Admin has been notified.',
+                data: { materialId: material._id, status: material.status }
             });
         } catch (error) {
             next(error);

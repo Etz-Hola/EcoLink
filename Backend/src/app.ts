@@ -30,6 +30,7 @@ import web3Routes from './routes/web3Routes';
 import bundleRoutes from './routes/bundleRoutes';
 import paymentRoutes from './routes/paymentRoutes';
 import notificationRoutes from './routes/notificationRoutes';
+import pricingRoutes from './routes/pricingRoutes';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -71,7 +72,7 @@ app.get('/metrics', async (req, res) => {
 
 // API Routes
 app.use(`/api/${API_VERSION}/auth`, authRoutes);
-app.use(`/api/${API_VERSION}/users`, userRoutes); // Add user routes
+app.use(`/api/${API_VERSION}/users`, userRoutes);
 app.use(`/api/${API_VERSION}/materials`, materialRoutes);
 app.use(`/api/${API_VERSION}/branches`, branchRoutes);
 app.use(`/api/${API_VERSION}/logistics`, logisticsRoutes);
@@ -80,6 +81,7 @@ app.use(`/api/${API_VERSION}/web3`, web3Routes);
 app.use(`/api/${API_VERSION}/bundles`, bundleRoutes);
 app.use(`/api/${API_VERSION}/payments`, paymentRoutes);
 app.use(`/api/${API_VERSION}/notifications`, notificationRoutes);
+app.use(`/api/${API_VERSION}/pricing`, pricingRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

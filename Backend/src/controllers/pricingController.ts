@@ -63,11 +63,12 @@ export class PricingController {
                 existing.basePrice = pricePerKg;
                 existing.name = name;
                 existing.description = description || `Admin-set rate for ${materialType}${condition ? ` (${condition})` : ''}`;
-                existing.approvalStatus = 'approved'; // auto-approve admin changes
+                existing.approvalStatus = 'approved';
                 existing.approvedBy = adminId;
                 await existing.save();
 
-                return res.status(200).json({ success: true, data: existing, message: 'Pricing updated' });
+                res.status(200).json({ success: true, data: existing, message: 'Pricing updated' });
+                return;
             }
 
             const newRule = await PricingRule.create({
