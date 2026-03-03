@@ -2,18 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   TrendingUp, Package, Clock, CheckCircle, Upload,
-  Leaf, ChevronRight, AlertCircle, Bell, Wallet, CreditCard
+  Leaf, ChevronRight, AlertCircle, Bell, Wallet, CreditCard, Truck, MessageSquare
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { Material, Notification } from '../../types';
+import toast from 'react-hot-toast';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   pending: { label: 'In Review', color: 'text-amber-600', bg: 'bg-amber-50' },
-  accepted: { label: 'Accepted', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+  accepted: { label: 'Accepted — Ready for Pickup', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+  approved: { label: 'Accepted — Ready for Pickup', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+  pickup_scheduled: { label: 'Pickup Scheduled', color: 'text-indigo-600', bg: 'bg-indigo-50' },
   processed: { label: 'Processed', color: 'text-indigo-600', bg: 'bg-indigo-50' },
+  delivered: { label: 'Paid & Delivered ✅', color: 'text-emerald-700', bg: 'bg-emerald-50' },
   rejected: { label: 'Rejected', color: 'text-rose-600', bg: 'bg-rose-50' },
 };
 
@@ -59,12 +63,56 @@ const CollectorDashboard: React.FC = () => {
   const stats = {
     total: materials.length,
     pending: materials.filter(m => m.status === 'pending').length,
-    accepted: materials.filter(m => m.status === 'accepted').length,
+    // Treat backend "approved" as accepted for the user
+    accepted: materials.filter(m => m.status === 'accepted' || m.status === 'approved').length,
     totalWeight: materials.reduce((sum, m) => sum + (m.weight || 0), 0),
   };
 
   const firstName = user?.firstName || user?.name?.split(' ')[0] || 'Collector';
   const recentMaterials = materials.slice(0, 5);
+
+  // ── Schedule Pickup handler (real API) ──
+  const handleSchedulePickup = async (materialId: string) => {
+    const token = localStorage.getItem('ecolink_token');
+    try {
+      const res = await fetch(`${API_URL}/materials/${materialId}/schedule-pickup`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to schedule pickup');
+      toast.success('Pickup scheduled! The branch has been notified to arrange collection. 🚚', {
+        duration: 5000, icon: '📅'
+      });
+      // Optimistically update local status
+      setMaterials(prev => prev.map(m =>
+        m._id === materialId ? { ...m, status: 'pickup_scheduled' as Material['status'] } : m
+      ));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Could not schedule pickup';
+      toast.error(msg);
+    }
+  };
+
+  // ── Appeal handler (real API) ──
+  const handleAppeal = async (materialId: string) => {
+    const token = localStorage.getItem('ecolink_token');
+    try {
+      const res = await fetch(`${API_URL}/materials/${materialId}/appeal`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: 'Quality or condition dispute — requesting admin review' })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to submit appeal');
+      toast.success('Appeal submitted! Our admin team will review within 24 hours. 📋', {
+        duration: 6000, icon: '✅'
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Could not submit appeal';
+      toast.error(msg);
+    }
+  };
 
   const statCards = [
     {
@@ -129,7 +177,7 @@ const CollectorDashboard: React.FC = () => {
             </div>
 
             <h1 className="text-4xl md:text-5xl font-black text-white mb-4 leading-tight">
-               Hi! <span className="bg-gradient-to-r from-emerald-400 to-green-300 bg-clip-text text-transparent">{firstName}!</span>
+              Hi! <span className="bg-gradient-to-r from-emerald-400 to-green-300 bg-clip-text text-transparent">{firstName}!</span>
             </h1>
             <p className="text-gray-400 font-medium max-w-xl text-lg leading-relaxed mb-8">
               Your contribution is making a difference. We've tracked <span className="text-white font-bold">{materials.length} batches</span> of materials from your account. Keep it up!
@@ -146,7 +194,7 @@ const CollectorDashboard: React.FC = () => {
               </Link>
               <Link to="/wallet">
                 <motion.button
-                  whileHover={{ scale: 1.05, bg: "rgba(255,255,255,0.15)" }} whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                   className="flex items-center gap-3 px-8 py-4 bg-white/10 backdrop-blur-md text-white rounded-2xl font-black text-sm transition-all border border-white/10"
                 >
                   <Wallet className="w-5 h-5 text-emerald-400" /> VIEW WALLET
@@ -280,7 +328,7 @@ const CollectorDashboard: React.FC = () => {
               <table className="w-full">
                 <thead>
                   <tr className="bg-gray-50/70">
-                    {['Material', 'Type', 'Weight', 'Status', 'Date'].map(h => (
+                    {['Material', 'Type', 'Weight', 'Status', 'Date', 'Action'].map(h => (
                       <th key={h} className="px-6 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">{h}</th>
                     ))}
                   </tr>
@@ -288,9 +336,13 @@ const CollectorDashboard: React.FC = () => {
                 <tbody className="divide-y divide-gray-50">
                   {recentMaterials.map((m, i) => {
                     const sc = STATUS_CONFIG[m.status] || STATUS_CONFIG.pending;
+                    const isAccepted = m.status === 'accepted' || m.status === 'approved';
+                    const isRejected = m.status === 'rejected';
+                    const isPaid = m.status === 'delivered';
+                    const quoted = m.pricePerKg && m.weight ? m.pricePerKg * m.weight : null;
                     return (
                       <motion.tr
-                        key={m._id}
+                        key={m._id || i}
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.4 + i * 0.06 }}
@@ -299,7 +351,12 @@ const CollectorDashboard: React.FC = () => {
                         <td className="px-6 py-4">
                           <div>
                             <p className="text-sm font-bold text-gray-900 line-clamp-1">{m.title || `${m.materialType} Batch`}</p>
-                            <p className="text-[10px] text-gray-400 font-medium">{m.subType}</p>
+                            {quoted && isAccepted && (
+                              <p className="text-[10px] text-emerald-600 font-black mt-0.5">₦{quoted.toLocaleString()} quoted</p>
+                            )}
+                            {isPaid && quoted && (
+                              <p className="text-[10px] text-emerald-700 font-black mt-0.5">₦{quoted.toLocaleString()} paid ✅</p>
+                            )}
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -314,7 +371,33 @@ const CollectorDashboard: React.FC = () => {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-[11px] font-medium text-gray-400">
-                          {new Date(m.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          {m.createdAt ? new Date(m.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'N/A'}
+                        </td>
+                        <td className="px-6 py-4">
+                          {isAccepted && m.status !== 'pickup_scheduled' && (
+                            <button
+                              onClick={() => handleSchedulePickup(m._id)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-wider hover:bg-emerald-700 transition-all shadow-sm whitespace-nowrap"
+                            >
+                              <Truck className="w-3 h-3" /> Schedule Pickup
+                            </button>
+                          )}
+                          {m.status === 'pickup_scheduled' && (
+                            <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest">
+                              Pickup Scheduled
+                            </span>
+                          )}
+                          {isRejected && (
+                            <button
+                              onClick={() => handleAppeal(m._id)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 text-rose-600 border border-rose-100 rounded-xl font-black text-[10px] uppercase tracking-wider hover:bg-rose-600 hover:text-white transition-all"
+                            >
+                              <MessageSquare className="w-3 h-3" /> Appeal
+                            </button>
+                          )}
+                          {isPaid && (
+                            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Complete ✅</span>
+                          )}
                         </td>
                       </motion.tr>
                     );

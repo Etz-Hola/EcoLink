@@ -52,7 +52,7 @@ const AppRoutes: React.FC = () => {
             <Route path="/" element={<Navigate to={homeRoute()} replace />} />
             <Route path="/home" element={<DashboardRouter />} />
             <Route path="/branch" element={<DashboardRouter />} />
-            <Route path="/admin" element={<DashboardRouter />} />
+            <Route path="/admin/*" element={<DashboardRouter />} />
             <Route path="/materials/upload" element={<MaterialUpload />} />
             <Route path="/materials" element={<MyMaterials />} />
             <Route path="/wallet" element={<Wallet />} />

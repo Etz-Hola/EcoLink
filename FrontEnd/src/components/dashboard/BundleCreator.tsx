@@ -13,8 +13,7 @@ export default function BundleCreator() {
     const [items, setItems] = useState<BundleItem[]>([]);
     const [bundleName, setBundleName] = useState('');
     const [creating, setCreating] = useState(false);
-    const [availableItems, setAvailableItems] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [availableItems, setAvailableItems] = useState<AvailableMaterial[]>([]);
 
     useEffect(() => {
         const fetchAvailableMaterials = async () => {
@@ -22,7 +21,7 @@ export default function BundleCreator() {
                 const token = localStorage.getItem('ecolink_token');
                 const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
-                const res = await fetch(`${apiUrl}/materials/pending?status=approved`, {
+                const res = await fetch(`${apiUrl}/materials/pending?status=approved,delivered`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
 
@@ -34,25 +33,24 @@ export default function BundleCreator() {
                         id: m._id,
                         type: m.materialType,
                         weightKg: m.weight,
-                        quality: m.condition
+                        quality: m.condition,
+                        value: (m.weight * (m.pricing?.finalPrice || 0))
                     })));
                 }
-            } catch (err) {
+            } catch {
                 toast.error('Failed to load available materials');
-            } finally {
-                setLoading(false);
             }
         };
 
         fetchAvailableMaterials();
     }, []);
 
-    const addToBundle = (item: { id: string; type: string; weightKg: number; quality: string }) => {
+    const addToBundle = (item: { id: string; type: string; weightKg: number; quality: string; value: number }) => {
         if (items.some(i => i.materialId === item.id)) {
             toast.error('Item already in bundle');
             return;
         }
-        setItems([...items, { materialId: item.id, ...item }]);
+        setItems([...items, { materialId: item.id, ...item } as any]);
     };
 
     const removeFromBundle = (materialId: string) => {
@@ -60,7 +58,7 @@ export default function BundleCreator() {
     };
 
     const calculateTotalWeight = () => {
-        return items.reduce((sum, item) => sum + item.weightKg, 0);
+        return items.reduce((sum, item: any) => sum + item.weightKg, 0);
     };
 
     const handleCreateBundle = async () => {
@@ -80,7 +78,7 @@ export default function BundleCreator() {
             const token = localStorage.getItem('ecolink_token');
             const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
-            const res = await fetch(`${apiUrl}/bundles`, {
+            const res = await fetch(`${apiUrl}/bundles/create`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -95,11 +93,11 @@ export default function BundleCreator() {
 
             if (!res.ok) throw new Error();
 
-            toast.success(`Bundle "${bundleName}" created! (${calculateTotalWeight()} kg) 📦`);
+            toast.success(`Bundle "${bundleName}" sealed! ${calculateTotalWeight()}kg ready for export 🚢`);
             setItems([]);
             setBundleName('');
             // Refresh available items
-            setAvailableItems(prev => prev.filter(a => !items.some(i => i.materialId === a.id)));
+            setAvailableItems(prev => prev.filter(a => !items.some(i => i.materialId === (a as any).id)));
         } catch {
             toast.error('Failed to create bundle');
         } finally {
@@ -129,7 +127,11 @@ export default function BundleCreator() {
                         <span className="text-[10px] font-bold text-gray-400">{availableItems.length} Items</span>
                     </div>
                     <div className="space-y-4 max-h-[440px] overflow-y-auto pr-2 custom-scrollbar">
-                        {availableItems.map(item => (
+                        {availableItems.length === 0 ? (
+                            <div className="p-8 text-center text-gray-400 font-medium italic border-2 border-dashed border-gray-50 rounded-3xl">
+                                No materials available for bundling yet.
+                            </div>
+                        ) : availableItems.map(item => (
                             <div
                                 key={item.id}
                                 className={`group border-2 rounded-3xl p-5 transition-all cursor-pointer ${items.some(i => i.materialId === item.id)

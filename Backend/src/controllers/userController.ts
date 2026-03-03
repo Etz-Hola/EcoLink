@@ -5,7 +5,7 @@ import { UserRole } from '../types/user';
 
 export class UserController {
     /**
-     * Update user role
+     * Update user role   
      */
     static async updateRole(req: Request, res: Response, next: NextFunction) {
         try {

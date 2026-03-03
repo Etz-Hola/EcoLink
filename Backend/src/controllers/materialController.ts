@@ -1,8 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
+import { Types } from 'mongoose';
 import Material from '../models/Material';
+import User from '../models/User';
 import { MaterialStatus } from '../types/material';
 import { AppError } from '../utils/logger';
 import { PaymentService } from '../services/paymentService';
+import { NotificationService } from '../services/notificationService';
 
 export class MaterialController {
     /**
@@ -150,12 +153,26 @@ export class MaterialController {
     }
 
     /**
-     * Get pending materials for branches (nearby or all)
+     * Get materials for branches (nearby or by status)
+     * Default: pending, but supports ?status=approved,rejected,delivered,etc or status=all
      */
     static async getPendingMaterials(req: Request, res: Response, next: NextFunction) {
         try {
-            const { lat, lng, radius } = req.query;
-            let query: any = { status: MaterialStatus.PENDING };
+            const { lat, lng, radius, status } = req.query as {
+                lat?: string;
+                lng?: string;
+                radius?: string;
+                status?: string;
+            };
+
+            const query: any = {};
+
+            if (status && status !== 'all') {
+                const statusList = status.split(',').map(s => s.trim()).filter(Boolean);
+                query.status = statusList.length > 1 ? { $in: statusList } : statusList[0];
+            } else {
+                query.status = MaterialStatus.PENDING;
+            }
 
             if (lat && lng) {
                 const center: [number, number] = [Number(lng), Number(lat)];
@@ -204,31 +221,287 @@ export class MaterialController {
                 material.qualityAssessment.notes = notes;
             }
 
-            if (status === MaterialStatus.APPROVED) {
+            if (status === MaterialStatus.APPROVED || status === MaterialStatus.REJECTED) {
                 material.processingBranch = (req as any).user.branchId || (req as any).user._id;
-                material.approvedAt = new Date();
-            }
-
-            // Trigger payment when marked as processed
-            if (status === MaterialStatus.PROCESSED && material.status !== MaterialStatus.PROCESSED) {
-                const branchId = (req as any).user.branchId || (req as any).user._id;
-                const collectorId = material.submittedBy;
-                const amount = (material as any).totalValue || (material.weight * (material.pricing?.finalPrice || 0));
-
-                // background process or await if we want strict consistency
-                await PaymentService.processInternalTransfer(
-                    material._id.toString(),
-                    branchId.toString(),
-                    collectorId.toString(),
-                    amount
-                );
+                if (status === MaterialStatus.APPROVED) material.approvedAt = new Date();
             }
 
             await material.save();
 
+            // Notify uploader of status/price update
+            await NotificationService.sendMaterialStatusUpdate(
+                material.submittedBy.toString(),
+                material._id.toString(),
+                'pending',
+                material.status
+            );
+
             res.status(200).json({
                 success: true,
                 data: material
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * Verify physical delivery and trigger payment release
+     */
+    static async verifyMaterial(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { id } = req.params;
+            const branchId = (req as any).user.branchId || (req as any).user._id;
+
+            const material = await Material.findById(id);
+            if (!material) {
+                throw new AppError('Material not found', 404);
+            }
+
+            // Ensure this branch is assigned or it's a valid intake
+            // For now, simplicity: if status is approved/accepted
+            // if (material.status !== MaterialStatus.APPROVED && material.status !== 'accepted') {
+            //     throw new AppError('Material must be in approved status to verify delivery', 400);
+            // }
+
+            if (material.status !== MaterialStatus.APPROVED) {
+                throw new AppError('Material must be in approved status to verify delivery', 400);
+            }
+
+            material.status = MaterialStatus.DELIVERED;
+            material.deliveredAt = new Date();
+            material.currentOwner = (req as any).user.branchId || (req as any).user._id;
+
+            // Process Payment Release
+            const collectorId = material.submittedBy;
+            const amount = (material as any).totalValue || (material.weight * (material.pricing?.finalPrice || 0));
+
+            await PaymentService.processInternalTransfer(
+                material._id.toString(),
+                branchId.toString(),
+                collectorId.toString(),
+                amount
+            );
+
+            await material.save();
+
+            // Notify uploader of payment release
+            await NotificationService.sendNotification(collectorId.toString(), {
+                title: 'Payment Released 💸',
+                message: `Payment of ₦${amount.toLocaleString()} has been released to your balance for your ${material.materialType} upload.`,
+                type: 'payment',
+                metadata: { materialId: material._id.toString(), amount }
+            });
+
+            res.status(200).json({
+                success: true,
+                message: 'Delivery verified and payment released successfully',
+                data: material
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * PATCH /materials/:id/schedule-pickup
+     * Called by Collector/Organization when they are ready for pickup.
+     * Notifies the relevant branch manager.
+     */
+    static async schedulePickup(req: Request, res: Response, next: NextFunction) {
+        try {
+            const material = await Material.findById(req.params.id)
+                .populate('submittedBy', 'username businessName firstName lastName')
+                .populate('branch', '_id');
+
+            if (!material) throw new AppError('Material not found', 404);
+
+            const user = (req as any).user;
+            // Only the uploader can schedule pickup
+            if (material.submittedBy._id.toString() !== user._id.toString()) {
+                throw new AppError('Not authorized to schedule pickup for this material', 403);
+            }
+
+            if (!['approved', 'accepted'].includes(material.status)) {
+                throw new AppError('Material must be accepted by a branch before scheduling pickup', 400);
+            }
+
+            material.status = 'pickup_scheduled' as any;
+            await material.save();
+
+            // Notify the branch manager (find admins/branches)
+            const branchId = (material as any).branch || (material as any).reviewedBy;
+            if (branchId) {
+                await NotificationService.sendNotification(branchId.toString(), {
+                    title: 'Pickup Scheduled 🚚',
+                    message: `Uploader has confirmed they are ready for pickup of ${material.materialType} (${material.weight}kg). Please arrange collection.`,
+                    type: 'material',
+                    metadata: { materialId: material._id.toString(), status: 'pickup_scheduled' }
+                });
+            }
+
+            // Also notify uploader/collector for confirmation
+            await NotificationService.sendNotification(user._id.toString(), {
+                title: 'Pickup Request Sent ✅',
+                message: `Your pickup request for ${material.materialType} (${material.weight}kg) has been submitted. The branch will contact you shortly.`,
+                type: 'material',
+                metadata: { materialId: material._id.toString(), status: 'pickup_scheduled' }
+            });
+
+            res.status(200).json({
+                success: true,
+                message: 'Pickup scheduled. Branch has been notified.',
+                data: material
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * POST /materials/:id/appeal
+     * Collector appeals a rejection. Creates an admin notification ticket.
+     */
+    static async appealMaterial(req: Request, res: Response, next: NextFunction) {
+        try {
+            const material = await Material.findById(req.params.id)
+                .populate('submittedBy', 'username businessName firstName lastName');
+
+            if (!material) throw new AppError('Material not found', 404);
+
+            const user = (req as any).user;
+            if (material.submittedBy._id.toString() !== user._id.toString()) {
+                throw new AppError('Not authorized to appeal this material', 403);
+            }
+
+            if (material.status !== MaterialStatus.REJECTED) {
+                throw new AppError('Only rejected materials can be appealed', 400);
+            }
+
+            const { reason } = req.body;
+
+            // Find all admins and notify them
+            const admins = await User.find({ role: 'admin' }).select('_id');
+            const appealNotifPromises = admins.map(admin =>
+                NotificationService.sendNotification(admin._id.toString(), {
+                    title: '⚠️ Rejection Appeal Received',
+                    message: `User ${user.username || user.businessName} is appealing the rejection of their ${material.materialType} (${material.weight}kg) upload.${reason ? ` Reason: ${reason}` : ''}`,
+                    type: 'material',
+                    metadata: {
+                        materialId: material._id.toString(),
+                        appealedBy: user._id.toString(),
+                        reason: reason || 'No reason provided'
+                    }
+                })
+            );
+            await Promise.all(appealNotifPromises);
+
+            // Notify the uploader that appeal was submitted
+            await NotificationService.sendNotification(user._id.toString(), {
+                title: 'Appeal Submitted 📋',
+                message: `Your appeal for the rejected ${material.materialType} (${material.weight}kg) upload has been submitted. Our admin team will review it within 24 hours.`,
+                type: 'material',
+                metadata: { materialId: material._id.toString() }
+            });
+
+            res.status(200).json({
+                success: true,
+                message: 'Appeal submitted successfully. Admin has been notified.',
+                data: { materialId: material._id, status: material.status }
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * PATCH /materials/:id/confirm-pickup
+     * Called by Branch to confirm they are heading/ready for pickup.
+     */
+    static async confirmPickup(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { id } = req.params;
+            const branchId = (req as any).user.branchId || (req as any).user._id;
+
+            const material = await Material.findById(id);
+            if (!material) throw new AppError('Material not found', 404);
+
+            if (material.status !== MaterialStatus.APPROVED) {  // ← use the enum, not string
+                throw new AppError('Material must be approved before confirming pickup', 400);
+            }
+
+            material.status = 'pickup_scheduled' as any;
+            await material.save();
+
+            // Notify uploader
+            await NotificationService.sendNotification(material.submittedBy.toString(), {
+                title: 'Pickup Confirmed! 🚚',
+                message: `A branch manager has confirmed your pickup request. Please have your materials ready.`,
+                type: 'material',
+                metadata: { materialId: material._id.toString(), status: 'pickup_scheduled' }
+            });
+
+            res.status(200).json({
+                success: true,
+                message: 'Pickup confirmed and uploader notified',
+                data: material
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * GET /materials/stats/branch
+     * Returns stats for the authenticated branch
+     */
+    static async getBranchStats(req: Request, res: Response, next: NextFunction) {
+        try {
+            const branchId = (req as any).user.branchId || (req as any).user._id;
+            const lat = parseFloat(req.query.lat as string) || 6.5244;
+            const lng = parseFloat(req.query.lng as string) || 3.3792;
+            const radius = parseFloat(req.query.radius as string) || 50;
+
+            const center: [number, number] = [lng, lat];
+
+            // 1. Pending nearby
+            const pendingNearbyCount = await Material.countDocuments({
+                status: MaterialStatus.PENDING,
+                pickupLocation: {
+                    $geoWithin: {
+                        $centerSphere: [center, radius / 6371]
+                    }
+                }
+            });
+
+            // 2. Branch specific stats
+            const stats = await Material.aggregate([
+                { $match: { processingBranch: new Types.ObjectId(branchId.toString()) } },
+                {
+                    $group: {
+                        _id: '$status',
+                        count: { $sum: 1 }
+                    }
+                }
+            ]);
+
+            const statusCounts: Record<string, number> = {
+                pending: pendingNearbyCount,
+                approved: 0,
+                delivered: 0,
+                rejected: 0,
+                processed: 0
+            };
+
+            stats.forEach(s => {
+                if (statusCounts.hasOwnProperty(s._id)) {
+                    statusCounts[s._id] = s.count;
+                }
+            });
+
+            res.status(200).json({
+                success: true,
+                data: statusCounts
             });
         } catch (error) {
             next(error);

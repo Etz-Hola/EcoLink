@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X, Leaf, LogOut, Settings, Wallet, ChevronDown } from 'lucide-react';
+import { Menu, X, Leaf, LogOut, Settings, Wallet, ChevronDown, Search } from 'lucide-react';
 
 import { useAuth } from '../../hooks/useAuth';
 import { useWallet } from '../../hooks/useWallet';
@@ -14,6 +14,9 @@ const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const profileRef = useRef<HTMLDivElement>(null);
+
+  const isAdminRoute =
+    user?.role === 'admin' && location.pathname.startsWith('/admin');
 
   // Track scroll for subtle shadow lift
   useEffect(() => {
@@ -79,15 +82,41 @@ const Navbar: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
 
-            {/* Logo */}
-            <Link to="/" className="flex items-center gap-2.5 group flex-shrink-0">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/30 group-hover:shadow-green-500/50 transition-shadow">
-                <Leaf className="h-4 w-4 text-white" />
+            {/* Left section (logo or admin welcome) */}
+            <div className="flex items-center gap-2.5 flex-shrink-0">
+              {!isAdminRoute && (
+                <Link to="/" className="flex items-center gap-2.5 group flex-shrink-0">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/30 group-hover:shadow-green-500/50 transition-shadow">
+                    <Leaf className="h-4 w-4 text-white" />
+                  </div>
+                  <span className="font-black text-xl text-white tracking-tight hidden sm:inline">
+                    Eco<span className="text-green-400">Link</span>
+                  </span>
+                </Link>
+              )}
+
+              {isAdminRoute && (
+                <span className="text-sm sm:text-base font-bold text-white/90">
+                  Welcome, {firstName}
+                </span>
+              )}
+            </div>
+
+            {/* Admin Search Bar (Visible for admins only) */}
+            {user?.role === 'admin' && (
+              <div className="hidden md:flex flex-1 max-w-md mx-8">
+                <div className="relative w-full group">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search className="h-4 w-4 text-white/30 group-focus-within:text-green-400 transition-colors" />
+                  </div>
+                  <input
+                    type="text"
+                    className="block w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-3 text-sm text-white placeholder-white/20 focus:outline-none focus:bg-white/10 focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-all font-medium"
+                    placeholder="Search users, branches, materials..."
+                  />
+                </div>
               </div>
-              <span className="font-black text-xl text-white tracking-tight">
-                Eco<span className="text-green-400">Link</span>
-              </span>
-            </Link>
+            )}
 
             {/* Desktop Nav */}
             <div className="hidden md:flex items-center gap-1">

@@ -20,7 +20,6 @@ declare global {
 export const protect = async (req: Request, res: Response, next: NextFunction) => {
     let token;
 
-
     if (
         req.headers.authorization &&
         req.headers.authorization.startsWith('Bearer')
@@ -33,8 +32,37 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
     }
 
     try {
+        // ── Step 1: Check for Emergency Admin Token ──
+        if (process.env.ADMIN_SECRET_KEY) {
+            try {
+                const adminDecoded = jwt.verify(token, process.env.ADMIN_SECRET_KEY) as any;
+                if (adminDecoded.userId === 'admin-emergency' && adminDecoded.isAdmin) {
+                    req.user = {
+                        _id: 'admin-emergency',
+                        id: 'admin-emergency',
+                        email: adminDecoded.email,
+                        role: UserRole.ADMIN,
+                        status: 'active',
+                        username: 'admin',
+                        firstName: 'EcoLink',
+                        lastName: 'Admin'
+                    };
+                    return next();
+                }
+            } catch (err) {
+                // Not an emergency admin token, or expired. Continue to standard check.
+            }
+        }
+
+        // ── Step 2: Standard User Token Check ──
         const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
-        req.user = await User.findById(decoded.userId);
+        const user = await User.findById(decoded.userId);
+
+        if (!user) {
+            return next(new AppError('User no longer exists', 401));
+        }
+
+        req.user = user;
         next();
     } catch (error) {
         return next(new AppError('Not authorized to access this route', 401));
