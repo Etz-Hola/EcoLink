@@ -15,6 +15,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
   pending: { label: 'In Review', color: 'text-amber-600', bg: 'bg-amber-50' },
   accepted: { label: 'Accepted — Ready for Pickup', color: 'text-emerald-600', bg: 'bg-emerald-50' },
   approved: { label: 'Accepted — Ready for Pickup', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+  pickup_scheduled: { label: 'Pickup Scheduled', color: 'text-indigo-600', bg: 'bg-indigo-50' },
   processed: { label: 'Processed', color: 'text-indigo-600', bg: 'bg-indigo-50' },
   delivered: { label: 'Paid & Delivered ✅', color: 'text-emerald-700', bg: 'bg-emerald-50' },
   rejected: { label: 'Rejected', color: 'text-rose-600', bg: 'bg-rose-50' },
