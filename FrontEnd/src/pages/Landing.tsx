@@ -12,6 +12,7 @@ const Landing: React.FC = () => {
   };
 
   const features = [ 
+    
     {
       icon: <Recycle className="h-6 w-6" />,
       title: 'Smart Material Upload',
