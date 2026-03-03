@@ -11,7 +11,7 @@ const Landing: React.FC = () => {
     visible: { opacity: 1, y: 0 }
   };
 
-  const features = [
+  const features = [ 
     {
       icon: <Recycle className="h-6 w-6" />,
       title: 'Smart Material Upload',
