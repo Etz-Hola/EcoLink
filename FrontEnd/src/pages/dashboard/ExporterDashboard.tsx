@@ -2,9 +2,22 @@ import React from 'react';
 import { Package, TrendingUp, Truck, ShoppingCart, ArrowUpRight, Search } from 'lucide-react';
 import Button from '../../components/common/Button';
 import NearbyBuyersMap from '../../components/dashboard/NearbyBuyersMap';
+import toast from 'react-hot-toast';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+
+interface AvailableBundle {
+    _id: string;
+    name: string;
+    branchName?: string;
+    totalWeight: number;
+    totalPrice: number;
+}
 
 const ExporterDashboard: React.FC = () => {
     const [userLocation, setUserLocation] = React.useState<{ lat: number; lng: number } | null>(null);
+    const [bundles, setBundles] = React.useState<AvailableBundle[]>([]);
+    const [loadingBundles, setLoadingBundles] = React.useState(false);
 
     React.useEffect(() => {
         if (navigator.geolocation) {
@@ -16,6 +29,34 @@ const ExporterDashboard: React.FC = () => {
             setUserLocation({ lat: 6.5244, lng: 3.3792 });
         }
     }, []);
+
+    const fetchBundles = React.useCallback(async () => {
+        setLoadingBundles(true);
+        try {
+            const token = localStorage.getItem('ecolink_token');
+            const res = await fetch(`${API_URL}/bundles/available`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success) throw new Error(data.message || 'Failed to load bundles');
+            const mapped: AvailableBundle[] = (data.data || []).map((b: any) => ({
+                _id: b._id,
+                name: b.name,
+                branchName: b.branchId?.name,
+                totalWeight: b.totalWeight,
+                totalPrice: b.totalPrice,
+            }));
+            setBundles(mapped);
+        } catch (err: any) {
+            toast.error(err.message || 'Could not load export bundles');
+        } finally {
+            setLoadingBundles(false);
+        }
+    }, []);
+
+    React.useEffect(() => {
+        fetchBundles();
+    }, [fetchBundles]);
     const stats = [
         { label: 'Active Purchases', value: '12', icon: ShoppingCart, color: 'text-blue-600', bg: 'bg-blue-50' },
         { label: 'Bundles Verified', value: '450', icon: Package, color: 'text-green-600', bg: 'bg-green-50' },
@@ -23,11 +64,21 @@ const ExporterDashboard: React.FC = () => {
         { label: 'Market Savings', value: '₦245k', icon: TrendingUp, color: 'text-orange-600', bg: 'bg-orange-50' },
     ];
 
-    const availableBundles = [
-        { id: 'BDL001', branch: 'Ikeja Hub', type: 'PET Plastic', weight: '2,500kg', quality: 'Clean/Sort', price: '₦180/kg', status: 'Ready' },
-        { id: 'BDL002', branch: 'Lekki Center', type: 'Aluminum Can', weight: '1,200kg', quality: 'Raw/Baled', price: '₦450/kg', status: 'In Processing' },
-        { id: 'BDL003', branch: 'Ikorodu Branch', type: 'Mixed Paper', weight: '5,000kg', quality: 'Baled', price: '₦95/kg', status: 'Ready' },
-    ];
+    const handlePurchase = async (bundleId: string) => {
+        try {
+            const token = localStorage.getItem('ecolink_token');
+            const res = await fetch(`${API_URL}/bundles/${bundleId}/purchase`, {
+                method: 'PATCH',
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success) throw new Error(data.message || 'Failed to purchase bundle');
+            toast.success('Bundle purchase recorded — materials marked as sold ✅');
+            fetchBundles();
+        } catch (err: any) {
+            toast.error(err.message || 'Could not complete purchase');
+        }
+    };
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
@@ -79,36 +130,55 @@ const ExporterDashboard: React.FC = () => {
                             <button className="text-sm font-bold text-green-600 hover:text-green-700">View Map Mode</button>
                         </div>
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left">
-                                <thead className="bg-gray-50/50 text-gray-400 text-xs font-bold uppercase tracking-widest">
-                                    <tr>
-                                        <th className="px-6 py-4">Bundle ID</th>
-                                        <th className="px-6 py-4">Type</th>
-                                        <th className="px-6 py-4">Source Branch</th>
-                                        <th className="px-6 py-4">Weight</th>
-                                        <th className="px-6 py-4">Price</th>
-                                        <th className="px-6 py-4">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-50">
-                                    {availableBundles.map((bundle) => (
-                                        <tr key={bundle.id} className="hover:bg-gray-50/50 transition-colors group">
-                                            <td className="px-6 py-4 font-bold text-gray-900">{bundle.id}</td>
-                                            <td className="px-6 py-4">
-                                                <span className="text-sm font-semibold text-gray-700 bg-gray-100 px-2 py-1 rounded-md">{bundle.type}</span>
-                                            </td>
-                                            <td className="px-6 py-4 text-sm font-medium text-gray-600">{bundle.branch}</td>
-                                            <td className="px-6 py-4 text-sm font-bold text-gray-900">{bundle.weight}</td>
-                                            <td className="px-6 py-4 text-sm font-black text-green-600">{bundle.price}</td>
-                                            <td className="px-6 py-4">
-                                                <button className="text-sm font-bold text-white bg-gray-900 px-4 py-2 rounded-xl hover:bg-green-600 transition-all opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0">
-                                                    Request
-                                                </button>
-                                            </td>
+                            {loadingBundles ? (
+                                <div className="flex flex-col items-center justify-center py-12">
+                                    <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mb-3" />
+                                    <p className="text-sm font-medium text-gray-400">Loading available bundles...</p>
+                                </div>
+                            ) : bundles.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-12 text-center">
+                                    <Package className="w-10 h-10 text-gray-200 mb-3" />
+                                    <p className="text-sm font-medium text-gray-500">No export bundles available yet.</p>
+                                </div>
+                            ) : (
+                                <table className="w-full text-left">
+                                    <thead className="bg-gray-50/50 text-gray-400 text-xs font-bold uppercase tracking-widest">
+                                        <tr>
+                                            <th className="px-6 py-4">Bundle</th>
+                                            <th className="px-6 py-4">Source Branch</th>
+                                            <th className="px-6 py-4">Weight</th>
+                                            <th className="px-6 py-4">Total Price</th>
+                                            <th className="px-6 py-4">Action</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-50">
+                                        {bundles.map((bundle) => (
+                                            <tr key={bundle._id} className="hover:bg-gray-50/50 transition-colors group">
+                                                <td className="px-6 py-4 font-bold text-gray-900">
+                                                    {bundle.name}
+                                                </td>
+                                                <td className="px-6 py-4 text-sm font-medium text-gray-600">
+                                                    {bundle.branchName || '—'}
+                                                </td>
+                                                <td className="px-6 py-4 text-sm font-bold text-gray-900">
+                                                    {bundle.totalWeight.toLocaleString()} kg
+                                                </td>
+                                                <td className="px-6 py-4 text-sm font-black text-green-600">
+                                                    ₦{bundle.totalPrice.toLocaleString()}
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <button
+                                                        onClick={() => handlePurchase(bundle._id)}
+                                                        className="text-sm font-bold text-white bg-gray-900 px-4 py-2 rounded-xl hover:bg-green-600 transition-all opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0"
+                                                    >
+                                                        Purchase
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
                         </div>
                     </div>
                 </div>
