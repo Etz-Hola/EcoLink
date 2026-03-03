@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import CollectorDashboard from './CollectorDashboard';
 import BranchDashboard from './BranchDashboard';
 import ExporterDashboard from './ExporterDashboard';
+import AdminDashboard from './AdminDashboard';
 
 
 const DashboardRouter: React.FC = () => {
@@ -34,16 +35,7 @@ const DashboardRouter: React.FC = () => {
 
     // ADMIN
     if (user.role === 'admin') {
-        return (
-            <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100"
-            >
-                <h2 className="text-2xl font-black text-gray-900">Admin Dashboard</h2>
-                <p className="text-gray-500 mt-2 font-medium">Manage users and global platform settings.</p>
-            </motion.div>
-        );
+        return <AdminDashboard />;
     }
 
     // FALLBACK
