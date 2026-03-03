@@ -2,19 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   TrendingUp, Package, Clock, CheckCircle, Upload,
-  Leaf, ChevronRight, AlertCircle, Bell, Wallet, CreditCard
+  Leaf, ChevronRight, AlertCircle, Bell, Wallet, CreditCard, Truck, MessageSquare
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { Material, Notification } from '../../types';
+import toast from 'react-hot-toast';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   pending: { label: 'In Review', color: 'text-amber-600', bg: 'bg-amber-50' },
-  accepted: { label: 'Accepted', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+  accepted: { label: 'Accepted — Ready for Pickup', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+  approved: { label: 'Accepted — Ready for Pickup', color: 'text-emerald-600', bg: 'bg-emerald-50' },
   processed: { label: 'Processed', color: 'text-indigo-600', bg: 'bg-indigo-50' },
-  delivered: { label: 'Paid & Delivered', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+  delivered: { label: 'Paid & Delivered ✅', color: 'text-emerald-700', bg: 'bg-emerald-50' },
   rejected: { label: 'Rejected', color: 'text-rose-600', bg: 'bg-rose-50' },
 };
 
@@ -281,7 +283,7 @@ const CollectorDashboard: React.FC = () => {
               <table className="w-full">
                 <thead>
                   <tr className="bg-gray-50/70">
-                    {['Material', 'Type', 'Weight', 'Status', 'Date'].map(h => (
+                    {['Material', 'Type', 'Weight', 'Status', 'Date', 'Action'].map(h => (
                       <th key={h} className="px-6 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">{h}</th>
                     ))}
                   </tr>
@@ -289,9 +291,13 @@ const CollectorDashboard: React.FC = () => {
                 <tbody className="divide-y divide-gray-50">
                   {recentMaterials.map((m, i) => {
                     const sc = STATUS_CONFIG[m.status] || STATUS_CONFIG.pending;
+                    const isAccepted = m.status === 'accepted' || m.status === 'approved';
+                    const isRejected = m.status === 'rejected';
+                    const isPaid = m.status === 'delivered';
+                    const quoted = m.pricePerKg && m.weight ? m.pricePerKg * m.weight : null;
                     return (
                       <motion.tr
-                        key={m._id}
+                        key={m._id || i}
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.4 + i * 0.06 }}
@@ -300,7 +306,12 @@ const CollectorDashboard: React.FC = () => {
                         <td className="px-6 py-4">
                           <div>
                             <p className="text-sm font-bold text-gray-900 line-clamp-1">{m.title || `${m.materialType} Batch`}</p>
-                            <p className="text-[10px] text-gray-400 font-medium">{m.subType}</p>
+                            {quoted && isAccepted && (
+                              <p className="text-[10px] text-emerald-600 font-black mt-0.5">₦{quoted.toLocaleString()} quoted</p>
+                            )}
+                            {isPaid && quoted && (
+                              <p className="text-[10px] text-emerald-700 font-black mt-0.5">₦{quoted.toLocaleString()} paid ✅</p>
+                            )}
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -316,6 +327,29 @@ const CollectorDashboard: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 text-[11px] font-medium text-gray-400">
                           {m.createdAt ? new Date(m.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'N/A'}
+                        </td>
+                        <td className="px-6 py-4">
+                          {isAccepted && (
+                            <button
+                              onClick={() => {
+                                toast.success('Pickup scheduled! The branch has been notified to proceed.', { icon: '📅', duration: 5000 });
+                              }}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-wider hover:bg-emerald-700 transition-all shadow-sm whitespace-nowrap"
+                            >
+                              <Truck className="w-3 h-3" /> Schedule Pickup
+                            </button>
+                          )}
+                          {isRejected && (
+                            <button
+                              onClick={() => toast('An appeal has been submitted. Our team will review shortly.', { icon: '📋', duration: 5000 })}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 text-rose-600 border border-rose-100 rounded-xl font-black text-[10px] uppercase tracking-wider hover:bg-rose-600 hover:text-white transition-all"
+                            >
+                              <MessageSquare className="w-3 h-3" /> Appeal
+                            </button>
+                          )}
+                          {isPaid && (
+                            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Complete ✅</span>
+                          )}
                         </td>
                       </motion.tr>
                     );
