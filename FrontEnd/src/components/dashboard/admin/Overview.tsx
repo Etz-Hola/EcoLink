@@ -5,7 +5,7 @@ import {
     MapPin, Clock, ArrowUpRight, ArrowDownRight,
     ShieldCheck, AlertCircle
 } from 'lucide-react';
-
+import { useAuth } from '../../../hooks/useAuth';
 
 interface StatCardProps {
     label: string;
@@ -61,6 +61,9 @@ const ActivityItem = ({ title, subtitle, time, icon: Icon, color, bg }: Activity
 );
 
 const AdminOverview: React.FC = () => {
+    const { user } = useAuth();
+    const firstName = user?.firstName || user?.name?.split(' ')[0] || 'Admin';
+
     const metrics = [
         { label: 'Total Users', value: '1,284', change: '12%', positive: true, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
         { label: 'Active Branches', value: '156', change: '3%', positive: true, icon: MapPin, color: 'text-purple-600', bg: 'bg-purple-50' },
@@ -71,9 +74,16 @@ const AdminOverview: React.FC = () => {
     return (
         <div className="space-y-6 md:space-y-8 pb-10 px-0 sm:px-2 md:px-0">
             {/* Header */}
-            <div className="flex flex-col gap-1 ml-4 md:ml-0">
-                <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">Dashboard Overview</h1>
-                <p className="text-[10px] md:text-sm font-bold text-gray-400 uppercase tracking-widest leading-relaxed">Global Platform Metrics & Real-time Monitoring</p>
+            <div className="flex flex-col md:flex-row md:items-baseline md:justify-between gap-2 ml-4 md:ml-0">
+                <div>
+                    <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">Dashboard Overview</h1>
+                    <p className="text-[10px] md:text-sm font-bold text-gray-400 uppercase tracking-widest leading-relaxed">
+                        Global Platform Metrics & Real-time Monitoring
+                    </p>
+                </div>
+                <p className="text-xs md:text-sm font-bold text-gray-500">
+                    Welcome, <span className="text-gray-900">{firstName}</span>
+                </p>
             </div>
 
             {/* Metrics Grid */}

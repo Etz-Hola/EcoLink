@@ -15,6 +15,9 @@ const Navbar: React.FC = () => {
   const location = useLocation();
   const profileRef = useRef<HTMLDivElement>(null);
 
+  const isAdminRoute =
+    user?.role === 'admin' && location.pathname.startsWith('/admin');
+
   // Track scroll for subtle shadow lift
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 10);
@@ -79,15 +82,25 @@ const Navbar: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
 
-            {/* Logo */}
-            <Link to="/" className="flex items-center gap-2.5 group flex-shrink-0">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/30 group-hover:shadow-green-500/50 transition-shadow">
-                <Leaf className="h-4 w-4 text-white" />
-              </div>
-              <span className="font-black text-xl text-white tracking-tight hidden sm:inline">
-                Eco<span className="text-green-400">Link</span>
-              </span>
-            </Link>
+            {/* Left section (logo or admin welcome) */}
+            <div className="flex items-center gap-2.5 flex-shrink-0">
+              {!isAdminRoute && (
+                <Link to="/" className="flex items-center gap-2.5 group flex-shrink-0">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/30 group-hover:shadow-green-500/50 transition-shadow">
+                    <Leaf className="h-4 w-4 text-white" />
+                  </div>
+                  <span className="font-black text-xl text-white tracking-tight hidden sm:inline">
+                    Eco<span className="text-green-400">Link</span>
+                  </span>
+                </Link>
+              )}
+
+              {isAdminRoute && (
+                <span className="text-sm sm:text-base font-bold text-white/90">
+                  Welcome, {firstName}
+                </span>
+              )}
+            </div>
 
             {/* Admin Search Bar (Visible for admins only) */}
             {user?.role === 'admin' && (

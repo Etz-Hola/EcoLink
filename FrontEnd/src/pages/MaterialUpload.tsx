@@ -13,6 +13,15 @@ const MATERIAL_TYPES = [
   { value: 'household', label: 'Paper / Organic', subtypes: ['paper', 'cardboard', 'glass', 'textile', 'other'] },
 ];
 
+interface AdminDefaultPrice {
+  pricePerKg: number;
+  minAllowed: number;
+  maxAllowed: number;
+  materialType: string;
+  condition: string | null;
+  name: string;
+}
+
 interface LocationData {
   lat: number;
   lng: number;
@@ -39,6 +48,8 @@ const MaterialUpload: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [indicativePrice, setIndicativePrice] = useState<AdminDefaultPrice | null>(null);
+  const [loadingPrice, setLoadingPrice] = useState(false);
 
   // Location state
   const [location, setLocation] = useState<LocationData | null>(null);
@@ -46,10 +57,33 @@ const MaterialUpload: React.FC = () => {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [manualAddress, setManualAddress] = useState('');
 
-  // Get user location on mount
+  // Get user location & indicative price on mount
   useEffect(() => {
     detectLocation();
+    fetchIndicativePrice('plastic', 'clean');
   }, []);
+
+  const fetchIndicativePrice = async (materialType: string, condition: string) => {
+    setLoadingPrice(true);
+    try {
+      const token = localStorage.getItem('ecolink_token');
+      const query = condition ? `?condition=${encodeURIComponent(condition)}` : '';
+      const res = await fetch(
+        `${API_URL}/pricing/defaults/${encodeURIComponent(materialType)}${query}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const data = await res.json();
+      if (data.success && data.data) {
+        setIndicativePrice(data.data);
+      } else {
+        setIndicativePrice(null);
+      }
+    } catch {
+      setIndicativePrice(null);
+    } finally {
+      setLoadingPrice(false);
+    }
+  };
 
   const detectLocation = () => {
     if (!navigator.geolocation) {
@@ -99,6 +133,12 @@ const MaterialUpload: React.FC = () => {
       // Reset subtype when material changes
       ...(name === 'materialType' ? { subType: MATERIAL_TYPES.find(t => t.value === value)?.subtypes[0] || '' } : {})
     }));
+
+    if (name === 'materialType' || name === 'condition') {
+      const nextMaterial = name === 'materialType' ? value : formData.materialType;
+      const nextCondition = name === 'condition' ? value : formData.condition;
+      fetchIndicativePrice(nextMaterial, nextCondition);
+    }
   };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -287,6 +327,25 @@ const MaterialUpload: React.FC = () => {
                 </select>
               </div>
             </div>
+
+            {loadingPrice && (
+              <p className="text-[11px] text-gray-400 font-medium mt-1">
+                Fetching indicative admin price for this material...
+              </p>
+            )}
+            {!loadingPrice && indicativePrice && (
+              <div className="mt-2 inline-flex flex-col sm:flex-row sm:items-center gap-1.5 px-3 py-2 bg-emerald-50 border border-emerald-100 rounded-xl">
+                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">
+                  Indicative admin rate
+                </span>
+                <span className="text-sm font-black text-emerald-700">
+                  ₦{indicativePrice.pricePerKg.toLocaleString()}/kg
+                </span>
+                <span className="text-[10px] text-emerald-600">
+                  (branches can pay between ₦{indicativePrice.minAllowed.toLocaleString()}–₦{indicativePrice.maxAllowed.toLocaleString()} per kg)
+                </span>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div>
