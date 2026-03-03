@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
 import {
-    Search, Filter, MoreVertical, Edit2, ShieldOff,
-    Trash2, Mail, Phone, MapPin, BadgeCheck,
-    ChevronLeft, ChevronRight, UserX, UserCheck
+    Search, Filter, Edit2, ShieldOff,
+    Trash2, BadgeCheck,
+    ChevronLeft, ChevronRight
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 
 const UserManagement: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [roleFilter, setRoleFilter] = useState('all');
-    const [selectedUser, setSelectedUser] = useState<any>(null);
 
     // Mock data for UI development
     const users = [
@@ -35,11 +33,11 @@ const UserManagement: React.FC = () => {
     };
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">User Management</h1>
-                    <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Manage platform participants and internal roles</p>
+        <div className="space-y-6 px-4 md:px-0 pb-10">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div className="ml-0 md:ml-0">
+                    <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">User Management</h1>
+                    <p className="text-[10px] md:text-sm font-bold text-gray-400 uppercase tracking-widest leading-relaxed">Manage platform participants and internal roles</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <button className="flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg active:scale-95">

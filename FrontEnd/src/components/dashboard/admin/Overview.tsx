@@ -6,11 +6,18 @@ import {
     ShieldCheck, AlertCircle
 } from 'lucide-react';
 
-interface OverviewProps {
-    stats?: any;
+
+interface StatCardProps {
+    label: string;
+    value: string;
+    change: string;
+    positive: boolean;
+    icon: React.ElementType;
+    color: string;
+    bg: string;
 }
 
-const StatCard = ({ label, value, change, positive, icon: Icon, color, bg }: any) => (
+const StatCard = ({ label, value, change, positive, icon: Icon, color, bg }: StatCardProps) => (
     <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -31,7 +38,16 @@ const StatCard = ({ label, value, change, positive, icon: Icon, color, bg }: any
     </motion.div>
 );
 
-const ActivityItem = ({ title, subtitle, time, icon: Icon, color, bg }: any) => (
+interface ActivityItemProps {
+    title: string;
+    subtitle: string;
+    time: string;
+    icon: React.ElementType;
+    color: string;
+    bg: string;
+}
+
+const ActivityItem = ({ title, subtitle, time, icon: Icon, color, bg }: ActivityItemProps) => (
     <div className="flex items-start gap-4 p-4 hover:bg-gray-50 rounded-2xl transition-all group cursor-pointer">
         <div className={`w-10 h-10 rounded-xl ${bg} ${color} flex items-center justify-center flex-shrink-0 shadow-sm`}>
             <Icon size={20} />
@@ -44,7 +60,7 @@ const ActivityItem = ({ title, subtitle, time, icon: Icon, color, bg }: any) => 
     </div>
 );
 
-const AdminOverview: React.FC<OverviewProps> = ({ stats }) => {
+const AdminOverview: React.FC = () => {
     const metrics = [
         { label: 'Total Users', value: '1,284', change: '12%', positive: true, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
         { label: 'Active Branches', value: '156', change: '3%', positive: true, icon: MapPin, color: 'text-purple-600', bg: 'bg-purple-50' },
@@ -53,11 +69,11 @@ const AdminOverview: React.FC<OverviewProps> = ({ stats }) => {
     ];
 
     return (
-        <div className="space-y-8 pb-10">
+        <div className="space-y-6 md:space-y-8 pb-10 px-0 sm:px-2 md:px-0">
             {/* Header */}
-            <div className="flex flex-col gap-1">
-                <h1 className="text-3xl font-black text-gray-900 tracking-tight">Dashboard Overview</h1>
-                <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Global Platform Metrics & Real-time Monitoring</p>
+            <div className="flex flex-col gap-1 ml-4 md:ml-0">
+                <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">Dashboard Overview</h1>
+                <p className="text-[10px] md:text-sm font-bold text-gray-400 uppercase tracking-widest leading-relaxed">Global Platform Metrics & Real-time Monitoring</p>
             </div>
 
             {/* Metrics Grid */}

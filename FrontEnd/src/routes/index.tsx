@@ -44,40 +44,25 @@ const AppRoutes: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Routes>
-        {/* Admin route has its own internal layout/sidebar */}
-        <Route
-          path="/admin/*"
-          element={<DashboardRouter />}
-        />
-
-        {/* Standard User Routes with shared Navbar/Sidebar */}
-        <Route
-          path="*"
-          element={
-            <>
-              <Navbar />
-              <div className="flex">
-                <Sidebar />
-                <main className="flex-1 p-6 md:p-8 min-h-[calc(100vh-64px)]">
-                  <Routes>
-                    <Route path="/" element={<Navigate to={homeRoute()} replace />} />
-                    <Route path="/home" element={<DashboardRouter />} />
-                    <Route path="/branch" element={<DashboardRouter />} />
-                    <Route path="/materials/upload" element={<MaterialUpload />} />
-                    <Route path="/materials" element={<MyMaterials />} />
-                    <Route path="/wallet" element={<Wallet />} />
-                    <Route path="/profile" element={<Profile />} />
-                    <Route path="/login" element={<Navigate to={homeRoute()} replace />} />
-                    <Route path="/register" element={<Navigate to={homeRoute()} replace />} />
-                    <Route path="*" element={<Navigate to={homeRoute()} replace />} />
-                  </Routes>
-                </main>
-              </div>
-            </>
-          }
-        />
-      </Routes>
+      <Navbar />
+      <div className="flex">
+        <Sidebar />
+        <main className="flex-1 p-6 md:p-8 min-h-[calc(100vh-64px)]">
+          <Routes>
+            <Route path="/" element={<Navigate to={homeRoute()} replace />} />
+            <Route path="/home" element={<DashboardRouter />} />
+            <Route path="/branch" element={<DashboardRouter />} />
+            <Route path="/admin/*" element={<DashboardRouter />} />
+            <Route path="/materials/upload" element={<MaterialUpload />} />
+            <Route path="/materials" element={<MyMaterials />} />
+            <Route path="/wallet" element={<Wallet />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/login" element={<Navigate to={homeRoute()} replace />} />
+            <Route path="/register" element={<Navigate to={homeRoute()} replace />} />
+            <Route path="*" element={<Navigate to={homeRoute()} replace />} />
+          </Routes>
+        </main>
+      </div>
     </div>
   );
 };

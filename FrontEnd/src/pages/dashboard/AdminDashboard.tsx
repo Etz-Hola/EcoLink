@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import AdminLayout from '../../components/dashboard/admin/AdminLayout';
+import React from 'react';
+import { useLocation } from 'react-router-dom';
 import AdminOverview from '../../components/dashboard/admin/Overview';
 import UserManagement from '../../components/dashboard/admin/UserManagement';
 import PricingManager from '../../components/dashboard/PricingManager';
@@ -8,16 +7,17 @@ import BranchManagement from '../../components/dashboard/admin/BranchManagement'
 import MaterialMonitor from '../../components/dashboard/admin/MaterialMonitor';
 import FinanceManager from '../../components/dashboard/admin/FinanceManager';
 import PlatformSettings from '../../components/dashboard/admin/PlatformSettings';
-import toast from 'react-hot-toast';
 
 const AdminDashboard: React.FC = () => {
-  const { user, logout } = useAuth();
-  const [currentView, setCurrentView] = useState('overview');
+  const location = useLocation();
 
-  const handleLogout = () => {
-    logout();
-    toast.success('Logged out from Admin Terminal');
-  };
+  // Extract the section from the URL /admin/:section
+  const pathParts = location.pathname.split('/');
+  // If it's just /admin, default to overview. If it's /admin/something, use that.
+  let currentView = pathParts[2] || 'overview';
+
+  // Map 'analytics' to 'overview' if needed
+  if (currentView === 'analytics') currentView = 'overview';
 
   const renderView = () => {
     switch (currentView) {
@@ -49,14 +49,9 @@ const AdminDashboard: React.FC = () => {
   };
 
   return (
-    <AdminLayout
-      currentView={currentView}
-      onViewChange={setCurrentView}
-      onLogout={handleLogout}
-      user={user}
-    >
+    <div className="max-w-7xl mx-auto py-2">
       {renderView()}
-    </AdminLayout>
+    </div>
   );
 };
 
