@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Package, CheckCircle, XCircle, Clock, Filter, Truck, BadgeCheck, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -15,18 +15,29 @@ interface QueueItem {
     location?: string;
 }
 
+interface AdminDefault {
+    pricePerKg: number;
+    minAllowed: number;
+    maxAllowed: number;
+}
+
+// Cache of admin default prices by materialType
+type AdminPriceCache = Record<string, AdminDefault | null>;
+
 export default function ProcessingQueue() {
     const [queue, setQueue] = useState<QueueItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<string>('all');
     const [priceInputs, setPriceInputs] = useState<Record<string, string>>({});
+    const [adminPrices, setAdminPrices] = useState<AdminPriceCache>({});
+
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+    const token = localStorage.getItem('ecolink_token');
+    const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 
     useEffect(() => {
         const fetchQueue = async () => {
             try {
-                const token = localStorage.getItem('ecolink_token');
-                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
-
                 const res = await fetch(`${apiUrl}/materials/pending`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });

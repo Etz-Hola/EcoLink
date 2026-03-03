@@ -1,25 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BarChart3, Users, Package, DollarSign, TrendingUp } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
 import { useMaterial } from '../../hooks/useMaterial';
-import { formatPrice, formatWeight } from '../../utils/helpers';
 import PricingManager from '../../components/dashboard/PricingManager';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+
+interface AdminStats {
+  counts: {
+    users: number;
+    materials: number;
+    bundles: number;
+  };
+  financials?: {
+    totalCommission?: number;
+    totalBalances?: number;
+  };
+}
+
 const AdminDashboard: React.FC = () => {
-  const { user } = useAuth();
   const { materials } = useMaterial();
-
   const [dateRange, setDateRange] = useState('7d');
+  const [statsData, setStatsData] = useState<AdminStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
 
-  const [statsData, setStatsData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchStats = async () => {
       try {
         const token = localStorage.getItem('ecolink_token');
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
-        const res = await fetch(`${apiUrl}/admin/stats`, {
+        const res = await fetch(`${API_URL}/admin/stats`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         const data = await res.json();
@@ -27,7 +35,7 @@ const AdminDashboard: React.FC = () => {
       } catch (err) {
         console.error('Failed to fetch admin stats', err);
       } finally {
-        setLoading(false);
+        setStatsLoading(false);
       }
     };
     fetchStats();
@@ -36,7 +44,7 @@ const AdminDashboard: React.FC = () => {
   const stats = [
     {
       label: 'Total Users',
-      value: statsData?.counts.users.toLocaleString() || '0',
+      value: statsLoading ? '—' : (statsData?.counts.users?.toLocaleString() || '0'),
       change: '+12%',
       positive: true,
       icon: <Users className="h-5 w-5" />,
@@ -45,7 +53,7 @@ const AdminDashboard: React.FC = () => {
     },
     {
       label: 'Total Materials',
-      value: statsData?.counts.materials.toString() || '0',
+      value: statsLoading ? '—' : (statsData?.counts.materials?.toString() || '0'),
       change: '+3 new',
       positive: true,
       icon: <Package className="h-5 w-5" />,
@@ -54,7 +62,7 @@ const AdminDashboard: React.FC = () => {
     },
     {
       label: 'Active Bundles',
-      value: statsData?.counts.bundles.toString() || '0',
+      value: statsLoading ? '—' : (statsData?.counts.bundles?.toString() || '0'),
       change: '+18%',
       positive: true,
       icon: <DollarSign className="h-5 w-5" />,
@@ -69,7 +77,18 @@ const AdminDashboard: React.FC = () => {
       icon: <BarChart3 className="h-5 w-5" />,
       color: 'text-orange-600',
       bg: 'bg-orange-50'
-    }
+    },
+    {
+      label: 'Commission Earned',
+      value: statsData?.financials?.totalCommission
+        ? `₦${statsData.financials.totalCommission.toLocaleString()}`
+        : '₦—',
+      change: '+5%',
+      positive: true,
+      icon: <TrendingUp className="h-5 w-5" />,
+      color: 'text-emerald-600',
+      bg: 'bg-emerald-50'
+    },
   ];
 
   const recentActivities = [
@@ -77,14 +96,14 @@ const AdminDashboard: React.FC = () => {
     { type: 'material', message: '50kg of plastic bottles processed', time: '15 minutes ago' },
     { type: 'branch', message: 'Ile-Ife branch reached capacity', time: '1 hour ago' },
     { type: 'payment', message: '₦125,000 paid to collectors', time: '2 hours ago' },
-    { type: 'system', message: 'Daily backup completed', time: '3 hours ago' }
+    { type: 'system', message: 'Daily backup completed', time: '3 hours ago' },
   ];
 
   const topMaterials = [
     { name: 'Plastic Bottles', weight: '2,450 kg', value: '₦367,500', percentage: 85 },
-    { name: 'Aluminum Cans', weight: '1,200 kg', value: '₹240,000', percentage: 65 },
+    { name: 'Aluminum Cans', weight: '1,200 kg', value: '₦240,000', percentage: 65 },
     { name: 'Paper/Cardboard', weight: '800 kg', value: '₦64,000', percentage: 45 },
-    { name: 'Glass Bottles', weight: '600 kg', value: '₦36,000', percentage: 30 }
+    { name: 'Glass Bottles', weight: '600 kg', value: '₦36,000', percentage: 30 },
   ];
 
   return (
@@ -93,12 +112,8 @@ const AdminDashboard: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-600 mt-1">
-            Overview of platform performance and key metrics.
-          </p>
+          <p className="text-gray-600 mt-1">Overview of platform performance and key metrics.</p>
         </div>
-
-        {/* Date Range Selector */}
         <div className="mt-4 sm:mt-0">
           <select
             value={dateRange}
@@ -114,7 +129,7 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {stats.map((stat, index) => (
           <div key={index} className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="flex items-center justify-between mb-4">
@@ -133,22 +148,23 @@ const AdminDashboard: React.FC = () => {
         ))}
       </div>
 
+      {/* ── Global Pricing Manager ── */}
+      <PricingManager />
+
       {/* Charts and Analytics */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Revenue Chart Placeholder */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-gray-900">Revenue Trend</h3>
             <TrendingUp className="h-5 w-5 text-green-500" />
           </div>
           <div className="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
-            <p className="text-gray-500">Revenue chart would be rendered here</p>
+            <p className="text-gray-500">Revenue chart coming soon</p>
           </div>
         </div>
 
-        {/* Top Materials */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-6">Top Materials</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-6">Top Materials by Volume</h3>
           <div className="space-y-4">
             {topMaterials.map((material, index) => (
               <div key={index} className="space-y-2">
@@ -174,7 +190,6 @@ const AdminDashboard: React.FC = () => {
 
       {/* Recent Activity and System Health */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Recent Activity */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-6">Recent Activity</h3>
           <div className="space-y-4">
@@ -192,41 +207,25 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* System Health */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-6">System Health</h3>
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">API Response Time</span>
-              <span className="text-sm text-green-600 font-medium">125ms</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div className="bg-green-500 h-2 rounded-full w-4/5"></div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">Database Load</span>
-              <span className="text-sm text-yellow-600 font-medium">68%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div className="bg-yellow-500 h-2 rounded-full w-2/3"></div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">Server Uptime</span>
-              <span className="text-sm text-green-600 font-medium">99.8%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div className="bg-green-500 h-2 rounded-full w-full"></div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">Storage Used</span>
-              <span className="text-sm text-blue-600 font-medium">2.4TB / 5TB</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div className="bg-blue-500 h-2 rounded-full w-2/5"></div>
-            </div>
+            {[
+              { label: 'API Response Time', value: '125ms', color: 'text-green-600', bar: 'bg-green-500', width: '80%' },
+              { label: 'Database Load', value: '68%', color: 'text-yellow-600', bar: 'bg-yellow-500', width: '68%' },
+              { label: 'Server Uptime', value: '99.8%', color: 'text-green-600', bar: 'bg-green-500', width: '100%' },
+              { label: 'Storage Used', value: '2.4TB / 5TB', color: 'text-blue-600', bar: 'bg-blue-500', width: '48%' },
+            ].map((item, i) => (
+              <div key={i}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm font-medium text-gray-700">{item.label}</span>
+                  <span className={`text-sm font-medium ${item.color}`}>{item.value}</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className={`${item.bar} h-2 rounded-full`} style={{ width: item.width }} />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
