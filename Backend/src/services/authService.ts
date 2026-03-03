@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import { ethers } from 'ethers';
 import { OAuth2Client } from 'google-auth-library';
 import { SiweMessage, generateNonce } from 'siwe';
@@ -69,6 +70,49 @@ export class AuthService {
    */
   static async login(credentials: ILoginCredentials): Promise<IAuthResponse> {
     try {
+      // ── Hardcoded Admin Check (Emergency Access) ──
+      if (
+        process.env.ADMIN_EMAIL &&
+        credentials.identifier.toLowerCase() === process.env.ADMIN_EMAIL.toLowerCase()
+      ) {
+        const adminPasswordHash = process.env.ADMIN_PASSWORD;
+        const adminSecret = process.env.ADMIN_SECRET_KEY;
+
+        if (adminPasswordHash && adminSecret) {
+          const isMatch = await bcrypt.compare(credentials.password || '', adminPasswordHash);
+          if (isMatch) {
+            // Admin login success → sign special token with admin secret
+            const accessToken = jwt.sign(
+              {
+                userId: 'admin-emergency',
+                email: process.env.ADMIN_EMAIL,
+                role: UserRole.ADMIN,
+                status: 'active',
+                isAdmin: true
+              },
+              adminSecret,
+              { expiresIn: (process.env.JWT_EXPIRE || '24h') as any }
+            );
+
+            return {
+              success: true,
+              message: 'Emergency admin login successful',
+              user: {
+                username: 'admin',
+                email: process.env.ADMIN_EMAIL,
+                role: UserRole.ADMIN,
+                firstName: 'EcoLink',
+                lastName: 'Admin'
+              } as any,
+              tokens: {
+                accessToken,
+                refreshToken: accessToken // Simple for emergency admin
+              }
+            };
+          }
+        }
+      }
+
       let user: IUser | null = null;
 
       // Find user by identifier (email, phone, or wallet)
