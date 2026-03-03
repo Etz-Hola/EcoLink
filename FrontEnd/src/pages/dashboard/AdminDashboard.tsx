@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { BarChart3, Users, Package, DollarSign, TrendingUp, Calendar } from 'lucide-react';
+import { BarChart3, Users, Package, DollarSign, TrendingUp } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useMaterial } from '../../hooks/useMaterial';
 import { formatPrice, formatWeight } from '../../utils/helpers';
+import PricingManager from '../../components/dashboard/PricingManager';
 
 const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
