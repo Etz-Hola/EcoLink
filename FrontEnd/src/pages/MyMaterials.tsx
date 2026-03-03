@@ -11,9 +11,13 @@ type Status = 'all' | 'pending' | 'accepted' | 'rejected' | 'processed';
 const STATUS_STEPS = {
     pending: { label: 'In Review', step: 1, color: 'text-amber-600', bg: 'bg-amber-50', icon: Clock },
     accepted: { label: 'Accepted', step: 2, color: 'text-emerald-600', bg: 'bg-emerald-50', icon: CheckCircle },
+    approved: { label: 'Accepted', step: 2, color: 'text-emerald-600', bg: 'bg-emerald-50', icon: CheckCircle },
+    delivered: { label: 'Delivered', step: 3, color: 'text-emerald-700', bg: 'bg-emerald-50', icon: CheckCircle },
     processed: { label: 'Processed', step: 3, color: 'text-indigo-600', bg: 'bg-indigo-50', icon: TrendingUp },
+    bundled: { label: 'Bundled', step: 3, color: 'text-purple-600', bg: 'bg-purple-50', icon: TrendingUp },
+    sold: { label: 'Sold', step: 3, color: 'text-blue-600', bg: 'bg-blue-50', icon: TrendingUp },
     rejected: { label: 'Rejected', step: 0, color: 'text-rose-600', bg: 'bg-rose-50', icon: XCircle },
-};
+} as const;
 
 const MyMaterials: React.FC = () => {
     const [materials, setMaterials] = useState<any[]>([]);
@@ -44,7 +48,16 @@ const MyMaterials: React.FC = () => {
     const getFiltered = () => {
         let result = materials;
         if (selectedStatus !== 'all') {
-            result = result.filter(m => m.status === selectedStatus);
+            if (selectedStatus === 'accepted') {
+                // Treat backend "approved" as accepted for the user
+                result = result.filter(m => m.status === 'accepted' || m.status === 'approved');
+            } else if (selectedStatus === 'processed') {
+                // Group all completed lifecycle states as "processed"
+                const processedStatuses = ['processed', 'delivered', 'bundled', 'sold'];
+                result = result.filter(m => processedStatuses.includes(m.status));
+            } else {
+                result = result.filter(m => m.status === selectedStatus);
+            }
         }
         if (searchQuery.trim()) {
             const q = searchQuery.toLowerCase();
@@ -61,9 +74,11 @@ const MyMaterials: React.FC = () => {
     const counts = {
         all: materials.length,
         pending: materials.filter(m => m.status === 'pending').length,
-        accepted: materials.filter(m => m.status === 'accepted').length,
+        accepted: materials.filter(m => m.status === 'accepted' || m.status === 'approved').length,
         rejected: materials.filter(m => m.status === 'rejected').length,
-        processed: materials.filter(m => m.status === 'processed').length,
+        processed: materials.filter((m) =>
+            ['processed', 'delivered', 'bundled', 'sold'].includes(m.status)
+        ).length,
     };
 
     const tabs: { id: Status; label: string }[] = [
@@ -185,7 +200,8 @@ const MyMaterials: React.FC = () => {
                             <tbody className="divide-y divide-gray-50">
                                 <AnimatePresence>
                                     {filtered.map((m, i) => {
-                                        const statusInfo = STATUS_STEPS[m.status as keyof typeof STATUS_STEPS] || STATUS_STEPS.pending;
+                                        const statusKey = (m.status in STATUS_STEPS ? m.status : 'pending') as keyof typeof STATUS_STEPS;
+                                        const statusInfo = STATUS_STEPS[statusKey];
                                         const StatusIcon = statusInfo.icon;
                                         return (
                                             <motion.tr
@@ -199,11 +215,26 @@ const MyMaterials: React.FC = () => {
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-3">
                                                         <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
-                                                            {m.images?.[0]?.url ? (
-                                                                <img src={m.images[0].url} alt={m.title} className="w-full h-full object-cover" />
-                                                            ) : (
-                                                                <Package className="w-5 h-5 text-gray-400 m-auto mt-2.5" />
-                                                            )}
+                                                            {(() => {
+                                                                const firstImage = m.images?.[0];
+                                                                const imageUrl =
+                                                                    typeof firstImage === 'string'
+                                                                        ? firstImage
+                                                                        : firstImage?.url;
+                                                                return imageUrl ? (
+                                                                    <img
+                                                                        src={imageUrl}
+                                                                        alt={m.title}
+                                                                        className="w-full h-full object-cover cursor-pointer"
+                                                                        onClick={() => window.open(imageUrl, '_blank')}
+                                                                        onError={(e) => {
+                                                                            (e.currentTarget as HTMLImageElement).style.display = 'none';
+                                                                        }}
+                                                                    />
+                                                                ) : (
+                                                                    <Package className="w-5 h-5 text-gray-400 m-auto mt-2.5" />
+                                                                );
+                                                            })()}
                                                         </div>
                                                         <div>
                                                             <p className="text-sm font-bold text-gray-900 line-clamp-1">{m.title || `${m.materialType} Batch`}</p>

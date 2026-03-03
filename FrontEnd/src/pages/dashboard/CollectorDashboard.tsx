@@ -62,7 +62,8 @@ const CollectorDashboard: React.FC = () => {
   const stats = {
     total: materials.length,
     pending: materials.filter(m => m.status === 'pending').length,
-    accepted: materials.filter(m => m.status === 'accepted').length,
+    // Treat backend "approved" as accepted for the user
+    accepted: materials.filter(m => m.status === 'accepted' || m.status === 'approved').length,
     totalWeight: materials.reduce((sum, m) => sum + (m.weight || 0), 0),
   };
 
@@ -372,13 +373,18 @@ const CollectorDashboard: React.FC = () => {
                           {m.createdAt ? new Date(m.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'N/A'}
                         </td>
                         <td className="px-6 py-4">
-                          {isAccepted && (
+                          {isAccepted && m.status !== 'pickup_scheduled' && (
                             <button
                               onClick={() => handleSchedulePickup(m._id)}
                               className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-wider hover:bg-emerald-700 transition-all shadow-sm whitespace-nowrap"
                             >
                               <Truck className="w-3 h-3" /> Schedule Pickup
                             </button>
+                          )}
+                          {m.status === 'pickup_scheduled' && (
+                            <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest">
+                              Pickup Scheduled
+                            </span>
                           )}
                           {isRejected && (
                             <button

@@ -152,12 +152,26 @@ export class MaterialController {
     }
 
     /**
-     * Get pending materials for branches (nearby or all)
+     * Get materials for branches (nearby or by status)
+     * Default: pending, but supports ?status=approved,rejected,delivered,etc or status=all
      */
     static async getPendingMaterials(req: Request, res: Response, next: NextFunction) {
         try {
-            const { lat, lng, radius } = req.query;
-            let query: any = { status: MaterialStatus.PENDING };
+            const { lat, lng, radius, status } = req.query as {
+                lat?: string;
+                lng?: string;
+                radius?: string;
+                status?: string;
+            };
+
+            const query: any = {};
+
+            if (status && status !== 'all') {
+                const statusList = status.split(',').map(s => s.trim()).filter(Boolean);
+                query.status = statusList.length > 1 ? { $in: statusList } : statusList[0];
+            } else {
+                query.status = MaterialStatus.PENDING;
+            }
 
             if (lat && lng) {
                 const center: [number, number] = [Number(lng), Number(lat)];
