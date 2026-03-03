@@ -9,7 +9,6 @@ const Landing: React.FC = () => {
   const fadeInUp = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 }
-    
   };
 
   const features = [
