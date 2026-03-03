@@ -240,6 +240,12 @@ const MaterialUpload: React.FC = () => {
     );
   }
 
+  const weightNumber = parseFloat(formData.weight || '0');
+  const estimatedPayout =
+    indicativePrice && weightNumber > 0
+      ? indicativePrice.pricePerKg * weightNumber
+      : null;
+
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-16">
       {/* Header */}
@@ -334,17 +340,24 @@ const MaterialUpload: React.FC = () => {
               </p>
             )}
             {!loadingPrice && indicativePrice && (
-              <div className="mt-2 inline-flex flex-col sm:flex-row sm:items-center gap-1.5 px-3 py-2 bg-emerald-50 border border-emerald-100 rounded-xl">
-                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">
-                  Indicative admin rate
-                </span>
-                <span className="text-sm font-black text-emerald-700">
-                  ₦{indicativePrice.pricePerKg.toLocaleString()}/kg
-                </span>
-                <span className="text-[10px] text-emerald-600">
-                  (branches can pay between ₦{indicativePrice.minAllowed.toLocaleString()}–₦{indicativePrice.maxAllowed.toLocaleString()} per kg)
-                </span>
-              </div>
+              <>
+                <div className="mt-2 inline-flex flex-col sm:flex-row sm:items-center gap-1.5 px-3 py-2 bg-emerald-50 border border-emerald-100 rounded-xl">
+                  <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">
+                    Indicative admin rate
+                  </span>
+                  <span className="text-sm font-black text-emerald-700">
+                    ₦{indicativePrice.pricePerKg.toLocaleString()}/kg
+                  </span>
+                  <span className="text-[10px] text-emerald-600">
+                    (branches can pay between ₦{indicativePrice.minAllowed.toLocaleString()}–₦{indicativePrice.maxAllowed.toLocaleString()} per kg)
+                  </span>
+                </div>
+                {estimatedPayout && (
+                  <p className="mt-1 text-[11px] text-emerald-700 font-bold">
+                    Estimated payout: ₦{estimatedPayout.toLocaleString()} (based on your weight × admin rate)
+                  </p>
+                )}
+              </>
             )}
 
             <div className="grid grid-cols-2 gap-4">
