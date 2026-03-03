@@ -168,3 +168,6 @@
 2026-03-02 01:55:29:5529 [31merror[39m: [31mFailed to save notification for user [object Object]: Cannot read properties of undefined (reading 'title')[39m
 2026-03-02 11:43:42:4342 [31merror[39m: [31mFailed to save notification for user [object Object]: Cannot read properties of undefined (reading 'title')[39m
 2026-03-03 13:24:32:2432 [31merror[39m: [31mDatabase connection failed: querySrv ESERVFAIL _mongodb._tcp.cluster0.ksak8ks.mongodb.net[39m
+2026-03-03 14:16:16:1616 [31merror[39m: [31mDatabase connection failed: querySrv ESERVFAIL _mongodb._tcp.cluster0.ksak8ks.mongodb.net[39m
+2026-03-03 14:22:59:2259 [31merror[39m: [31mDatabase connection failed: querySrv ESERVFAIL _mongodb._tcp.cluster0.ksak8ks.mongodb.net[39m
+2026-03-03 14:38:09:389 [31merror[39m: [31mDatabase connection failed: querySrv ESERVFAIL _mongodb._tcp.cluster0.ksak8ks.mongodb.net[39m

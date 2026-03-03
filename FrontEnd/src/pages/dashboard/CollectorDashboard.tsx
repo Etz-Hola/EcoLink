@@ -374,7 +374,7 @@ const CollectorDashboard: React.FC = () => {
                         <td className="px-6 py-4">
                           {isAccepted && (
                             <button
-                              onClick={() => m._id && handleSchedulePickup(m._id)}
+                              onClick={() => handleSchedulePickup(m._id)}
                               className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-wider hover:bg-emerald-700 transition-all shadow-sm whitespace-nowrap"
                             >
                               <Truck className="w-3 h-3" /> Schedule Pickup
@@ -382,7 +382,7 @@ const CollectorDashboard: React.FC = () => {
                           )}
                           {isRejected && (
                             <button
-                              onClick={() => m._id && handleAppeal(m._id)}
+                              onClick={() => handleAppeal(m._id)}
                               className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 text-rose-600 border border-rose-100 rounded-xl font-black text-[10px] uppercase tracking-wider hover:bg-rose-600 hover:text-white transition-all"
                             >
                               <MessageSquare className="w-3 h-3" /> Appeal

@@ -5,7 +5,7 @@ import { UserRole } from '../types/user';
 import { PricingStrategy, PriceFactorType } from '../types/pricing';
 
 export class PricingController {
-    /**
+    /** 
      * GET /pricing
      * Returns active global price rules — one per materialType+condition combo.
      * Used by branches to auto-fill price when reviewing materials.
