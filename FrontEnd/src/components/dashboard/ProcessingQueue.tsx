@@ -384,10 +384,22 @@ export default function ProcessingQueue() {
                                                     <span className="text-[11px] text-amber-500 font-bold italic">Awaiting pickup scheduling by uploader</span>
                                                 )}
                                                 <button
-                                                    onClick={() => toast('Uploader notified to confirm pickup availability! 📅', { icon: '📅', duration: 4000 })}
+                                                    onClick={async () => {
+                                                        try {
+                                                            const res = await fetch(`${API_URL}/materials/${item.id}/confirm-pickup`, {
+                                                                method: 'PATCH',
+                                                                headers: authHeaders,
+                                                            });
+                                                            if (!res.ok) throw new Error();
+                                                            setQueue(prev => prev.map(i => i.id === item.id ? { ...i, status: 'pickup_scheduled' } : i));
+                                                            toast.success('Pickup confirmed! Uploader has been notified 🚚');
+                                                        } catch {
+                                                            toast.error('Failed to confirm pickup');
+                                                        }
+                                                    }}
                                                     className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all"
                                                 >
-                                                    <Truck className="h-3.5 w-3.5" /> Notify Pickup
+                                                    <Truck className="h-3.5 w-3.5" /> Confirm Pickup
                                                 </button>
                                                 <button
                                                     onClick={() => handleVerify(item.id)}

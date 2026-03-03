@@ -5,7 +5,7 @@ import { BundleStatus } from '../types/bundle';
 import { MaterialStatus } from '../types/material';
 import { AppError } from '../utils/logger';
 
-export class BundleController { 
+export class BundleController {
     /**
      * Create a bundle from accepted materials (Branch)
      */
@@ -50,13 +50,11 @@ export class BundleController {
             // Notify uploaders
             const { NotificationService } = require('../services/notificationService');
             for (const material of materials) {
-                await NotificationService.sendNotification({
-                    recipient: material.submittedBy,
-                    title: 'Material Bundled for Export',
+                await NotificationService.sendNotification(material.submittedBy.toString(), {
+                    title: 'Material Bundled for Export 🚢',
                     message: `Your material (${material.materialType}) has been bundled into "${name}" and is ready for export!`,
-                    type: 'info',
-                    relatedId: bundle._id,
-                    onModel: 'Bundle'
+                    type: 'material',
+                    metadata: { materialId: material._id, bundleId: bundle._id }
                 });
             }
 
@@ -115,6 +113,26 @@ export class BundleController {
             res.status(200).json({
                 success: true,
                 data: bundle
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * Get bundles created by the authenticated branch
+     */
+    static async getMyBundles(req: Request, res: Response, next: NextFunction) {
+        try {
+            const branchId = (req as any).user.branchId || (req as any).user._id;
+            const bundles = await Bundle.find({ branchId })
+                .populate('materialIds', 'materialType weight condition')
+                .sort({ createdAt: -1 });
+
+            res.status(200).json({
+                success: true,
+                count: bundles.length,
+                data: bundles
             });
         } catch (error) {
             next(error);

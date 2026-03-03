@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 
 interface BundleItem {
     materialId: string;
-    type: string; 
+    type: string;
     weightKg: number;
     quality: string;
 }
@@ -13,8 +13,7 @@ export default function BundleCreator() {
     const [items, setItems] = useState<BundleItem[]>([]);
     const [bundleName, setBundleName] = useState('');
     const [creating, setCreating] = useState(false);
-    const [availableItems, setAvailableItems] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [availableItems, setAvailableItems] = useState<AvailableMaterial[]>([]);
 
     useEffect(() => {
         const fetchAvailableMaterials = async () => {
@@ -22,7 +21,7 @@ export default function BundleCreator() {
                 const token = localStorage.getItem('ecolink_token');
                 const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
-                const res = await fetch(`${apiUrl}/materials/pending?status=delivered`, {
+                const res = await fetch(`${apiUrl}/materials/pending?status=approved,delivered`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
 
@@ -40,8 +39,6 @@ export default function BundleCreator() {
                 }
             } catch {
                 toast.error('Failed to load available materials');
-            } finally {
-                setLoading(false);
             }
         };
 
@@ -130,7 +127,11 @@ export default function BundleCreator() {
                         <span className="text-[10px] font-bold text-gray-400">{availableItems.length} Items</span>
                     </div>
                     <div className="space-y-4 max-h-[440px] overflow-y-auto pr-2 custom-scrollbar">
-                        {availableItems.map(item => (
+                        {availableItems.length === 0 ? (
+                            <div className="p-8 text-center text-gray-400 font-medium italic border-2 border-dashed border-gray-50 rounded-3xl">
+                                No materials available for bundling yet.
+                            </div>
+                        ) : availableItems.map(item => (
                             <div
                                 key={item.id}
                                 className={`group border-2 rounded-3xl p-5 transition-all cursor-pointer ${items.some(i => i.materialId === item.id)

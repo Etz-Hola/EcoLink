@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { Types } from 'mongoose';
 import Material from '../models/Material';
 import User from '../models/User';
 import { MaterialStatus } from '../types/material';
@@ -220,12 +221,20 @@ export class MaterialController {
                 material.qualityAssessment.notes = notes;
             }
 
-            if (status === MaterialStatus.APPROVED) {
+            if (status === MaterialStatus.APPROVED || status === MaterialStatus.REJECTED) {
                 material.processingBranch = (req as any).user.branchId || (req as any).user._id;
-                material.approvedAt = new Date();
+                if (status === MaterialStatus.APPROVED) material.approvedAt = new Date();
             }
 
             await material.save();
+
+            // Notify uploader of status/price update
+            await NotificationService.sendMaterialStatusUpdate(
+                material.submittedBy.toString(),
+                material._id.toString(),
+                'pending',
+                material.status
+            );
 
             res.status(200).json({
                 success: true,
@@ -275,6 +284,14 @@ export class MaterialController {
             );
 
             await material.save();
+
+            // Notify uploader of payment release
+            await NotificationService.sendNotification(collectorId.toString(), {
+                title: 'Payment Released 💸',
+                message: `Payment of ₦${amount.toLocaleString()} has been released to your balance for your ${material.materialType} upload.`,
+                type: 'payment',
+                metadata: { materialId: material._id.toString(), amount }
+            });
 
             res.status(200).json({
                 success: true,
@@ -391,6 +408,100 @@ export class MaterialController {
                 success: true,
                 message: 'Appeal submitted successfully. Admin has been notified.',
                 data: { materialId: material._id, status: material.status }
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * PATCH /materials/:id/confirm-pickup
+     * Called by Branch to confirm they are heading/ready for pickup.
+     */
+    static async confirmPickup(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { id } = req.params;
+            const branchId = (req as any).user.branchId || (req as any).user._id;
+
+            const material = await Material.findById(id);
+            if (!material) throw new AppError('Material not found', 404);
+
+            if (material.status !== MaterialStatus.APPROVED) {  // ← use the enum, not string
+                throw new AppError('Material must be approved before confirming pickup', 400);
+            }
+
+            material.status = 'pickup_scheduled' as any;
+            await material.save();
+
+            // Notify uploader
+            await NotificationService.sendNotification(material.submittedBy.toString(), {
+                title: 'Pickup Confirmed! 🚚',
+                message: `A branch manager has confirmed your pickup request. Please have your materials ready.`,
+                type: 'material',
+                metadata: { materialId: material._id.toString(), status: 'pickup_scheduled' }
+            });
+
+            res.status(200).json({
+                success: true,
+                message: 'Pickup confirmed and uploader notified',
+                data: material
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * GET /materials/stats/branch
+     * Returns stats for the authenticated branch
+     */
+    static async getBranchStats(req: Request, res: Response, next: NextFunction) {
+        try {
+            const branchId = (req as any).user.branchId || (req as any).user._id;
+            const lat = parseFloat(req.query.lat as string) || 6.5244;
+            const lng = parseFloat(req.query.lng as string) || 3.3792;
+            const radius = parseFloat(req.query.radius as string) || 50;
+
+            const center: [number, number] = [lng, lat];
+
+            // 1. Pending nearby
+            const pendingNearbyCount = await Material.countDocuments({
+                status: MaterialStatus.PENDING,
+                pickupLocation: {
+                    $geoWithin: {
+                        $centerSphere: [center, radius / 6371]
+                    }
+                }
+            });
+
+            // 2. Branch specific stats
+            const stats = await Material.aggregate([
+                { $match: { processingBranch: new Types.ObjectId(branchId.toString()) } },
+                {
+                    $group: {
+                        _id: '$status',
+                        count: { $sum: 1 }
+                    }
+                }
+            ]);
+
+            const statusCounts: Record<string, number> = {
+                pending: pendingNearbyCount,
+                approved: 0,
+                delivered: 0,
+                rejected: 0,
+                processed: 0
+            };
+
+            stats.forEach(s => {
+                if (statusCounts.hasOwnProperty(s._id)) {
+                    statusCounts[s._id] = s.count;
+                }
+            });
+
+            res.status(200).json({
+                success: true,
+                data: statusCounts
             });
         } catch (error) {
             next(error);
