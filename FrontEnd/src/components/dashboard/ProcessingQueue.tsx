@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Package, CheckCircle, XCircle, Clock, Filter, Truck, BadgeCheck, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -21,8 +21,9 @@ interface AdminDefault {
     maxAllowed: number;
 }
 
-// Cache of admin default prices by materialType
 type AdminPriceCache = Record<string, AdminDefault | null>;
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
 export default function ProcessingQueue() {
     const [queue, setQueue] = useState<QueueItem[]>([]);
@@ -31,15 +32,40 @@ export default function ProcessingQueue() {
     const [priceInputs, setPriceInputs] = useState<Record<string, string>>({});
     const [adminPrices, setAdminPrices] = useState<AdminPriceCache>({});
 
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
-    const token = localStorage.getItem('ecolink_token');
-    const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+    const authToken = localStorage.getItem('ecolink_token');
+    const authHeaders = { Authorization: `Bearer ${authToken}`, 'Content-Type': 'application/json' };
+
+    // Fetch admin default price for a material type (cached)
+    const fetchAdminDefault = async (materialType: string) => {
+        const key = materialType.toLowerCase();
+        if (key in adminPrices) return; // already cached
+        try {
+            const res = await fetch(`${API_URL}/pricing/defaults/${encodeURIComponent(key)}`, {
+                headers: authHeaders
+            });
+            const data = await res.json();
+            setAdminPrices(prev => ({
+                ...prev,
+                [key]: data.success && data.data ? data.data : null
+            }));
+            if (data.success && data.data) {
+                // Pre-fill the price input if not already set
+                setPriceInputs(prev => {
+                    const updated = { ...prev };
+                    // We'll use materialType key to pre-fill items on render
+                    return updated;
+                });
+            }
+        } catch {
+            setAdminPrices(prev => ({ ...prev, [key]: null }));
+        }
+    };
 
     useEffect(() => {
         const fetchQueue = async () => {
             try {
-                const res = await fetch(`${apiUrl}/materials/pending`, {
-                    headers: { Authorization: `Bearer ${token}` },
+                const res = await fetch(`${API_URL}/materials/pending`, {
+                    headers: { Authorization: `Bearer ${authToken}` },
                 });
 
                 if (!res.ok) throw new Error();
@@ -72,6 +98,10 @@ export default function ProcessingQueue() {
                         location: m.pickupLocation?.city || m.pickupLocation?.address,
                     }));
                     setQueue(mapped);
+
+                    // Trigger admin price fetch for each unique material type
+                    const uniqueTypes = [...new Set((mapped as QueueItem[]).map(i => i.materialType.toLowerCase()))];
+                    uniqueTypes.forEach(type => fetchAdminDefault(type));
                 }
             } catch {
                 toast.error('Failed to load processing queue');
@@ -81,7 +111,29 @@ export default function ProcessingQueue() {
         };
 
         fetchQueue();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // When a pending item has no price input yet but we have admin default, pre-fill it
+    useEffect(() => {
+        setQueue(prevQueue => {
+            let changed = false;
+            const newInputs: Record<string, string> = {};
+            prevQueue.forEach(item => {
+                if (item.status === 'pending' && !priceInputs[item.id]) {
+                    const def = adminPrices[item.materialType.toLowerCase()];
+                    if (def) {
+                        newInputs[item.id] = String(def.pricePerKg);
+                        changed = true;
+                    }
+                }
+            });
+            if (changed) {
+                setPriceInputs(prev => ({ ...prev, ...newInputs }));
+            }
+            return prevQueue;
+        });
+    }, [adminPrices]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleAccept = async (id: string) => {
         const price = parseFloat(priceInputs[id] || '');
@@ -90,30 +142,31 @@ export default function ProcessingQueue() {
             return;
         }
 
-        try {
-            const token = localStorage.getItem('ecolink_token');
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+        const item = queue.find(i => i.id === id);
+        const def = item ? adminPrices[item.materialType.toLowerCase()] : null;
+        if (def && (price < def.minAllowed || price > def.maxAllowed)) {
+            toast.error(`Price must be between ₦${def.minAllowed.toLocaleString()} – ₦${def.maxAllowed.toLocaleString()} (±20% of admin rate)`, {
+                duration: 6000, icon: '⚠️'
+            });
+            return;
+        }
 
-            const res = await fetch(`${apiUrl}/materials/${id}/review`, {
+        try {
+            const res = await fetch(`${API_URL}/materials/${id}/review`, {
                 method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
+                headers: authHeaders,
                 body: JSON.stringify({ status: 'approved', offeredPrice: price })
             });
 
             if (!res.ok) throw new Error();
 
-            setQueue(prev => prev.map(item =>
-                item.id === id ? { ...item, status: 'approved', pricePerKg: price } : item
+            setQueue(prev => prev.map(i =>
+                i.id === id ? { ...i, status: 'approved', pricePerKg: price } : i
             ));
 
-            const item = queue.find(i => i.id === id);
             const total = item ? (item.weightKg * price) : 0;
-            toast.success(`Material accepted at ₦${price.toLocaleString()}/kg — Total: ₦${total.toLocaleString()}`, {
-                icon: '✅',
-                duration: 5000
+            toast.success(`Accepted at ₦${price.toLocaleString()}/kg — Total: ₦${total.toLocaleString()}`, {
+                icon: '✅', duration: 5000
             });
         } catch {
             toast.error('Failed to accept material');
@@ -122,22 +175,16 @@ export default function ProcessingQueue() {
 
     const handleReject = async (id: string) => {
         try {
-            const token = localStorage.getItem('ecolink_token');
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
-
-            const res = await fetch(`${apiUrl}/materials/${id}/review`, {
+            const res = await fetch(`${API_URL}/materials/${id}/review`, {
                 method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
+                headers: authHeaders,
                 body: JSON.stringify({ status: 'rejected' })
             });
 
             if (!res.ok) throw new Error();
 
-            setQueue(prev => prev.map(item => item.id === id ? { ...item, status: 'rejected' } : item));
-            toast.success('Material rejected with feedback sent to uploader', { icon: '❌' });
+            setQueue(prev => prev.map(i => i.id === id ? { ...i, status: 'rejected' } : i));
+            toast.success('Rejected — uploader notified', { icon: '❌' });
         } catch {
             toast.error('Failed to reject material');
         }
@@ -145,17 +192,10 @@ export default function ProcessingQueue() {
 
     const handleVerify = async (id: string) => {
         try {
-            const token = localStorage.getItem('ecolink_token');
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
-
             const item = queue.find(i => i.id === id);
-
-            const res = await fetch(`${apiUrl}/materials/${id}/verify`, {
+            const res = await fetch(`${API_URL}/materials/${id}/verify`, {
                 method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                }
+                headers: authHeaders,
             });
 
             if (!res.ok) throw new Error();
@@ -262,6 +302,7 @@ export default function ProcessingQueue() {
                     filteredQueue.map(item => {
                         const quoted = item.pricePerKg ? item.pricePerKg * item.weightKg : null;
                         const isAccepted = item.status === 'approved' || item.status === 'accepted';
+                        const def = adminPrices[item.materialType.toLowerCase()];
 
                         return (
                             <div key={item.id} className="p-6 hover:bg-gray-50/40 transition-colors">
@@ -292,19 +333,26 @@ export default function ProcessingQueue() {
 
                                         {/* ── PENDING: price input + accept/reject ── */}
                                         {item.status === 'pending' && (
-                                            <div className="flex flex-wrap items-center gap-2.5 mt-3">
-                                                <div className="flex items-center gap-1.5 bg-white border-2 border-gray-100 rounded-xl px-3 py-2 focus-within:border-blue-400 transition-colors">
-                                                    <span className="text-[11px] font-black text-gray-400">₦</span>
-                                                    <input
-                                                        type="number"
-                                                        placeholder="Price / kg"
-                                                        value={priceInputs[item.id] || ''}
-                                                        onChange={e => setPriceInputs(p => ({ ...p, [item.id]: e.target.value }))}
-                                                        className="w-24 text-sm font-bold text-gray-900 outline-none bg-transparent placeholder:text-gray-300"
-                                                    />
+                                            <div className="flex flex-wrap items-start gap-2.5 mt-3">
+                                                <div className="flex flex-col gap-1">
+                                                    <div className="flex items-center gap-1.5 bg-white border-2 border-gray-100 rounded-xl px-3 py-2 focus-within:border-blue-400 transition-colors">
+                                                        <span className="text-[11px] font-black text-gray-400">₦</span>
+                                                        <input
+                                                            type="number"
+                                                            placeholder={def ? `${def.pricePerKg} (admin rate)` : 'Price / kg'}
+                                                            value={priceInputs[item.id] || ''}
+                                                            onChange={e => setPriceInputs(p => ({ ...p, [item.id]: e.target.value }))}
+                                                            className="w-28 text-sm font-bold text-gray-900 outline-none bg-transparent placeholder:text-gray-300"
+                                                        />
+                                                    </div>
+                                                    {def && (
+                                                        <p className="text-[10px] text-amber-600 font-bold px-1">
+                                                            Admin rate: ₦{def.pricePerKg.toLocaleString()} · Range: ₦{def.minAllowed.toLocaleString()}–₦{def.maxAllowed.toLocaleString()}
+                                                        </p>
+                                                    )}
                                                 </div>
                                                 {priceInputs[item.id] && (
-                                                    <span className="text-[11px] font-black text-emerald-600">
+                                                    <span className="text-[11px] font-black text-emerald-600 pt-2">
                                                         → ₦{(parseFloat(priceInputs[item.id]) * item.weightKg).toLocaleString()} total
                                                     </span>
                                                 )}
@@ -323,7 +371,7 @@ export default function ProcessingQueue() {
                                             </div>
                                         )}
 
-                                        {/* ── ACCEPTED/APPROVED: quoted total + schedule + verify ── */}
+                                        {/* ── ACCEPTED/APPROVED: quoted total + verify ── */}
                                         {isAccepted && (
                                             <div className="flex flex-wrap items-center gap-3 mt-3">
                                                 {quoted ? (
@@ -333,10 +381,10 @@ export default function ProcessingQueue() {
                                                         <span className="text-[9px] text-emerald-400">({item.weightKg}kg × ₦{item.pricePerKg?.toLocaleString()}/kg)</span>
                                                     </div>
                                                 ) : (
-                                                    <span className="text-[11px] text-amber-500 font-bold italic">Awaiting pickup scheduling</span>
+                                                    <span className="text-[11px] text-amber-500 font-bold italic">Awaiting pickup scheduling by uploader</span>
                                                 )}
                                                 <button
-                                                    onClick={() => toast('Uploader has been notified to schedule a pickup! 📅', { icon: '📅', duration: 4000 })}
+                                                    onClick={() => toast('Uploader notified to confirm pickup availability! 📅', { icon: '📅', duration: 4000 })}
                                                     className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all"
                                                 >
                                                     <Truck className="h-3.5 w-3.5" /> Notify Pickup
