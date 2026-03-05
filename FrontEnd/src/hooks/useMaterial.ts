@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
-import { Material, MaterialCategory } from '../types';
+import { useState, useCallback } from 'react';
+import { Material } from '../types';
 import { useApp } from '../context/AppContext';
 import { generateMaterialId, uploadToCloudinary, validateImageFile } from '../utils/helpers';
 import { MATERIAL_CATEGORIES } from '../utils/constants';
@@ -70,6 +70,10 @@ export const useMaterial = () => {
       setIsUploading(false);
     }
   }, [addMaterial, setError]);
+
+  const getMaterialsByUser = useCallback((userId: string) => {
+    return materials.filter(material => material.uploadedBy === userId);
+  }, [materials]);
 
   const getMaterialsByOrganization = useCallback((organizationId: string) => {
     return materials.filter(material => material.organizationId === organizationId || material.uploadedBy === organizationId);
