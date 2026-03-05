@@ -24,6 +24,7 @@ export class PaymentService {
         // Create pending transaction
         await Transaction.create({
             user: userId,
+            organizationId: user.organizationId || user._id,
             type: TransactionType.TOPUP,
             status: TransactionStatus.PENDING,
             amount,
@@ -50,12 +51,13 @@ export class PaymentService {
             transaction.status = TransactionStatus.SUCCESS;
             await transaction.save();
 
-            // Update user balance
-            await User.findByIdAndUpdate(transaction.user, {
+            // Update user/organization balance
+            const targetId = transaction.organizationId || transaction.user;
+            await User.findByIdAndUpdate(targetId, {
                 $inc: { balance: amount }
             });
 
-            logger.info(`Top-up successful for user ${transaction.user}: ₦${amount}`);
+            logger.info(`Top-up successful for org/user ${targetId}: ₦${amount}`);
 
             // Notify user
             NotificationService.sendNotification(transaction.user.toString(), {
@@ -90,22 +92,27 @@ export class PaymentService {
             const sender = await User.findById(senderId).session(session);
             const recipient = await User.findById(recipientId).session(session);
 
-            if (!sender || !recipient) throw new AppError('Sender or Recipient not found', 404);
-            if (sender.balance < fullAmount) throw new AppError('Insufficient balance in branch/sender account', 400);
+            const senderOrgId = sender.organizationId || sender._id;
+            const recipientOrgId = recipient.organizationId || recipient._id;
 
-            // Commission calculation (2-5%, let's use 5% as default or from branch config if we had it)
-            // For now, using a fixed 5% as per branch model default
+            const senderOrg = await User.findById(senderOrgId).session(session);
+            const recipientOrg = await User.findById(recipientOrgId).session(session);
+
+            // Commission calculation (2-5%, let's use 5% as default)
             const commissionRate = 0.05;
             const commissionAmount = fullAmount * commissionRate;
             const netAmount = fullAmount - commissionAmount;
 
-            // Deduct from sender
-            sender.balance -= fullAmount;
-            await sender.save({ session });
+            if (!senderOrg || !recipientOrg) throw new AppError('Sender or Recipient organization not found', 404);
+            if (senderOrg.balance < fullAmount) throw new AppError('Insufficient balance in organization account', 400);
 
-            // Add to recipient
-            recipient.balance += netAmount;
-            await recipient.save({ session });
+            // Deduct from sender organization
+            senderOrg.balance -= fullAmount;
+            await senderOrg.save({ session });
+
+            // Add to recipient organization
+            recipientOrg.balance += netAmount;
+            await recipientOrg.save({ session });
 
             // Add to Admin (Commission aggregation)
             // Find an admin user to hold the platform balance
@@ -121,6 +128,7 @@ export class PaymentService {
             // Transfer record
             await Transaction.create([{
                 user: recipientId,
+                organizationId: recipientOrgId,
                 sender: senderId,
                 recipient: recipientId,
                 type: TransactionType.TRANSFER,
@@ -135,6 +143,7 @@ export class PaymentService {
             // Commission record
             await Transaction.create([{
                 user: admin?._id || senderId,
+                organizationId: admin?.organizationId || admin?._id || senderOrgId,
                 type: TransactionType.COMMISSION,
                 status: TransactionStatus.SUCCESS,
                 amount: commissionAmount,

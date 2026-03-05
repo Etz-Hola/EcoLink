@@ -170,13 +170,16 @@ export class MaterialController {
 
             const query: any = {};
 
+            const user = (req as any).user;
+            const organizationId = user.organizationId || user._id;
+
             if (status && status !== 'all') {
                 const statusList = status.split(',').map(s => s.trim()).filter(Boolean);
                 query.status = statusList.length > 1 ? { $in: statusList } : statusList[0];
 
-                // If fetching active items, only show those processed by this branch
-                const branchId = (req as any).user.branchId || (req as any).user.organizationId || (req as any).user._id;
-                query.processingBranch = branchId;
+                // Filter by processing branch/organization
+                const targetBranchId = (req.query.branchId as string) || user.branchId || organizationId;
+                query.processingBranch = targetBranchId;
             } else {
                 query.status = MaterialStatus.PENDING;
             }
@@ -230,6 +233,8 @@ export class MaterialController {
 
             if (status === MaterialStatus.APPROVED || status === MaterialStatus.REJECTED) {
                 material.processingBranch = (req as any).user.branchId || (req as any).user.organizationId || (req as any).user._id;
+                // Track which organization is processing it
+                (material as any).processingOrganizationId = (req as any).user.organizationId || (req as any).user._id;
                 if (status === MaterialStatus.APPROVED) material.approvedAt = new Date();
             }
 
@@ -474,6 +479,7 @@ export class MaterialController {
             // 1. Pending nearby
             const pendingNearbyCount = await Material.countDocuments({
                 status: MaterialStatus.PENDING,
+                organizationId: { $ne: branchId }, // Don't show our own uploads as pending to buy
                 pickupLocation: {
                     $geoWithin: {
                         $centerSphere: [center, radius / 6371]
@@ -481,7 +487,7 @@ export class MaterialController {
                 }
             });
 
-            // 2. Branch specific stats
+            // 2. Branch specific stats - filter by organizationId
             const stats = await Material.aggregate([
                 { $match: { processingBranch: new Types.ObjectId(branchId.toString()) } },
                 {

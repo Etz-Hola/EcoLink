@@ -65,7 +65,9 @@ const RegisterForm: React.FC = () => {
     password: '',
     confirmPassword: '',
     role: 'collector' as string,
+    inviteCode: '',
   });
+  const [isJoining, setIsJoining] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -101,7 +103,7 @@ const RegisterForm: React.FC = () => {
     }
     setIsLoading(true);
     try {
-      await register({
+      const user = await register({
         firstName: formData.name.split(' ')[0],
         lastName: formData.name.split(' ').slice(1).join(' ') || 'User',
         email: formData.email,
@@ -109,9 +111,10 @@ const RegisterForm: React.FC = () => {
         password: formData.password,
         role: formData.role,
         username: formData.email.split('@')[0],
+        inviteCode: isJoining ? formData.inviteCode : undefined,
       });
       toast.success('Welcome to EcoLink! 🎉');
-      navigateToDashboard(formData.role);
+      navigateToDashboard(user.role);
     } catch (err: any) {
       setError(err.message || 'Registration failed. Please try again.');
     } finally {
@@ -220,7 +223,7 @@ const RegisterForm: React.FC = () => {
 
       {/* ── Right panel ── */}
       <div className="flex-1 flex flex-col justify-center items-center px-6 sm:px-10 py-10 bg-gradient-to-br from-primary-100/70 via-white to-primary-50/40">
-        <div className="w-full max-w-md"> 
+        <div className="w-full max-w-md">
 
           <motion.div variants={fadeUp} custom={0} initial="hidden" animate="show">
             <h1 className="text-3xl font-black text-gray-900 mb-1">Create your account</h1>
@@ -339,6 +342,52 @@ const RegisterForm: React.FC = () => {
                     Change
                   </button>
                 </div>
+
+                {/* Organization Join Toggle */}
+                {formData.role !== 'collector' && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="mb-6 space-y-4"
+                  >
+                    <div className="flex p-1 bg-gray-100/50 rounded-xl border border-gray-200">
+                      <button
+                        type="button"
+                        onClick={() => setIsJoining(false)}
+                        className={`flex-1 py-2 text-xs font-black uppercase tracking-wider rounded-lg transition-all ${!isJoining ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                      >
+                        Start New
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsJoining(true)}
+                        className={`flex-1 py-2 text-xs font-black uppercase tracking-wider rounded-lg transition-all ${isJoining ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                      >
+                        Join Team
+                      </button>
+                    </div>
+
+                    {isJoining && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                      >
+                        <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">Invite Code</label>
+                        <input
+                          name="inviteCode"
+                          value={formData.inviteCode}
+                          onChange={handleChange}
+                          placeholder="e.g. ECO-JOIN-123"
+                          required
+                          className={inputCls('inviteCode')}
+                        />
+                        <p className="text-[10px] font-medium text-gray-400 mt-2 px-1">
+                          Enter the code provided by your organization administrator.
+                        </p>
+                      </motion.div>
+                    )}
+                  </motion.div>
+                )}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {/* Name */}
