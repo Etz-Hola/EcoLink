@@ -5,6 +5,7 @@ import UserManagement from '../../components/dashboard/admin/UserManagement';
 import PricingManager from '../../components/dashboard/PricingManager';
 import BranchManagement from '../../components/dashboard/admin/BranchManagement';
 import MaterialMonitor from '../../components/dashboard/admin/MaterialMonitor';
+import BundleMonitor from '../../components/dashboard/admin/BundleMonitor';
 import FinanceManager from '../../components/dashboard/admin/FinanceManager';
 import PlatformSettings from '../../components/dashboard/admin/PlatformSettings';
 
@@ -39,6 +40,8 @@ const AdminDashboard: React.FC = () => {
         return <BranchManagement />;
       case 'materials':
         return <MaterialMonitor />;
+      case 'bundles':
+        return <BundleMonitor />;
       case 'financials':
         return <FinanceManager />;
       case 'settings':
