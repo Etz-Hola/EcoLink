@@ -1,6 +1,6 @@
-import React from 'react';
-import { Package, TrendingUp, Truck, ShoppingCart, ArrowUpRight, Search } from 'lucide-react';
-import Button from '../../components/common/Button';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Package, TrendingUp, Truck, ShoppingCart, ArrowUpRight, RefreshCw } from 'lucide-react';
+import { useBalance } from '../../hooks/useBalance';
 import NearbyBuyersMap from '../../components/dashboard/NearbyBuyersMap';
 import toast from 'react-hot-toast';
 
@@ -15,11 +15,13 @@ interface AvailableBundle {
 }
 
 const ExporterDashboard: React.FC = () => {
-    const [userLocation, setUserLocation] = React.useState<{ lat: number; lng: number } | null>(null);
-    const [bundles, setBundles] = React.useState<AvailableBundle[]>([]);
-    const [loadingBundles, setLoadingBundles] = React.useState(false);
+    const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+    const [bundles, setBundles] = useState<AvailableBundle[]>([]);
+    const [loadingBundles, setLoadingBundles] = useState(false);
+    const { balance, refreshBalance, isAdmin } = useBalance();
+    const [isSyncing, setIsSyncing] = useState(false);
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 (position) => setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude }),
@@ -30,7 +32,7 @@ const ExporterDashboard: React.FC = () => {
         }
     }, []);
 
-    const fetchBundles = React.useCallback(async () => {
+    const fetchBundles = useCallback(async () => {
         setLoadingBundles(true);
         try {
             const token = localStorage.getItem('ecolink_token');
@@ -54,15 +56,18 @@ const ExporterDashboard: React.FC = () => {
         }
     }, []);
 
-    React.useEffect(() => {
+    useEffect(() => {
         fetchBundles();
     }, [fetchBundles]);
-    const stats = [
-        { label: 'Active Purchases', value: '12', icon: ShoppingCart, color: 'text-blue-600', bg: 'bg-blue-50' },
-        { label: 'Bundles Verified', value: '450', icon: Package, color: 'text-green-600', bg: 'bg-green-50' },
-        { label: 'In Transit', value: '5', icon: Truck, color: 'text-purple-600', bg: 'bg-purple-50' },
-        { label: 'Market Savings', value: '₦245k', icon: TrendingUp, color: 'text-orange-600', bg: 'bg-orange-50' },
-    ];
+
+    const handleSync = async () => {
+        setIsSyncing(true);
+        await Promise.all([fetchBundles(), refreshBalance()]);
+        setTimeout(() => {
+            setIsSyncing(false);
+            toast.success('Organization data synchronized');
+        }, 800);
+    };
 
     const handlePurchase = async (bundleId: string) => {
         try {
@@ -75,22 +80,49 @@ const ExporterDashboard: React.FC = () => {
             if (!res.ok || !data.success) throw new Error(data.message || 'Failed to purchase bundle');
             toast.success('Bundle purchase recorded — materials marked as sold ✅');
             fetchBundles();
+            refreshBalance();
         } catch (err: any) {
             toast.error(err.message || 'Could not complete purchase');
         }
     };
+
+    const stats = [
+        { label: 'Active Purchases', value: '12', icon: ShoppingCart, color: 'text-blue-600', bg: 'bg-blue-50' },
+        { label: 'Bundles Verified', value: '450', icon: Package, color: 'text-green-600', bg: 'bg-green-50' },
+        { label: 'In Transit', value: '5', icon: Truck, color: 'text-purple-600', bg: 'bg-purple-50' },
+        { label: 'Market Savings', value: '₦245k', icon: TrendingUp, color: 'text-orange-600', bg: 'bg-orange-50' },
+    ];
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">Exporter Dashboard</h1>
+                    <h1 className="text-3xl font-black text-gray-900 tracking-tight uppercase">Exporter Dashboard</h1>
                     <p className="text-gray-500 font-medium">Global procurement & logistics management</p>
                 </div>
-                <div className="flex gap-3">
-                    <Button variant="outline" leftIcon={<Search className="w-4 h-4" />}>Find Bundles</Button>
-                    <Button shadow>Market Insights</Button>
+                <div className="flex flex-col md:flex-row items-center gap-4">
+                    <div className="bg-white border border-gray-100 rounded-2xl px-6 py-3 shadow-sm flex items-center gap-4">
+                        <div>
+                            <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Entity Balance</p>
+                            <p className="text-xl font-black text-emerald-600">₦{balance.toLocaleString()}</p>
+                        </div>
+                        {isAdmin && (
+                            <div className="h-8 w-px bg-gray-100 mx-2" />
+                        )}
+                        {isAdmin && (
+                            <button className="text-[10px] font-black text-gray-900 uppercase tracking-widest hover:text-emerald-600 transition-colors">
+                                Withdraw
+                            </button>
+                        )}
+                    </div>
+                    <button
+                        onClick={handleSync}
+                        className="flex items-center justify-center gap-3 px-6 py-3.5 bg-gray-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-xl shadow-gray-200"
+                    >
+                        <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                        {isSyncing ? 'Syncing...' : 'Sync Data'}
+                    </button>
                 </div>
             </div>
 

@@ -6,7 +6,7 @@ export interface User {
   lastName: string;
   email: string;
   phone?: string;
-  role: 'collector' | 'branch' | 'admin' | 'buyer' | 'organization' | 'hotel' | 'exporter' | 'pending';
+  role: 'collector' | 'branch' | 'admin' | 'buyer' | 'organization' | 'hotel' | 'exporter' | 'pending' | 'owner';
   isVerified: boolean;
   ecoPoints: number;
   walletAddress?: string;

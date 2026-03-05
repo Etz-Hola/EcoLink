@@ -8,7 +8,9 @@ export enum UserRole {
   HOTEL = 'hotel',
   EXPORTER = 'exporter',
   ADMIN = 'admin',
-  PENDING = 'pending'
+  PENDING = 'pending',
+  OWNER = 'owner',
+  STAFF = 'staff'
 }
 
 export enum UserStatus {

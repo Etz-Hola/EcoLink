@@ -44,12 +44,32 @@ export const useBalance = () => {
         }
     }, [user, fetchBalance]);
 
+    const withdraw = async (amount: number, accountDetails: { bankName: string; accountNumber: string }) => {
+        try {
+            const token = localStorage.getItem('ecolink_token');
+            const response = await axios.post(`${API_URL}/payments/withdraw`,
+                { amount, accountDetails },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            if (response.data.success) {
+                await fetchBalance();
+                return { success: true, data: response.data.data };
+            }
+            return { success: false, message: response.data.message };
+        } catch (err: unknown) {
+            const message = axios.isAxiosError(err) ? err.response?.data?.message : 'Withdrawal failed';
+            return { success: false, message: message || 'Withdrawal failed' };
+        }
+    };
+
     return {
         balance: balanceData?.balance || 0,
         currency: balanceData?.currency || 'NGN',
         loading,
         error,
         refreshBalance: fetchBalance,
-        isAdmin: user?.role === 'admin' || user?.role === 'organization' || user?.role === 'branch'
+        withdraw,
+        isAdmin: user?.role === 'admin' || user?.role === 'organization' || user?.role === 'branch' || user?.role === 'owner'
     };
 };
