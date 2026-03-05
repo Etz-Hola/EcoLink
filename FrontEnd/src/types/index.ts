@@ -16,7 +16,8 @@ export interface User {
   totalEarnings?: number;
   totalMaterialsSubmitted?: number;
   profileImage?: string;
-  businessName?: string;
+  organizationId?: string;
+  branchId?: string;
   location?: {
     type: 'Point';
     coordinates: [number, number];
@@ -45,6 +46,7 @@ export interface Material {
   uploadedBy?: string;
   submittedBy?: string;
   status: 'pending' | 'accepted' | 'rejected' | 'processed' | 'approved' | 'delivered';
+  organizationId?: string;
   branchId?: string;
   uploadedAt?: Date;
   createdAt?: string | Date;
