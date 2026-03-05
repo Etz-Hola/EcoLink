@@ -4,12 +4,15 @@ import { useAuth } from '../../hooks/useAuth';
 import ProcessingQueue from '../../components/dashboard/ProcessingQueue';
 import BundleCreator from '../../components/dashboard/BundleCreator';
 import NearbyBuyersMap from '../../components/dashboard/NearbyBuyersMap';
+import { useBalance } from '../../hooks/useBalance';
+import { Notification } from '../../types';
 import toast from 'react-hot-toast';
 
 const BranchDashboard: React.FC = () => {
   const { user } = useAuth();
+  const { balance, refreshBalance, isAdmin } = useBalance();
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [stats, setStats] = useState<{ label: string; value: number | string; icon: any; color: string; bg: string }[]>([]);
+  const [stats, setStats] = useState<{ label: string; value: number | string; icon: React.ElementType; color: string; bg: string }[]>([]);
   const [loadingStats, setLoadingStats] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -51,7 +54,7 @@ const BranchDashboard: React.FC = () => {
           { label: 'Disputed', value: s.rejected || 0, icon: Filter, color: 'text-rose-600', bg: 'bg-rose-50' }
         ]);
       }
-    } catch (err) {
+    } catch {
       console.error('Failed to fetch branch stats');
     } finally {
       setLoadingStats(false);
@@ -62,9 +65,10 @@ const BranchDashboard: React.FC = () => {
     if (userLocation) fetchStats();
   }, [userLocation, fetchStats, refreshKey]);
 
-  const handleSync = () => {
+  const handleSync = async () => {
     setIsSyncing(true);
     setRefreshKey(prev => prev + 1);
+    await refreshBalance();
     setTimeout(() => {
       setIsSyncing(false);
       toast.success('Hub synchronization complete!');
@@ -86,13 +90,29 @@ const BranchDashboard: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={handleSync}
-          className="flex items-center justify-center gap-3 px-8 py-4 bg-gray-900 text-white rounded-[1.5rem] font-black text-xs uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-xl shadow-gray-200"
-        >
-          <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-          {isSyncing ? 'Synchronizing...' : 'Sync Hub Data'}
-        </button>
+        <div className="flex flex-col md:flex-row items-center gap-4">
+          <div className="bg-white border border-gray-100 rounded-[1.5rem] px-6 py-3 shadow-sm flex items-center gap-4">
+            <div>
+              <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Entity Balance</p>
+              <p className="text-xl font-black text-emerald-600">₦{balance.toLocaleString()}</p>
+            </div>
+            {isAdmin && (
+              <div className="h-8 w-px bg-gray-100 mx-2" />
+            )}
+            {isAdmin && (
+              <button className="text-[10px] font-black text-gray-900 uppercase tracking-widest hover:text-emerald-600 transition-colors">
+                Withdraw
+              </button>
+            )}
+          </div>
+          <button
+            onClick={handleSync}
+            className="flex items-center justify-center gap-3 px-8 py-4 bg-gray-900 text-white rounded-[1.5rem] font-black text-xs uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-xl shadow-gray-200"
+          >
+            <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+            {isSyncing ? 'Synchronizing...' : 'Sync Hub Data'}
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -197,7 +217,7 @@ interface ExportBundle {
   totalWeight: number;
   totalPrice: number;
   status: string;
-  materialIds: any[];
+  materialIds: string[];
 }
 
 const CreatedBundlesSection: React.FC = () => {
@@ -264,7 +284,7 @@ const CreatedBundlesSection: React.FC = () => {
 };
 
 const NotificationsList: React.FC<{ limit: number }> = ({ limit }) => {
-  const [notifications, setNotifications] = useState<any[]>([]); // We can keep any[] here if the structure is dynamic, but let's see
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

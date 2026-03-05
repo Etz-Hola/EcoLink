@@ -8,10 +8,11 @@ import {
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useMaterial } from '../../hooks/useMaterial';
+import { useBalance } from '../../hooks/useBalance';
 import { Material, Notification } from '../../types';
 import toast from 'react-hot-toast';
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: React.FC<any> }> = {
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: React.ElementType }> = {
   pending: { label: 'In Review', color: 'text-amber-600', bg: 'bg-amber-50', icon: Clock },
   accepted: { label: 'Accepted', color: 'text-emerald-600', bg: 'bg-emerald-50', icon: CheckCircle },
   approved: { label: 'Accepted', color: 'text-emerald-600', bg: 'bg-emerald-50', icon: CheckCircle },
@@ -24,6 +25,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
 const CollectorDashboard: React.FC = () => {
   const { user } = useAuth();
   const { fetchMyMaterials } = useMaterial();
+  const { balance, refreshBalance, isAdmin } = useBalance();
   const [materials, setMaterials] = useState<Material[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,7 +45,8 @@ const CollectorDashboard: React.FC = () => {
 
       const [matData, notifRes] = await Promise.all([
         fetchMyMaterials(),
-        fetch(`${API_URL}/notifications/me`, { headers })
+        fetch(`${API_URL}/notifications/me`, { headers }),
+        refreshBalance()
       ]);
 
       setMaterials(matData);
@@ -52,13 +55,13 @@ const CollectorDashboard: React.FC = () => {
       if (notifData.success) setNotifications(notifData.data);
 
       if (isRefresh) toast.success('Dashboard synced with latest data');
-    } catch (err) {
-      console.error('Error fetching dashboard data:', err);
+    } catch {
+      console.error('Error fetching dashboard data');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [API_URL, fetchMyMaterials]);
+  }, [API_URL, fetchMyMaterials, refreshBalance]);
 
   useEffect(() => {
     fetchData();
@@ -94,8 +97,9 @@ const CollectorDashboard: React.FC = () => {
       if (!res.ok) throw new Error(data.message || 'Failed to schedule pickup');
       toast.success('Pickup request sent! A branch representative will contact you. 🚚');
       fetchData(true);
-    } catch (err: any) {
-      toast.error(err.message || 'Could not schedule pickup');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Could not schedule pickup';
+      toast.error(message);
     }
   };
 
@@ -110,7 +114,7 @@ const CollectorDashboard: React.FC = () => {
       if (!res.ok) throw new Error('Appeal failed');
       toast.success('Appeal submitted for review.');
       fetchData(true);
-    } catch (err) {
+    } catch {
       toast.error('Could not submit appeal');
     }
   };
@@ -175,27 +179,34 @@ const CollectorDashboard: React.FC = () => {
             </div>
             <div className="flex items-baseline gap-1">
               <span className="text-2xl font-black text-emerald-600">₦</span>
-              <h2 className="text-5xl font-black text-gray-900 tracking-tighter">{(user?.balance || 0).toLocaleString()}</h2>
+              <h2 className="text-5xl font-black text-gray-900 tracking-tighter">{balance.toLocaleString()}</h2>
             </div>
             <div className="py-1 px-3 bg-emerald-50 w-fit rounded-full flex items-center gap-2">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-[8px] font-black text-emerald-700 uppercase">Live Organization Funds</span>
             </div>
           </div>
-          <Link to="/wallet" className="mt-8">
-            <button className="w-full flex items-center justify-between p-4 bg-gray-900 text-white rounded-2xl hover:bg-emerald-600 transition-colors">
-              <span className="text-xs font-black uppercase tracking-widest">Manage Treasury</span>
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </Link>
+          {isAdmin && (
+            <Link to="/wallet" className="mt-8">
+              <button className="w-full flex items-center justify-between p-4 bg-gray-900 text-white rounded-2xl hover:bg-emerald-600 transition-colors shadow-lg shadow-gray-200">
+                <span className="text-xs font-black uppercase tracking-widest">Withdraw / Top-up</span>
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </Link>
+          )}
+          {!isAdmin && (
+            <div className="mt-8 p-4 bg-gray-50 rounded-2xl border border-gray-100 italic text-[10px] font-bold text-gray-400 text-center">
+              Withdrawal restricted to admins
+            </div>
+          )}
         </motion.div>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {statCards.map((card, i) => (
+        {statCards.map((card, idx) => (
           <motion.div
-            key={i}
+            key={idx}
             whileHover={{ y: -5 }}
             className={`bg-gradient-to-br ${card.bg} p-6 rounded-[2rem] border border-white shadow-sm`}
           >
@@ -253,8 +264,8 @@ const CollectorDashboard: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           <AnimatePresence mode="popLayout">
             {loading ? (
-              Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="h-[300px] bg-gray-100 animate-pulse rounded-[2.5rem]" />
+              Array.from({ length: 4 }).map((_, idx) => (
+                <div key={idx} className="h-[300px] bg-gray-100 animate-pulse rounded-[2.5rem]" />
               ))
             ) : filteredMaterials.length === 0 ? (
               <motion.div
@@ -342,7 +353,7 @@ const CollectorDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Notifications and Team Stream */}
+      {/* Notifications and Environmental Impact */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-8">
         <div className="lg:col-span-2 bg-[#061a14] text-white rounded-[2.5rem] p-8 relative overflow-hidden shadow-2xl">
           <div className="absolute top-0 right-0 p-10 opacity-5">
@@ -353,7 +364,7 @@ const CollectorDashboard: React.FC = () => {
             <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
               {notifications.length === 0 ? (
                 <p className="text-gray-500 font-bold italic py-8 text-center text-xs tracking-widest uppercase">No active alerts for your organization</p>
-              ) : notifications.map((notif, i) => (
+              ) : notifications.map((notif) => (
                 <div key={notif._id} className="group p-5 bg-white/5 border border-white/5 rounded-[1.5rem] hover:bg-white/10 transition-all cursor-pointer">
                   <div className="flex justify-between items-start mb-2">
                     <p className="text-xs font-black text-emerald-400 uppercase tracking-widest">{notif.title}</p>
