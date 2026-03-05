@@ -190,6 +190,14 @@ const UserSchema = new Schema<IUser>({
     default: 0,
     min: 0
   },
+  organizationId: {
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  branchId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Branch'
+  },
 
   // Timestamps
   lastLogin: Date
@@ -248,7 +256,14 @@ UserSchema.pre('save', async function (this: any) { // Removed next parameter
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
   } catch (error: any) {
-    throw new Error(error.message || 'Password hashing failed'); // Throw error instead of next(error)
+    throw new Error(error.message || 'Password hashing failed');
+  }
+});
+
+// Default organizationId to self if not provided
+UserSchema.pre('save', function (this: any) {
+  if (this.isNew && !this.organizationId) {
+    this.organizationId = this._id;
   }
 });
 

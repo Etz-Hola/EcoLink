@@ -16,8 +16,8 @@ export enum TransactionStatus {
 }
 
 export interface ITransaction extends Document {
-    _id: Types.ObjectId;
-    user: Types.ObjectId; // User whose balance is affected (for transfers, this is the recipient or sender depending on context)
+    user: Types.ObjectId; // User whose balance is affected
+    organizationId: Types.ObjectId; // Organization/Entity who owns the transaction
     type: TransactionType;
     status: TransactionStatus;
     amount: number;

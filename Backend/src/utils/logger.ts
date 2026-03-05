@@ -5,7 +5,7 @@ const levels = {
     warn: 1,
     info: 2,
     http: 3,
-    debug: 4,
+    debug: 4, 
 };
 
 const level = () => {
@@ -58,7 +58,7 @@ export class AppError extends Error {
         this.isOperational = true;
 
         Error.captureStackTrace(this, this.constructor);
-    }
+    }    
 }
 
 export default logger;

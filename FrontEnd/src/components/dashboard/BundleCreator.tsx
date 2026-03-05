@@ -1,79 +1,69 @@
 import { useState, useEffect } from 'react';
-import { PackageCheck, Plus, Trash2, Box, Info } from 'lucide-react';
+import { PackageCheck, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-interface BundleItem {
-    materialId: string;
+interface AvailableMaterial {
+    id: string;
     type: string;
     weightKg: number;
     quality: string;
+    value: number;
 }
 
 export default function BundleCreator() {
-    const [items, setItems] = useState<BundleItem[]>([]);
+    const [availableItems, setAvailableItems] = useState<AvailableMaterial[]>([]);
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [bundleName, setBundleName] = useState('');
     const [creating, setCreating] = useState(false);
-    const [availableItems, setAvailableItems] = useState<AvailableMaterial[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    const fetchAvailableMaterials = async () => {
+        try {
+            const token = localStorage.getItem('ecolink_token');
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+
+            const res = await fetch(`${apiUrl}/materials/pending?status=approved,delivered`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                setAvailableItems(data.data.map((m: any) => ({
+                    id: m._id,
+                    type: m.materialType,
+                    weightKg: m.weight,
+                    quality: m.condition,
+                    value: (m.weight * (m.pricing?.offeredPrice || m.pricing?.finalPrice || 0))
+                })));
+            }
+        } catch {
+            toast.error('Failed to load materials');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchAvailableMaterials = async () => {
-            try {
-                const token = localStorage.getItem('ecolink_token');
-                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
-
-                const res = await fetch(`${apiUrl}/materials/pending?status=approved,delivered`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-
-                if (!res.ok) throw new Error();
-
-                const data = await res.json();
-                if (data.success) {
-                    setAvailableItems(data.data.map((m: any) => ({
-                        id: m._id,
-                        type: m.materialType,
-                        weightKg: m.weight,
-                        quality: m.condition,
-                        value: (m.weight * (m.pricing?.finalPrice || 0))
-                    })));
-                }
-            } catch {
-                toast.error('Failed to load available materials');
-            }
-        };
-
         fetchAvailableMaterials();
     }, []);
 
-    const addToBundle = (item: { id: string; type: string; weightKg: number; quality: string; value: number }) => {
-        if (items.some(i => i.materialId === item.id)) {
-            toast.error('Item already in bundle');
-            return;
-        }
-        setItems([...items, { materialId: item.id, ...item } as any]);
+    const toggleSelection = (id: string) => {
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
     };
 
-    const removeFromBundle = (materialId: string) => {
-        setItems(items.filter(i => i.materialId !== materialId));
-    };
-
-    const calculateTotalWeight = () => {
-        return items.reduce((sum, item: any) => sum + item.weightKg, 0);
-    };
+    const selectedItems = availableItems.filter(item => selectedIds.has(item.id));
+    const totalWeight = selectedItems.reduce((sum: number, item: AvailableMaterial) => sum + item.weightKg, 0);
 
     const handleCreateBundle = async () => {
-        if (items.length === 0) {
-            toast.error('Add at least one material to create a bundle');
-            return;
-        }
-
-        if (!bundleName.trim()) {
-            toast.error('Please provide a bundle name or description');
-            return;
-        }
+        if (selectedIds.size === 0) return toast.error('Select items to bundle');
+        if (!bundleName.trim()) return toast.error('Enter bundle name');
 
         setCreating(true);
-
         try {
             const token = localStorage.getItem('ecolink_token');
             const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
@@ -86,151 +76,112 @@ export default function BundleCreator() {
                 },
                 body: JSON.stringify({
                     name: bundleName,
-                    materialIds: items.map(i => i.materialId),
-                    description: `Bundle of ${items.length} materials`
+                    materialIds: Array.from(selectedIds),
+                    description: `Bundle of ${selectedIds.size} materials - ${totalWeight}kg`
                 }),
             });
 
-            if (!res.ok) throw new Error();
-
-            toast.success(`Bundle "${bundleName}" sealed! ${calculateTotalWeight()}kg ready for export 🚢`);
-            setItems([]);
-            setBundleName('');
-            // Refresh available items
-            setAvailableItems(prev => prev.filter(a => !items.some(i => i.materialId === (a as any).id)));
+            if (res.ok) {
+                toast.success('Bundle Sealed & Ready! 🚢');
+                setBundleName('');
+                setSelectedIds(new Set());
+                fetchAvailableMaterials();
+            }
         } catch {
-            toast.error('Failed to create bundle');
+            toast.error('Bundling failed');
         } finally {
             setCreating(false);
         }
     };
 
-    const totalWeight = calculateTotalWeight();
-
     return (
-        <div className="bg-white rounded-[2.5rem] shadow-xl shadow-purple-900/5 border border-gray-100 p-8 overflow-hidden">
+        <div className="bg-white rounded-[2.5rem] shadow-xl shadow-purple-900/5 border border-gray-100 p-8">
             <div className="flex items-center gap-4 mb-10">
                 <div className="w-14 h-14 rounded-2xl bg-purple-50 flex items-center justify-center">
                     <PackageCheck className="h-7 w-7 text-purple-600" />
                 </div>
                 <div>
-                    <h2 className="text-2xl font-black text-gray-900 tracking-tight">Export Bundle Creator</h2>
-                    <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest mt-0.5 italic">Aggregation Hub Tool</p>
+                    <h2 className="text-2xl font-black text-gray-900 tracking-tight">Export Preparation</h2>
+                    <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest mt-0.5">Select materials for bulk export</p>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                {/* Available Materials */}
+                {/* List */}
                 <div className="space-y-6">
-                    <div className="flex items-center justify-between mb-2 px-2">
-                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Available for Bundling</h3>
-                        <span className="text-[10px] font-bold text-gray-400">{availableItems.length} Items</span>
+                    <div className="flex items-center justify-between px-2">
+                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Delivered Stock</h3>
+                        <span className="text-[10px] font-bold text-gray-400">{availableItems.length} Available</span>
                     </div>
-                    <div className="space-y-4 max-h-[440px] overflow-y-auto pr-2 custom-scrollbar">
-                        {availableItems.length === 0 ? (
-                            <div className="p-8 text-center text-gray-400 font-medium italic border-2 border-dashed border-gray-50 rounded-3xl">
-                                No materials available for bundling yet.
-                            </div>
+
+                    <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                        {loading ? (
+                            <div className="p-20 text-center animate-pulse text-gray-400 font-bold uppercase text-[10px]">Syncing Stock...</div>
+                        ) : availableItems.length === 0 ? (
+                            <div className="p-12 text-center text-gray-300 italic border-2 border-dashed border-gray-50 rounded-[2rem]">No materials ready for bundling.</div>
                         ) : availableItems.map(item => (
                             <div
                                 key={item.id}
-                                className={`group border-2 rounded-3xl p-5 transition-all cursor-pointer ${items.some(i => i.materialId === item.id)
-                                    ? 'bg-purple-50 border-purple-200'
-                                    : 'bg-white border-gray-50 hover:border-purple-100 hover:shadow-md'
+                                onClick={() => toggleSelection(item.id)}
+                                className={`group p-5 rounded-[2rem] border-2 transition-all cursor-pointer flex items-center justify-between ${selectedIds.has(item.id) ? 'bg-purple-50 border-purple-200' : 'bg-white border-gray-50 hover:border-purple-100'
                                     }`}
-                                onClick={() => addToBundle(item)}
                             >
-                                <div className="flex justify-between items-center">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center font-black text-gray-400 text-xs text-center group-hover:bg-white group-hover:text-purple-600 transition-colors">
-                                            {item.type.charAt(0)}
-                                        </div>
-                                        <div>
-                                            <p className="font-black text-gray-900 tracking-tight">{item.type}</p>
-                                            <p className={`text-[10px] font-black uppercase tracking-widest ${item.quality === 'treated_clean' ? 'text-green-500' : 'text-orange-400'
-                                                }`}>
-                                                {item.quality.replace('_', ' ')}
-                                            </p>
-                                        </div>
+                                <div className="flex items-center gap-4">
+                                    <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${selectedIds.has(item.id) ? 'bg-purple-600 border-purple-600' : 'border-gray-200 group-hover:border-purple-300'
+                                        }`}>
+                                        {selectedIds.has(item.id) && <Check className="w-4 h-4 text-white" />}
                                     </div>
-                                    <div className="text-right">
-                                        <p className="font-black text-purple-600 text-lg leading-none">{item.weightKg}<span className="text-[10px] text-gray-300 ml-1">kg</span></p>
-                                        <Plus className={`h-5 w-5 ml-auto mt-1 transition-all ${items.some(i => i.materialId === item.id) ? 'rotate-45 text-purple-300' : 'text-gray-200 group-hover:text-purple-400 group-hover:scale-125'
-                                            }`} />
+                                    <div>
+                                        <p className="font-black text-gray-900 text-sm leading-tight uppercase">{item.type}</p>
+                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">{item.quality.replace('_', ' ')}</p>
                                     </div>
+                                </div>
+                                <div className="text-right">
+                                    <p className="font-black text-purple-600 text-sm">{item.weightKg}kg</p>
+                                    <p className="text-[10px] font-bold text-gray-300 uppercase tracking-tighter">Value: ₦{item.value.toLocaleString()}</p>
                                 </div>
                             </div>
                         ))}
                     </div>
                 </div>
 
-                {/* Current Bundle Configuration */}
-                <div className="relative">
-                    <div className="bg-gray-900 rounded-[2rem] p-8 text-white h-full flex flex-col shadow-2xl shadow-purple-200">
-                        <h3 className="text-xs font-black text-gray-500 uppercase tracking-widest mb-6">Live Bundle Summary</h3>
+                {/* Bundle Summary */}
+                <div className="bg-gray-900 rounded-[3rem] p-8 text-white h-fit shadow-2xl shadow-purple-900/10">
+                    <h3 className="text-xs font-black text-gray-500 uppercase tracking-widest mb-8 text-center">Export Configuration</h3>
 
-                        <input
-                            type="text"
-                            value={bundleName}
-                            onChange={e => setBundleName(e.target.value)}
-                            placeholder="Give your bundle a name..."
-                            className="w-full bg-white/5 border-2 border-white/5 rounded-2xl px-6 py-4 text-sm font-bold placeholder:text-gray-600 focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/10 transition-all outline-none mb-8"
-                        />
-
-                        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar mb-8 space-y-3 min-h-[200px]">
-                            {items.length === 0 ? (
-                                <div className="h-full flex flex-col items-center justify-center text-center p-6 bg-white/[0.02] rounded-3xl border border-dashed border-white/5">
-                                    <Box className="w-10 h-10 text-gray-700 mb-3" />
-                                    <p className="text-xs font-bold text-gray-600 max-w-[160px]">Add materials to the left panel to start bundling</p>
-                                </div>
-                            ) : (
-                                items.map((item, i) => (
-                                    <div key={i} className="flex justify-between items-center bg-white/5 p-4 rounded-2xl group/item hover:bg-white/10 transition-all">
-                                        <div>
-                                            <p className="text-xs font-black uppercase tracking-widest text-white/50">{item.type}</p>
-                                            <p className="text-sm font-bold text-white">{item.weightKg} kg</p>
-                                        </div>
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                removeFromBundle(item.materialId);
-                                            }}
-                                            className="p-2 text-gray-700 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all"
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </button>
-                                    </div>
-                                ))
-                            )}
+                    <div className="space-y-8">
+                        <div>
+                            <label className="text-[9px] font-black text-gray-600 uppercase tracking-widest block mb-2 px-1">Bundle Identifier</label>
+                            <input
+                                type="text"
+                                placeholder="E.g. Lagos West PET Batch A"
+                                value={bundleName}
+                                onChange={e => setBundleName(e.target.value)}
+                                className="w-full bg-white/5 border-2 border-white/5 rounded-2xl px-6 py-4 text-xs font-bold outline-none focus:border-purple-500/50 transition-all text-white placeholder:text-gray-700"
+                            />
                         </div>
 
-                        <div className="mt-auto pt-6 border-t border-white/5 space-y-6">
-                            <div className="flex justify-between items-end">
-                                <div>
-                                    <p className="text-[10px] font-black uppercase text-gray-600 tracking-widest mb-1">Total Mass</p>
-                                    <p className="text-3xl font-black text-white">{totalWeight} <span className="text-xs text-gray-600">KG</span></p>
-                                </div>
-                                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-tight ${totalWeight >= 500 ? 'bg-green-500/10 text-green-400' : 'bg-orange-500/10 text-orange-400'
-                                    }`}>
-                                    <Info className="w-3 h-3" />
-                                    {totalWeight >= 500 ? 'Export Ready' : 'Low Volume'}
-                                </div>
+                        <div className="flex justify-between items-center bg-white/[0.03] p-6 rounded-[2rem]">
+                            <div>
+                                <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest mb-1">Items Selected</p>
+                                <p className="text-2xl font-black text-white">{selectedIds.size}</p>
                             </div>
-
-                            <button
-                                onClick={handleCreateBundle}
-                                disabled={creating || items.length === 0}
-                                className={`
-                  w-full py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all
-                  ${creating || items.length === 0
-                                        ? 'bg-white/5 text-gray-700 cursor-not-allowed'
-                                        : 'bg-purple-600 text-white shadow-xl shadow-purple-900/40 hover:bg-purple-500 hover:-translate-y-1 active:scale-95'
-                                    }
-                `}
-                            >
-                                {creating ? 'Finalizing Bundle...' : 'Seal Bundle for Export'}
-                            </button>
+                            <div className="text-right">
+                                <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest mb-1">Total Mass</p>
+                                <p className="text-2xl font-black text-purple-400">{totalWeight} <span className="text-xs text-gray-600">KG</span></p>
+                            </div>
                         </div>
+
+                        <button
+                            disabled={selectedIds.size === 0 || creating}
+                            onClick={handleCreateBundle}
+                            className={`w-full py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 ${selectedIds.size === 0 || creating
+                                    ? 'bg-white/5 text-gray-700 cursor-not-allowed'
+                                    : 'bg-purple-600 text-white shadow-xl shadow-purple-900/20 hover:bg-purple-500 hover:-translate-y-1'
+                                }`}
+                        >
+                            {creating ? 'Sealing...' : 'Seal Bundle for Export'}
+                        </button>
                     </div>
                 </div>
             </div>

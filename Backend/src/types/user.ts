@@ -75,6 +75,10 @@ export interface IUser extends Document {
 
   balance: number;
 
+  // Organization & Branch Mapping
+  organizationId?: Types.ObjectId;
+  branchId?: Types.ObjectId;
+
   // Settings
   notifications: {
     email: boolean;
@@ -113,6 +117,9 @@ export interface IRegisterData {
   location?: ILocation;
   businessName?: string;
   businessType?: string;
+  organizationId?: string;
+  branchId?: string;
+  inviteCode?: string;
 }
 
 export interface IAuthResponse {

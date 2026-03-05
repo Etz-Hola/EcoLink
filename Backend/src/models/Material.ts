@@ -246,6 +246,11 @@ const MaterialSchema = new Schema<IMaterial>({
     type: Schema.Types.ObjectId,
     ref: 'Branch'
   },
+  organizationId: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
   assignedTransporter: {
     type: Schema.Types.ObjectId,
     ref: 'User'
@@ -304,6 +309,7 @@ MaterialSchema.index({ pickupLocation: '2dsphere' });
 MaterialSchema.index({ materialType: 1, subType: 1 });
 MaterialSchema.index({ status: 1 });
 MaterialSchema.index({ submittedBy: 1 });
+MaterialSchema.index({ organizationId: 1 });
 MaterialSchema.index({ processingBranch: 1 });
 MaterialSchema.index({ createdAt: -1 });
 MaterialSchema.index({ 'pricing.finalPrice': 1 });
