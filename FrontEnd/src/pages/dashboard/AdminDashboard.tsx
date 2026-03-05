@@ -2,6 +2,7 @@ import React from 'react';
 import { useLocation } from 'react-router-dom';
 import AdminOverview from '../../components/dashboard/admin/Overview';
 import UserManagement from '../../components/dashboard/admin/UserManagement';
+import OrganizationManagement from '../../components/dashboard/admin/OrganizationManagement';
 import PricingManager from '../../components/dashboard/PricingManager';
 import BranchManagement from '../../components/dashboard/admin/BranchManagement';
 import MaterialMonitor from '../../components/dashboard/admin/MaterialMonitor';
@@ -26,6 +27,8 @@ const AdminDashboard: React.FC = () => {
         return <AdminOverview />;
       case 'users':
         return <UserManagement />;
+      case 'organizations':
+        return <OrganizationManagement />;
       case 'pricing':
         return (
           <div className="space-y-6">

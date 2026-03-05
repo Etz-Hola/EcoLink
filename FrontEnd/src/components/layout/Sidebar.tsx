@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   Home, Package, Truck, BarChart3, Users,
   Settings, Leaf, Upload, MapPin, FileText, ChevronRight, Wallet,
-  Tag, DollarSign
+  Tag, DollarSign, Building2, Layers
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { classNames } from '../../utils/helpers';
@@ -41,9 +41,11 @@ const Sidebar: React.FC = () => {
   const adminNavigation: SidebarItem[] = [
     { name: 'Analytics', href: '/admin/analytics', icon: BarChart3, roles: ['admin'] },
     { name: 'User Management', href: '/admin/users', icon: Users, roles: ['admin'] },
+    { name: 'Organizations', href: '/admin/organizations', icon: Building2, roles: ['admin'] },
     { name: 'Material Pricing', href: '/admin/pricing', icon: Tag, roles: ['admin'] },
     { name: 'Branch Management', href: '/admin/branches', icon: MapPin, roles: ['admin'] },
     { name: 'Material Monitor', href: '/admin/materials', icon: Package, roles: ['admin'] },
+    { name: 'Bundle Monitor', href: '/admin/bundles', icon: Layers, roles: ['admin'] },
     { name: 'Finance Manager', href: '/admin/financials', icon: DollarSign, roles: ['admin'] },
     { name: 'Platform Settings', href: '/admin/settings', icon: Settings, roles: ['admin'] },
   ];
