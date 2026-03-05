@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
-import { Material, MaterialCategory } from '../types';
+import { useState, useCallback } from 'react';
+import { Material } from '../types';
 import { useApp } from '../context/AppContext';
 import { generateMaterialId, uploadToCloudinary, validateImageFile } from '../utils/helpers';
 import { MATERIAL_CATEGORIES } from '../utils/constants';
@@ -75,6 +75,10 @@ export const useMaterial = () => {
     return materials.filter(material => material.uploadedBy === userId);
   }, [materials]);
 
+  const getMaterialsByOrganization = useCallback((organizationId: string) => {
+    return materials.filter(material => material.organizationId === organizationId || material.uploadedBy === organizationId);
+  }, [materials]);
+
   const getMaterialsByStatus = useCallback((status: Material['status']) => {
     return materials.filter(material => material.status === status);
   }, [materials]);
@@ -83,7 +87,7 @@ export const useMaterial = () => {
     setLoading(true);
     try {
       const updates: Partial<Material> = { status };
-      if (status === 'processed') {
+      if (status === 'processed' || status === 'delivered') {
         updates.processedAt = new Date();
       }
 
@@ -125,32 +129,37 @@ export const useMaterial = () => {
         // Map backend data to frontend Material type
         const mappedMaterials: Material[] = data.data.map((m: any) => ({
           id: m._id,
-          name: m.name || `${m.materialType} Lot`,
+          _id: m._id, // Keep both for safety
+          title: m.title || `${m.materialType} Lot`,
+          name: m.title || `${m.materialType} Lot`,
           category: {
             id: m.materialType,
             name: m.materialType,
             subcategories: [],
-            basePrice: m.pricing?.offeredPrice || 0,
+            basePrice: m.pricing?.finalPrice || 0,
             unit: 'kg',
             description: ''
           },
-          subcategory: '',
+          subcategory: m.subType || '',
           weight: m.weight,
-          condition: m.condition === 'treated_clean' ? 'clean' : 'dirty',
-          photos: m.images || [],
-          pricePerKg: m.pricing?.offeredPrice || 0,
-          totalValue: (m.pricing?.offeredPrice || 0) * m.weight,
+          condition: m.condition,
+          photos: m.images?.map((img: any) => img.url) || [],
+          pricePerKg: m.pricing?.finalPrice || 0,
+          totalValue: (m.pricing?.finalPrice || 0) * m.weight,
           uploadedBy: m.submittedBy,
+          organizationId: m.organizationId,
           status: m.status === 'approved' ? 'accepted' : m.status,
           uploadedAt: new Date(m.createdAt),
+          createdAt: m.createdAt,
           description: m.description
         }));
 
-        // We need a way to batch update materials in AppContext
-        // For now, let's assume updateMaterial can handle it or we use a separate state
+        return mappedMaterials;
       }
+      return [];
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to fetch materials');
+      return [];
     } finally {
       setLoading(false);
     }
