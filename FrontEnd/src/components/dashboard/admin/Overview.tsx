@@ -64,9 +64,23 @@ const ActivityItem = ({ title, subtitle, time, icon: Icon, color, bg }: Activity
     </div>
 );
 
+interface DashboardStats {
+    counts: {
+        users: number;
+        materials: number;
+        bundles: number;
+        revenue: number;
+        volume: number;
+    };
+    distribution: {
+        usersByRole: { _id: string; count: number }[];
+        materialsByStatus: { _id: string; count: number }[];
+    };
+}
+
 const AdminOverview: React.FC = () => {
     const { user } = useAuth();
-    const [stats, setStats] = useState<any>(null);
+    const [stats, setStats] = useState<DashboardStats | null>(null);
     const [loading, setLoading] = useState(true);
     const firstName = user?.firstName || user?.name?.split(' ')[0] || 'Admin';
 
@@ -80,7 +94,7 @@ const AdminOverview: React.FC = () => {
             if (res.data.success) {
                 setStats(res.data.data);
             }
-        } catch (err: any) {
+        } catch {
             toast.error('Failed to load global stats');
         } finally {
             setLoading(false);
@@ -154,7 +168,7 @@ const AdminOverview: React.FC = () => {
                         </div>
 
                         <div className="h-72 w-full flex items-end justify-between gap-4 px-4 pb-4 bg-gray-50/30 rounded-3xl border border-gray-100">
-                            {stats?.distribution?.materialsByStatus?.map((item: any, i: number) => (
+                            {stats?.distribution?.materialsByStatus?.map((item, i: number) => (
                                 <div key={i} className="flex-1 flex flex-col items-center group">
                                     <div className="w-full relative flex items-end justify-center mb-2 h-48">
                                         <motion.div
