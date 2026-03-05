@@ -2,10 +2,10 @@ import React, { createContext, useContext, useReducer, useEffect, ReactNode } fr
 import { User, AuthState } from '../types';
 
 interface AuthContextType extends AuthState {
-  login: (email: string, password: string) => Promise<void>;
-  register: (userData: any) => Promise<void>;
-  googleLogin: (idToken: string, role?: string) => Promise<void>;
-  walletLogin: (address: string, message: string, signature: string, role?: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<any>;
+  register: (userData: any) => Promise<any>;
+  googleLogin: (idToken: string, role?: string) => Promise<any>;
+  walletLogin: (address: string, message: string, signature: string, role?: string) => Promise<any>;
   getNonce: () => Promise<string>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
@@ -118,6 +118,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('ecolink_user', JSON.stringify(user));
 
       dispatch({ type: 'LOGIN_SUCCESS', payload: { user, token: data.tokens.accessToken } });
+      return user;
     } catch (error: any) {
       dispatch({ type: 'LOGIN_FAILURE' });
       throw error;
@@ -147,6 +148,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('ecolink_user', JSON.stringify(user));
 
       dispatch({ type: 'LOGIN_SUCCESS', payload: { user, token: data.tokens.accessToken } });
+      return user;
     } catch (error: any) {
       dispatch({ type: 'LOGIN_FAILURE' });
       throw error;
@@ -174,6 +176,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('ecolink_user', JSON.stringify(user));
 
       dispatch({ type: 'LOGIN_SUCCESS', payload: { user, token: data.tokens.accessToken } });
+      return user;
     } catch (error: any) {
       dispatch({ type: 'LOGIN_FAILURE' });
       throw error;
@@ -206,6 +209,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('ecolink_user', JSON.stringify(user));
 
       dispatch({ type: 'LOGIN_SUCCESS', payload: { user, token: data.tokens.accessToken } });
+      return user;
     } catch (error: any) {
       dispatch({ type: 'LOGIN_FAILURE' });
       throw error;
