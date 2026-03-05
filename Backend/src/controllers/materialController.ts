@@ -105,6 +105,7 @@ export class MaterialController {
                     weight,
                     status: MaterialStatus.PENDING,
                     submittedBy: user._id,
+                    organizationId: user.organizationId || user._id,
                     currentOwner: user._id,
                     pickupLocation,
                     pricing: {
@@ -137,8 +138,10 @@ export class MaterialController {
      */
     static async getMyMaterials(req: Request, res: Response, next: NextFunction) {
         try {
-            const userId = (req as any).user._id;
-            const materials = await Material.find({ submittedBy: userId })
+            const user = (req as any).user;
+            const organizationId = user.organizationId || user._id;
+
+            const materials = await Material.find({ organizationId })
                 .sort({ createdAt: -1 })
                 .populate('submittedBy', 'firstName lastName username email');
 
@@ -170,6 +173,10 @@ export class MaterialController {
             if (status && status !== 'all') {
                 const statusList = status.split(',').map(s => s.trim()).filter(Boolean);
                 query.status = statusList.length > 1 ? { $in: statusList } : statusList[0];
+
+                // If fetching active items, only show those processed by this branch
+                const branchId = (req as any).user.branchId || (req as any).user.organizationId || (req as any).user._id;
+                query.processingBranch = branchId;
             } else {
                 query.status = MaterialStatus.PENDING;
             }
@@ -222,7 +229,7 @@ export class MaterialController {
             }
 
             if (status === MaterialStatus.APPROVED || status === MaterialStatus.REJECTED) {
-                material.processingBranch = (req as any).user.branchId || (req as any).user._id;
+                material.processingBranch = (req as any).user.branchId || (req as any).user.organizationId || (req as any).user._id;
                 if (status === MaterialStatus.APPROVED) material.approvedAt = new Date();
             }
 
@@ -251,7 +258,7 @@ export class MaterialController {
     static async verifyMaterial(req: Request, res: Response, next: NextFunction) {
         try {
             const { id } = req.params;
-            const branchId = (req as any).user.branchId || (req as any).user._id;
+            const branchId = (req as any).user.branchId || (req as any).user.organizationId || (req as any).user._id;
 
             const material = await Material.findById(id);
             if (!material) {
@@ -270,7 +277,7 @@ export class MaterialController {
 
             material.status = MaterialStatus.DELIVERED;
             material.deliveredAt = new Date();
-            material.currentOwner = (req as any).user.branchId || (req as any).user._id;
+            material.currentOwner = (req as any).user.branchId || (req as any).user.organizationId || (req as any).user._id;
 
             // Process Payment Release
             const collectorId = material.submittedBy;
@@ -421,7 +428,7 @@ export class MaterialController {
     static async confirmPickup(req: Request, res: Response, next: NextFunction) {
         try {
             const { id } = req.params;
-            const branchId = (req as any).user.branchId || (req as any).user._id;
+            const branchId = (req as any).user.branchId || (req as any).user.organizationId || (req as any).user._id;
 
             const material = await Material.findById(id);
             if (!material) throw new AppError('Material not found', 404);
@@ -457,7 +464,7 @@ export class MaterialController {
      */
     static async getBranchStats(req: Request, res: Response, next: NextFunction) {
         try {
-            const branchId = (req as any).user.branchId || (req as any).user._id;
+            const branchId = (req as any).user.branchId || (req as any).user.organizationId || (req as any).user._id;
             const lat = parseFloat(req.query.lat as string) || 6.5244;
             const lng = parseFloat(req.query.lng as string) || 3.3792;
             const radius = parseFloat(req.query.radius as string) || 50;

@@ -246,6 +246,11 @@ const MaterialSchema = new Schema<IMaterial>({
     type: Schema.Types.ObjectId,
     ref: 'Branch'
   },
+  organizationId: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
   assignedTransporter: {
     type: Schema.Types.ObjectId,
     ref: 'User'

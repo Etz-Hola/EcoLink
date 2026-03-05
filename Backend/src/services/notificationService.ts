@@ -19,14 +19,19 @@ export const sendSMS = async (phone: string, message: string) => {
 export const NotificationService = {
     sendNotification: async (userId: string, data: { title: string; message: string; type: 'payment' | 'material' | 'system'; metadata?: any }) => {
         try {
+            const User = require('../models/User').default;
+            const user = await User.findById(userId).select('organizationId');
+            const organizationId = user?.organizationId || userId;
+
             await Notification.create({
                 user: userId,
+                organizationId,
                 title: data.title,
                 message: data.message,
                 type: data.type,
                 metadata: data.metadata
             });
-            logger.info(`Notification saved for user ${userId}: ${data.title}`);
+            logger.info(`Notification saved for user ${userId} (Org: ${organizationId}): ${data.title}`);
         } catch (error) {
             logger.error(`Failed to save notification for user ${userId}:`, error);
         }
@@ -45,7 +50,15 @@ export const NotificationService = {
     },
 
     getUserNotifications: async (userId: string, limit = 20) => {
-        return await Notification.find({ user: userId })
+        const user = await require('../models/User').default.findById(userId).select('organizationId');
+        const organizationId = user?.organizationId || userId;
+
+        return await Notification.find({
+            $or: [
+                { user: userId },
+                { organizationId: organizationId }
+            ]
+        })
             .sort({ createdAt: -1 })
             .limit(limit);
     },

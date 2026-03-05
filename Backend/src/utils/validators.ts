@@ -9,7 +9,7 @@ export const loginSchema = Joi.object({
     password: Joi.string().when('identifier', {
         is: Joi.string().email(),
         then: Joi.required(),
-        otherwise: Joi.optional()
+        otherwise: Joi.optional() 
     }),
     signature: Joi.string().optional(),
     message: Joi.string().optional()

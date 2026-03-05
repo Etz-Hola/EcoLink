@@ -12,7 +12,7 @@ export class BundleController {
     static async createBundle(req: Request, res: Response, next: NextFunction) {
         try {
             const { name, materialIds, description } = req.body;
-            const branchId = (req as any).user.branchId || (req as any).user._id;
+            const branchId = (req as any).user.branchId || (req as any).user.organizationId || (req as any).user._id;
 
             if (!materialIds || !Array.isArray(materialIds) || materialIds.length === 0) {
                 throw new AppError('At least one material is required to create a bundle', 400);
@@ -124,7 +124,7 @@ export class BundleController {
      */
     static async getMyBundles(req: Request, res: Response, next: NextFunction) {
         try {
-            const branchId = (req as any).user.branchId || (req as any).user._id;
+            const branchId = (req as any).user.branchId || (req as any).user.organizationId || (req as any).user._id;
             const bundles = await Bundle.find({ branchId })
                 .populate('materialIds', 'materialType weight condition')
                 .sort({ createdAt: -1 });

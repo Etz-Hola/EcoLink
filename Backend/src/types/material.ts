@@ -128,6 +128,7 @@ export interface IMaterial extends Document {
 
   // Ownership & Processing
   submittedBy: Types.ObjectId; // User who submitted
+  organizationId: Types.ObjectId; // Organization/Entity who owns the submission
   currentOwner: Types.ObjectId; // Current owner
   processingBranch?: Types.ObjectId; // Branch handling this material
   assignedTransporter?: Types.ObjectId; // Transporter for pickup
