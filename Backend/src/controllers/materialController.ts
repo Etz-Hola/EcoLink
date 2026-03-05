@@ -280,25 +280,30 @@ export class MaterialController {
                 throw new AppError('Material must be in approved status to verify delivery', 400);
             }
 
+            const uploader = await User.findById(material.submittedBy);
+            if (!uploader) throw new AppError('Uploader not found', 404);
+
+            const branchOrgId = (req as any).user.organizationId || (req as any).user._id;
+            const uploaderOrgId = uploader.organizationId || uploader._id;
+
             material.status = MaterialStatus.DELIVERED;
             material.deliveredAt = new Date();
-            material.currentOwner = (req as any).user.branchId || (req as any).user.organizationId || (req as any).user._id;
+            material.currentOwner = branchOrgId;
 
-            // Process Payment Release
-            const collectorId = material.submittedBy;
-            const amount = (material as any).totalValue || (material.weight * (material.pricing?.finalPrice || 0));
+            // Process Payment Release (Org to Org)
+            const amount = (material as any).totalValue || (material.weight * (material.pricing?.finalPrice || material.pricing?.offeredPrice || 0));
 
             await PaymentService.processInternalTransfer(
                 material._id.toString(),
-                branchId.toString(),
-                collectorId.toString(),
+                branchOrgId.toString(),
+                uploaderOrgId.toString(),
                 amount
             );
 
             await material.save();
 
             // Notify uploader of payment release
-            await NotificationService.sendNotification(collectorId.toString(), {
+            await NotificationService.sendNotification(material.submittedBy.toString(), {
                 title: 'Payment Released 💸',
                 message: `Payment of ₦${amount.toLocaleString()} has been released to your balance for your ${material.materialType} upload.`,
                 type: 'payment',

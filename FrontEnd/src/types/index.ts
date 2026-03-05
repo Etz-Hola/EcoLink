@@ -26,6 +26,7 @@ export interface User {
     state?: string;
     country?: string;
   };
+  businessName?: string;
 }
 
 export interface Material {
@@ -45,7 +46,7 @@ export interface Material {
   totalValue?: number;
   uploadedBy?: string;
   submittedBy?: string;
-  status: 'pending' | 'accepted' | 'rejected' | 'processed' | 'approved' | 'delivered';
+  status: 'pending' | 'accepted' | 'rejected' | 'processed' | 'approved' | 'delivered' | 'pickup_scheduled';
   organizationId?: string;
   branchId?: string;
   uploadedAt?: Date;

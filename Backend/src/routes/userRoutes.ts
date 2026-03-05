@@ -11,4 +11,11 @@ const router = express.Router();
  */
 router.patch('/role', protect, UserController.updateRole);
 
+/**
+ * @route   GET /api/v1/users/organization/balance
+ * @desc    Get organization balance
+ * @access  Private
+ */
+router.get('/organization/balance', protect, UserController.getOrganizationBalance);
+
 export default router;

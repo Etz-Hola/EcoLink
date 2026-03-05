@@ -56,4 +56,31 @@ export class UserController {
             next(error);
         }
     }
+
+    /**
+     * Get organization balance (shared across entity)
+     * GET /users/organization/balance
+     */
+    static async getOrganizationBalance(req: Request, res: Response, next: NextFunction) {
+        try {
+            const user = (req as any).user;
+            const organizationId = user.organizationId || user._id;
+
+            const organization = await User.findById(organizationId).select('balance currency');
+            if (!organization) {
+                throw new AppError('Organization not found', 404);
+            }
+
+            res.status(200).json({
+                success: true,
+                data: {
+                    balance: organization.balance || 0,
+                    currency: (organization as any).currency || 'NGN',
+                    organizationId
+                }
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
