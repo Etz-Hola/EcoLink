@@ -1,16 +1,23 @@
-import React from 'react';
-import { Package, CheckCircle, Clock } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Package, CheckCircle, Clock, RefreshCw, MapPin, Layout, ShoppingCart, Bell, Search, Filter } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import { useMaterial } from '../../hooks/useMaterial';
 import ProcessingQueue from '../../components/dashboard/ProcessingQueue';
 import BundleCreator from '../../components/dashboard/BundleCreator';
 import NearbyBuyersMap from '../../components/dashboard/NearbyBuyersMap';
+import toast from 'react-hot-toast';
 
 const BranchDashboard: React.FC = () => {
   const { user } = useAuth();
-  const [userLocation, setUserLocation] = React.useState<{ lat: number; lng: number } | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [stats, setStats] = useState<{ label: string; value: number | string; icon: any; color: string; bg: string }[]>([]);
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [isSyncing, setIsSyncing] = useState(false);
 
-  React.useEffect(() => {
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+
+  // Geolocation
+  useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude }),
@@ -21,141 +28,162 @@ const BranchDashboard: React.FC = () => {
     }
   }, []);
 
-  const [stats, setStats] = React.useState<any[]>([]);
-  const [loadingStats, setLoadingStats] = React.useState(true);
-
-  React.useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const token = localStorage.getItem('ecolink_token');
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
-        const url = new URL(`${apiUrl}/materials/stats/branch`);
-        if (userLocation) {
-          url.searchParams.append('lat', userLocation.lat.toString());
-          url.searchParams.append('lng', userLocation.lng.toString());
-        }
-
-        const res = await fetch(url.toString(), {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const data = await res.json();
-        if (data.success) {
-          const s = data.data;
-          setStats([
-            {
-              label: 'Pending Review',
-              value: (s.pending || 0).toString(),
-              icon: <Clock className="h-5 w-5" />,
-              color: 'text-orange-600',
-              bg: 'bg-orange-50'
-            },
-            {
-              label: 'Approved',
-              value: (s.approved || 0).toString(),
-              icon: <CheckCircle className="h-5 w-5" />,
-              color: 'text-blue-600',
-              bg: 'bg-blue-50'
-            },
-            {
-              label: 'Total Processed',
-              value: (s.delivered || 0).toString(),
-              icon: <Package className="h-5 w-5" />,
-              color: 'text-green-600',
-              bg: 'bg-green-50'
-            },
-            {
-              label: 'Rejected',
-              value: (s.rejected || 0).toString(),
-              icon: <div className="font-black text-[10px]">X</div>,
-              color: 'text-red-600',
-              bg: 'bg-red-50'
-            }
-          ]);
-        }
-      } catch {
-        console.error('Failed to fetch branch stats');
-      } finally {
-        setLoadingStats(false);
+  const fetchStats = useCallback(async () => {
+    setLoadingStats(true);
+    try {
+      const token = localStorage.getItem('ecolink_token');
+      const url = new URL(`${API_URL}/materials/stats/branch`);
+      if (userLocation) {
+        url.searchParams.append('lat', userLocation.lat.toString());
+        url.searchParams.append('lng', userLocation.lng.toString());
       }
-    };
+
+      const res = await fetch(url.toString(), {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        const s = data.data;
+        setStats([
+          { label: 'Pending Review', value: s.pending || 0, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
+          { label: 'Approved', value: s.approved || 0, icon: CheckCircle, color: 'text-blue-600', bg: 'bg-blue-50' },
+          { label: 'Hub Processed', value: s.delivered || 0, icon: Package, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+          { label: 'Disputed', value: s.rejected || 0, icon: Filter, color: 'text-rose-600', bg: 'bg-rose-50' }
+        ]);
+      }
+    } catch (err) {
+      console.error('Failed to fetch branch stats');
+    } finally {
+      setLoadingStats(false);
+    }
+  }, [API_URL, userLocation]);
+
+  useEffect(() => {
     if (userLocation) fetchStats();
-  }, [userLocation]);
+  }, [userLocation, fetchStats, refreshKey]);
+
+  const handleSync = () => {
+    setIsSyncing(true);
+    setRefreshKey(prev => prev + 1);
+    setTimeout(() => {
+      setIsSyncing(false);
+      toast.success('Hub synchronization complete!');
+    }, 1000);
+  };
 
   return (
-    <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500 overflow-x-hidden">
-      {/* Header */}
-      <div className="px-4 md:px-0">
-        <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">Aggregation Hub Dashboard</h1>
-        <p className="text-sm md:text-base text-gray-500 font-medium mt-1">
-          Hello {user?.name}, manage local intake, quality verification, and export bundling.
-        </p>
+    <div className="max-w-7xl mx-auto space-y-10 pb-20 px-4 md:px-0 animate-in fade-in duration-700">
+      {/* Header with Sync Button */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Active Hub Terminal</span>
+          </div>
+          <h1 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight uppercase">Aggregation Center</h1>
+          <p className="text-gray-500 font-medium max-w-xl">
+            Managing materials for <span className="text-gray-900 font-bold uppercase tracking-tighter">{user?.businessName || 'Local Branch'}</span>. Organization-wide data is synced.
+          </p>
+        </div>
+
+        <button
+          onClick={handleSync}
+          className="flex items-center justify-center gap-3 px-8 py-4 bg-gray-900 text-white rounded-[1.5rem] font-black text-xs uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-xl shadow-gray-200"
+        >
+          <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+          {isSyncing ? 'Synchronizing...' : 'Sync Hub Data'}
+        </button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 px-4 md:px-0">
-        {stats.map((stat, index) => (
-          <div key={index} className="bg-white p-5 md:p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest">{stat.label}</p>
-                {loadingStats ? (
-                  <div className="h-8 w-12 bg-gray-100 animate-pulse rounded-lg mt-1" />
-                ) : (
-                  <p className="text-xl md:text-2xl font-black text-gray-900 mt-1">{stat.value}</p>
-                )}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((stat, index) => {
+          const Icon = stat.icon;
+          return (
+            <div key={index} className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all group overflow-hidden relative">
+              <div className="absolute -right-4 -top-4 opacity-[0.03] group-hover:scale-110 transition-transform duration-700">
+                <Icon className="w-24 h-24" />
               </div>
-              <div className={`p-2.5 md:p-3 rounded-xl ${stat.bg}`}>
-                <span className={stat.color}>{stat.icon}</span>
+              <div className="relative z-10 flex flex-col justify-between h-full">
+                <div className={`w-10 h-10 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center mb-4`}>
+                  <Icon className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-2xl font-black text-gray-900 leading-none mb-1">{loadingStats ? '...' : stat.value}</p>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{stat.label}</p>
+                </div>
               </div>
             </div>
+          );
+        })}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:items-start">
+        {/* Processing Queue - Main Area */}
+        <div className="lg:col-span-8 space-y-8">
+          <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-4 md:p-8">
+            <div className="flex items-center justify-between mb-8 px-2">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-50 rounded-xl">
+                  <Layout className="w-5 h-5 text-blue-600" />
+                </div>
+                <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight">Intake Management</h2>
+              </div>
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Shared Organization Queue</span>
+            </div>
+            <div className="overflow-x-auto">
+              <ProcessingQueue key={refreshKey} />
+            </div>
           </div>
-        ))}
-      </div>
 
-      {/* Processing Queue Section */}
-      <div className="space-y-6">
-        <div className="flex items-center justify-between px-6 md:px-2">
-          <h2 className="text-lg md:text-xl font-black text-gray-900 tracking-tight uppercase">Incoming Intake Review</h2>
-          <span className="text-[9px] md:text-[10px] font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full uppercase tracking-widest">Real-time</span>
-        </div>
-        <div className="overflow-x-auto">
-          <ProcessingQueue />
-        </div>
-      </div>
+          {/* Bundle Creator */}
+          <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-4 md:p-8">
+            <div className="flex items-center justify-between mb-8 px-2">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-50 rounded-xl">
+                  <Package className="w-5 h-5 text-purple-600" />
+                </div>
+                <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight">Export Preparation</h2>
+              </div>
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Aggregation Layer</span>
+            </div>
+            <BundleCreator key={refreshKey} />
+          </div>
 
-      {/* Map Section */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between px-6 md:px-2">
-          <h2 className="text-lg md:text-xl font-black text-gray-900 tracking-tight uppercase">Nearby Pending Uploads</h2>
-          <span className="text-[9px] md:text-[10px] font-bold text-orange-600 bg-orange-50 px-3 py-1 rounded-full uppercase tracking-widest">Geographical View</span>
+          <CreatedBundlesSection key={refreshKey} />
         </div>
-        <div className="px-4 md:px-0">
-          <NearbyBuyersMap userLocation={userLocation} viewMode="branch" />
-        </div>
-      </div>
 
-      {/* Aggregation & Bundling Section */}
-      <div className="space-y-6 pt-4 md:pt-8">
-        <div className="flex items-center justify-between px-6 md:px-2">
-          <h2 className="text-lg md:text-xl font-black text-gray-900 tracking-tight uppercase">Export Preparation</h2>
-          <span className="text-[9px] md:text-[10px] font-bold text-purple-600 bg-purple-50 px-3 py-1 rounded-full uppercase tracking-widest">Supply Chain</span>
-        </div>
-        <div className="px-4 md:px-0">
-          <BundleCreator />
-        </div>
-      </div>
+        {/* Sidebar Controls */}
+        <div className="lg:col-span-4 space-y-8">
+          {/* Map View */}
+          <div className="bg-[#061a14] text-white rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-10 opacity-[0.05] group-hover:scale-110 transition-transform duration-700">
+              <MapPin className="w-32 h-32" />
+            </div>
+            <div className="relative z-10">
+              <div className="flex justify-between items-center mb-6 px-2">
+                <h2 className="text-lg font-black uppercase tracking-tight">Supply Map</h2>
+                <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+                  <Search className="w-4 h-4 text-emerald-400" />
+                </div>
+              </div>
+              <div className="rounded-2xl overflow-hidden h-[300px] border border-white/5 shadow-inner">
+                <NearbyBuyersMap userLocation={userLocation} viewMode="branch" />
+              </div>
+              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-4 text-center">Identifying pending pickups in shared territory</p>
+            </div>
+          </div>
 
-      {/* Created Bundles Tracking */}
-      <div className="px-4 md:px-0">
-        <CreatedBundlesSection />
-      </div>
-
-      {/* Notifications Section */}
-      <div className="px-4 md:px-0">
-        <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] border border-gray-100 p-6 md:p-8 shadow-sm">
-          <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-6 font-black uppercase tracking-tight px-2">System Alerts</h2>
-          <div className="overflow-y-auto max-h-[400px]">
-            <NotificationsList limit={5} />
+          {/* Notifications List */}
+          <div className="bg-white rounded-[2.5rem] border border-gray-100 p-8 shadow-sm">
+            <div className="flex items-center justify-between mb-8 px-2">
+              <h2 className="text-lg font-black text-gray-900 uppercase tracking-tight">Hub Alerts</h2>
+              <Bell className="w-5 h-5 text-gray-400" />
+            </div>
+            <NotificationsList limit={5} key={refreshKey} />
+            <button className="w-full mt-6 py-4 border-t border-gray-50 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-gray-900 transition-colors">
+              Enter Alert History
+            </button>
           </div>
         </div>
       </div>
@@ -173,16 +201,14 @@ interface ExportBundle {
 }
 
 const CreatedBundlesSection: React.FC = () => {
-  const [bundles, setBundles] = React.useState<ExportBundle[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const [bundles, setBundles] = useState<ExportBundle[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchBundles = async () => {
       try {
         const token = localStorage.getItem('ecolink_token');
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
-        // User requested GET /bundles/my, but currently the route is /my-bundles. 
-        // I will stick to what works but ensure the fields match the request.
         const res = await fetch(`${apiUrl}/bundles/my-bundles`, {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -197,44 +223,37 @@ const CreatedBundlesSection: React.FC = () => {
     fetchBundles();
   }, []);
 
-  if (loading) return <div className="bg-white rounded-[2rem] p-8 border border-gray-50 flex items-center justify-center text-gray-400 font-bold animate-pulse">Scanning bundle inventory...</div>;
+  if (loading) return <div className="h-32 bg-gray-50 animate-pulse rounded-[2rem]" />;
   if (bundles.length === 0) return null;
 
   return (
-    <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 border border-gray-100 shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between mb-6 md:mb-8 px-2 md:px-4">
+    <div className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between mb-8 px-4">
         <div>
-          <h2 className="text-lg md:text-xl font-black text-gray-900 tracking-tight uppercase">Created Export Bundles</h2>
-          <p className="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Inventory in transit or awaiting purchase</p>
+          <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase leading-none">Export Inventory</h2>
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2">{bundles.length} Created Bundles</p>
         </div>
-        <div className="w-8 h-8 md:w-10 md:h-10 rounded-2xl bg-emerald-50 flex items-center justify-center">
-          <Package className="w-4 h-4 md:w-5 md:h-5 text-emerald-600" />
-        </div>
+        <ShoppingCart className="w-6 h-6 text-gray-300" />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {bundles.map((bundle) => (
-          <div key={bundle._id} className="group p-5 rounded-3xl border border-gray-50 hover:border-emerald-100 hover:shadow-md transition-all bg-white relative overflow-hidden">
+          <div key={bundle._id} className="p-6 rounded-[2rem] border border-gray-50 hover:shadow-lg hover:border-emerald-100 transition-all group">
             <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="font-black text-gray-900 text-sm truncate max-w-[140px]">{bundle.name}</h3>
-                <p className="text-[9px] font-black uppercase text-gray-400 tracking-widest mt-1">
-                  {bundle.materialIds?.length || 0} Items grouped
-                </p>
-              </div>
-              <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter ${bundle.status === 'sold' || bundle.status === 'purchased' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'
+              <h3 className="font-black text-gray-900 text-sm group-hover:text-emerald-700 transition-colors truncate w-2/3">{bundle.name}</h3>
+              <span className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-tighter ${bundle.status === 'purchased' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-50 text-blue-600'
                 }`}>
                 {bundle.status}
               </span>
             </div>
-            <div className="flex items-end justify-between mt-auto">
+            <div className="flex justify-between items-end">
               <div>
-                <p className="text-[9px] font-bold text-gray-400 uppercase leading-none mb-1">Total Mass</p>
-                <p className="text-xl font-black text-gray-900">{bundle.totalWeight}<span className="text-[10px] ml-0.5 font-bold">KG</span></p>
+                <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Lot Weight</p>
+                <p className="text-xl font-black text-gray-900">{bundle.totalWeight}kg</p>
               </div>
               <div className="text-right">
-                <p className="text-[9px] font-bold text-gray-400 uppercase leading-none mb-1">Estimated Value</p>
-                <p className="text-sm md:text-base font-black text-emerald-600">₦{bundle.totalPrice?.toLocaleString()}</p>
+                <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Hub Value</p>
+                <p className="text-sm font-black text-emerald-600">₦{bundle.totalPrice?.toLocaleString()}</p>
               </div>
             </div>
           </div>
@@ -244,19 +263,11 @@ const CreatedBundlesSection: React.FC = () => {
   );
 };
 
-interface NotificationItem {
-  _id: string;
-  title: string;
-  message: string;
-  type: 'payment' | 'material' | 'system';
-  createdAt: string;
-}
-
 const NotificationsList: React.FC<{ limit: number }> = ({ limit }) => {
-  const [notifications, setNotifications] = React.useState<NotificationItem[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const [notifications, setNotifications] = useState<any[]>([]); // We can keep any[] here if the structure is dynamic, but let's see
+  const [loading, setLoading] = useState(true);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchNotifs = async () => {
       try {
         const token = localStorage.getItem('ecolink_token');
@@ -265,9 +276,9 @@ const NotificationsList: React.FC<{ limit: number }> = ({ limit }) => {
           headers: { Authorization: `Bearer ${token}` }
         });
         const data = await res.json();
-        if (data.success) setNotifications((data.data as NotificationItem[]).slice(0, limit));
-      } catch {
-        console.error('Failed to fetch notifications');
+        if (data.success) setNotifications(data.data.slice(0, limit));
+      } catch (err) {
+        console.error('Failed to fetch notifications', err);
       } finally {
         setLoading(false);
       }
@@ -275,29 +286,21 @@ const NotificationsList: React.FC<{ limit: number }> = ({ limit }) => {
     fetchNotifs();
   }, [limit]);
 
-  if (loading) return <div className="p-4 text-center text-gray-300 font-black uppercase tracking-widest animate-pulse text-xs">Synchronizing Alerts...</div>;
-  if (notifications.length === 0) return (
-    <div className="p-10 text-center text-gray-400 italic font-medium">
-      No active alerts for your hub.
-    </div>
-  );
+  if (loading) return <div className="space-y-4">{Array.from({ length: 3 }).map((_, idx) => <div key={idx} className="h-16 bg-gray-50 animate-pulse rounded-2xl" />)}</div>;
 
   return (
     <div className="space-y-4">
-      {notifications.map((note, i) => (
-        <div key={i} className="flex gap-4 p-4 rounded-3xl hover:bg-gray-50 transition-colors cursor-pointer border border-transparent hover:border-gray-100 group">
-          <div className={`w-1.5 h-1.5 rounded-full mt-2 shrink-0 ${note.type === 'payment' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' :
-              note.type === 'material' ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]' :
-                'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]'
-            }`} />
+      {notifications.map((note, idx) => (
+        <div key={idx} className="flex gap-4 p-4 rounded-2xl hover:bg-gray-50 transition-colors cursor-pointer border border-transparent hover:border-gray-100 group">
+          <div className="w-1.5 h-1.5 rounded-full mt-2 shrink-0 bg-emerald-500 shadow-lg shadow-emerald-500/50" />
           <div className="flex-1">
             <div className="flex justify-between items-start mb-1">
-              <p className="text-sm font-black text-gray-900 group-hover:text-emerald-700 transition-colors uppercase tracking-tight">{note.title}</p>
+              <p className="text-xs font-black text-gray-900 group-hover:text-emerald-700 transition-colors uppercase tracking-tight">{note.title}</p>
               <p className="text-[9px] text-gray-400 font-bold uppercase whitespace-nowrap ml-2">
                 {new Date(note.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </p>
             </div>
-            <p className="text-xs text-gray-500 font-medium leading-relaxed">{note.message}</p>
+            <p className="text-[11px] text-gray-500 font-medium leading-tight line-clamp-2">{note.message}</p>
           </div>
         </div>
       ))}

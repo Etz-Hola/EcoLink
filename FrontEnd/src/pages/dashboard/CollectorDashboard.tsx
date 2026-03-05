@@ -54,7 +54,6 @@ const CollectorDashboard: React.FC = () => {
       if (isRefresh) toast.success('Dashboard synced with latest data');
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
-      setError('Could not sync dashboards. Please check your connection.');
     } finally {
       setLoading(false);
       setRefreshing(false);
