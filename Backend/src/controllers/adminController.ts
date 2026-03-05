@@ -27,7 +27,7 @@ export class AdminController {
                 Material.countDocuments(),
                 Bundle.countDocuments(),
                 Transaction.aggregate([
-                    { $match: { status: TransactionStatus.SUCCESS, type: { $in: [TransactionType.PAYMENT, TransactionType.TRANSFER] } } },
+                    { $match: { status: TransactionStatus.SUCCESS, type: TransactionType.COMMISSION } },
                     { $group: { _id: null, total: { $sum: '$amount' } } }
                 ]),
                 Material.aggregate([
