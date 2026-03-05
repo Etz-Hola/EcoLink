@@ -15,21 +15,23 @@ export class PaymentService {
         const user = await User.findById(userId);
         if (!user) throw new AppError('User not found', 404);
 
+        const organizationId = user.organizationId || user._id;
+
         const paystackSession = await PaystackService.initializeTransaction(
             user.email || `${user.username}@ecolink.com`,
             amount,
-            { userId, type: TransactionType.TOPUP }
+            { userId, organizationId: organizationId.toString(), type: TransactionType.TOPUP }
         );
 
         // Create pending transaction
         await Transaction.create({
             user: userId,
-            organizationId: user.organizationId || user._id,
+            organizationId: organizationId,
             type: TransactionType.TOPUP,
             status: TransactionStatus.PENDING,
             amount,
             reference: paystackSession.data.reference,
-            description: `Top-up via Paystack`
+            description: `Top-up via Paystack for organization`
         });
 
         return paystackSession.data;
