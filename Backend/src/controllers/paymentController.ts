@@ -52,34 +52,36 @@ export class PaymentController {
      * Paystack Webhook
      */
     static async handleWebhook(req: Request, res: Response, next: NextFunction) {
-    try {
-        const signature = req.headers['x-paystack-signature'] as string;
-        const body = JSON.stringify(req.body);
+        try {
+            const signature = req.headers['x-paystack-signature'] as string;
+            const body = JSON.stringify(req.body);
 
-        if (!PaystackService.verifyWebhookSignature(body, signature)) {
-            return res.status(400).send('Invalid signature');
+            if (!PaystackService.verifyWebhookSignature(body, signature)) {
+                return res.status(400).send('Invalid signature');
+            }
+
+            const event = req.body;
+            if (event.event === 'charge.success') {
+                const reference = event.data.reference;
+                await PaymentService.finalizeTopup(reference);
+            }
+
+            return res.status(200).send('Webhook handled');
+        } catch (error) {
+            logger.error('Webhook error:', error);
+            return res.status(500).send('Webhook error'); // ← add return here
         }
-
-        const event = req.body;
-        if (event.event === 'charge.success') {
-            const reference = event.data.reference;
-            await PaymentService.finalizeTopup(reference);
-        }
-
-        return res.status(200).send('Webhook handled');
-    } catch (error) {
-        logger.error('Webhook error:', error);
-        return res.status(500).send('Webhook error'); // ← add return here
     }
-}
 
     /**
      * Get Transaction History
      */
     static async getTransactionHistory(req: Request, res: Response, next: NextFunction) {
         try {
-            const userId = (req as any).user._id;
-            const transactions = await Transaction.find({ user: userId })
+            const user = (req as any).user;
+            const organizationId = user.organizationId || user._id;
+
+            const transactions = await Transaction.find({ organizationId })
                 .sort({ createdAt: -1 })
                 .populate('sender', 'firstName lastName username')
                 .populate('recipient', 'firstName lastName username')
