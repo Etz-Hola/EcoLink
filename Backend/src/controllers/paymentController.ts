@@ -116,4 +116,35 @@ export class PaymentController {
             next(error);
         }
     }
+
+    /**
+     * Process Withdrawal
+     * POST /api/v1/payments/withdraw
+     * Access: Admin/Owner only
+     */
+    static async withdraw(req: Request, res: Response, next: NextFunction) {
+        try {
+            const user = (req as any).user;
+            const { amount, accountDetails } = req.body;
+
+            // Strict Role-Based Access Control
+            if (!['admin', 'owner'].includes(user.role)) {
+                throw new AppError('Only organization admins or owners can initiate withdrawals', 403);
+            }
+
+            if (!amount || amount <= 0) {
+                throw new AppError('Valid amount is required', 400);
+            }
+
+            const transaction = await PaymentService.withdraw(user._id, amount, accountDetails);
+
+            res.status(200).json({
+                success: true,
+                message: 'Withdrawal processed successfully',
+                data: transaction
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
 }

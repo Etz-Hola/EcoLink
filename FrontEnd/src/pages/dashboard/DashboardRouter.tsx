@@ -33,6 +33,12 @@ const DashboardRouter: React.FC = () => {
         return <ExporterDashboard />;
     }
 
+    // Generic OWNER / STAFF — Should ideally check organization type, but for now we default to Collector if generic
+    if (['owner', 'staff'].includes(user.role)) {
+        // Here we could add logic to check user.businessType or a parent role
+        return <CollectorDashboard />;
+    }
+
     // ADMIN
     if (user.role === 'admin') {
         return <AdminDashboard />;

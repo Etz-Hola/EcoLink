@@ -9,6 +9,7 @@ router.use(protect);
 
 router.post('/topup', PaymentController.initiateTopup);
 router.get('/verify/:reference', PaymentController.verifyTopup);
+router.post('/withdraw', PaymentController.withdraw);
 router.get('/history', PaymentController.getTransactionHistory);
 router.get('/admin/stats', PaymentController.getAdminStats);
 
