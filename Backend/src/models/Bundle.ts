@@ -18,6 +18,11 @@ const BundleSchema = new Schema<IBundle>({
         ref: 'Branch',
         required: true
     },
+    organizationId: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
     exporterId: {
         type: Schema.Types.ObjectId,
         ref: 'User'
@@ -52,6 +57,7 @@ const BundleSchema = new Schema<IBundle>({
 
 // Indexes
 BundleSchema.index({ branchId: 1, status: 1 });
+BundleSchema.index({ organizationId: 1, status: 1 });
 BundleSchema.index({ exporterId: 1 });
 BundleSchema.index({ status: 1 });
 BundleSchema.index({ createdAt: -1 });

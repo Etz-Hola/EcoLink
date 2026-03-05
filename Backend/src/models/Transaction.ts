@@ -7,6 +7,11 @@ const TransactionSchema = new Schema<ITransaction>({
         ref: 'User',
         required: true
     },
+    organizationId: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
     type: {
         type: String,
         enum: Object.values(TransactionType),
@@ -57,6 +62,7 @@ const TransactionSchema = new Schema<ITransaction>({
 
 // Indexes
 TransactionSchema.index({ user: 1, createdAt: -1 });
+TransactionSchema.index({ organizationId: 1, createdAt: -1 });
 TransactionSchema.index({ reference: 1 });
 TransactionSchema.index({ status: 1 });
 TransactionSchema.index({ material: 1 });

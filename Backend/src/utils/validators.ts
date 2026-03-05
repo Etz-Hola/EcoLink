@@ -9,7 +9,7 @@ export const loginSchema = Joi.object({
     password: Joi.string().when('identifier', {
         is: Joi.string().email(),
         then: Joi.required(),
-        otherwise: Joi.optional() 
+        otherwise: Joi.optional()
     }),
     signature: Joi.string().optional(),
     message: Joi.string().optional()
@@ -23,7 +23,10 @@ export const registerSchema = Joi.object({
     firstName: Joi.string().required(),
     lastName: Joi.string().required(),
     role: Joi.string().valid(...VALID_ROLES).required(),
-    authProvider: Joi.string().valid('email', 'phone', 'wallet', 'google').required()
+    authProvider: Joi.string().valid('email', 'phone', 'wallet', 'google').required(),
+    organizationId: Joi.string().optional(),
+    branchId: Joi.string().optional(),
+    inviteCode: Joi.string().optional()
 });
 
 export const googleLoginSchema = Joi.object({

@@ -12,6 +12,7 @@ export interface IBundle extends Document {
     name: string;
     materialIds: Types.ObjectId[];
     branchId: Types.ObjectId;
+    organizationId: Types.ObjectId; // Organization/Entity who owns the bundle
     exporterId?: Types.ObjectId;
     status: BundleStatus;
     totalWeight: number;

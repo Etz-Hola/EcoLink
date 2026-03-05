@@ -2171,3 +2171,16 @@
 2026-03-05 15:42:14:4214 [32minfo[39m: [32m::1 - - [05/Mar/2026:14:42:14 +0000] "GET /api/v1/materials/my HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
 2026-03-05 15:42:19:4219 [32minfo[39m: [32m::1 - - [05/Mar/2026:14:42:19 +0000] "GET /api/v1/notifications HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
 2026-03-05 15:42:23:4223 [32minfo[39m: [32m::1 - - [05/Mar/2026:14:42:23 +0000] "GET /api/v1/notifications HTTP/1.1" 304 - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"[39m
+2026-03-05 16:09:43:943 [32minfo[39m: [32mEnvironment: development[39m
+2026-03-05 16:09:43:943 [32minfo[39m: [32mMongoDB URI present: true[39m
+2026-03-05 16:09:44:944 [31merror[39m: [31mDatabase connection failed: queryTxt ESERVFAIL cluster0.ksak8ks.mongodb.net[39m
+2026-03-05 16:10:06:106 [32minfo[39m: [32mEnvironment: development[39m
+2026-03-05 16:10:06:106 [32minfo[39m: [32mMongoDB URI present: true[39m
+2026-03-05 16:10:08:108 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-03-05 16:10:08:108 [32minfo[39m: [32mRedis URL not provided, skipping Redis connection (dev mode)[39m
+2026-03-05 16:10:08:108 [32minfo[39m: [32mServer running on port 5001 in development mode[39m
+2026-03-05 16:10:35:1035 [32minfo[39m: [32mEnvironment: development[39m
+2026-03-05 16:10:35:1035 [32minfo[39m: [32mMongoDB URI present: true[39m
+2026-03-05 16:10:39:1039 [32minfo[39m: [32mConnected to MongoDB[39m
+2026-03-05 16:10:39:1039 [32minfo[39m: [32mRedis URL not provided, skipping Redis connection (dev mode)[39m
+2026-03-05 16:10:39:1039 [32minfo[39m: [32mServer running on port 5001 in development mode[39m

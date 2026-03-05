@@ -119,6 +119,7 @@ export interface IRegisterData {
   businessType?: string;
   organizationId?: string;
   branchId?: string;
+  inviteCode?: string;
 }
 
 export interface IAuthResponse {
