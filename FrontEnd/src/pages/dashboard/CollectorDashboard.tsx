@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   TrendingUp, Package, Clock, CheckCircle, Upload,
-  Leaf, ChevronRight, AlertCircle, Bell, Wallet, CreditCard, Truck, MessageSquare,
-  RefreshCw, Filter, List, Grid, Search
+  Leaf, ChevronRight, AlertCircle, Wallet, Truck, MessageSquare,
+  RefreshCw, Search
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
@@ -11,7 +11,7 @@ import { useMaterial } from '../../hooks/useMaterial';
 import { Material, Notification } from '../../types';
 import toast from 'react-hot-toast';
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: any }> = {
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: React.FC<any> }> = {
   pending: { label: 'In Review', color: 'text-amber-600', bg: 'bg-amber-50', icon: Clock },
   accepted: { label: 'Accepted', color: 'text-emerald-600', bg: 'bg-emerald-50', icon: CheckCircle },
   approved: { label: 'Accepted', color: 'text-emerald-600', bg: 'bg-emerald-50', icon: CheckCircle },
@@ -21,20 +21,13 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
   rejected: { label: 'Rejected', color: 'text-rose-600', bg: 'bg-rose-50', icon: AlertCircle },
 };
 
-const container = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.08 } }
-};
-const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
-
 const CollectorDashboard: React.FC = () => {
   const { user } = useAuth();
-  const { fetchMyMaterials, updateMaterialStatus } = useMaterial();
+  const { fetchMyMaterials } = useMaterial();
   const [materials, setMaterials] = useState<Material[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'accepted' | 'delivered' | 'rejected'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
