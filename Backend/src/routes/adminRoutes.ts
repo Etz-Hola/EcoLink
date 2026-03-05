@@ -6,6 +6,10 @@ import { UserRole } from '../types/user';
 const router = express.Router();
 
 router.get('/stats', protect, authorize(UserRole.ADMIN), AdminController.getGlobalStats);
-router.get('/tracking', protect, authorize(UserRole.ADMIN), AdminController.getUserTracking);
+router.get('/users', protect, authorize(UserRole.ADMIN), AdminController.getUsers);
+router.patch('/users/:id', protect, authorize(UserRole.ADMIN), AdminController.updateUser);
+router.get('/materials', protect, authorize(UserRole.ADMIN), AdminController.getMaterials);
+router.get('/bundles', protect, authorize(UserRole.ADMIN), AdminController.getBundles);
+router.get('/transactions', protect, authorize(UserRole.ADMIN), AdminController.getTransactions);
 
 export default router;
