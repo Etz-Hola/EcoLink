@@ -7,6 +7,8 @@ import User from '../models/User';
 import { IUser, ILoginCredentials, IRegisterData, IAuthResponse, AuthProvider, UserStatus, UserRole } from '../types/user';
 import { AppError } from '../utils/logger';
 import { sendWelcomeEmail, sendVerificationEmail } from './notificationService';
+import Invite from '../models/Invite';
+import { InviteStatus } from '../types/invite';
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -27,6 +29,25 @@ export class AuthService {
       // Create new user
       console.log('Creating new user instance...');
       const user = new User(userData);
+
+      // Handle Organizational Linking via Invite Code
+      if (userData.inviteCode) {
+        const invite = await Invite.findOne({
+          code: userData.inviteCode.toUpperCase(),
+          status: InviteStatus.PENDING,
+          expiresAt: { $gt: new Date() }
+        });
+
+        if (!invite) {
+          throw new AppError('Invalid or expired invite code', 400);
+        }
+
+        user.organizationId = invite.organizationId;
+        user.role = invite.role; // Auto-assign role from invite
+        invite.status = InviteStatus.ACCEPTED;
+        await invite.save();
+      }
+
       console.log('Saving user to database...');
       await user.save();
       console.log('User saved successfully. ID:', user._id);
