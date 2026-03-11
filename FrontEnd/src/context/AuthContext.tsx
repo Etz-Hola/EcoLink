@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, ReactNode, useCallback } from 'react';
 import { User, AuthState } from '../types';
 
 interface AuthContextType extends AuthState {
@@ -92,12 +92,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   // Helper to normalize user object (backend returns firstName+lastName, frontend expects name)
-  const normalizeUser = (rawUser: any) => {
+  const normalizeUser = useCallback((rawUser: any) => {
     const name = rawUser.name || `${rawUser.firstName || ''} ${rawUser.lastName || ''}`.trim() || rawUser.username || 'User';
     return { ...rawUser, name, id: rawUser._id || rawUser.id };
-  };
+  }, []);
 
-  const login = async (email: string, password: string): Promise<void> => {
+  const login = useCallback(async (email: string, password: string): Promise<any> => {
     dispatch({ type: 'LOGIN_START' });
 
     try {
@@ -123,9 +123,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       dispatch({ type: 'LOGIN_FAILURE' });
       throw error;
     }
-  };
+  }, [normalizeUser]);
 
-  const register = async (userData: any): Promise<void> => {
+  const register = useCallback(async (userData: any): Promise<any> => {
     dispatch({ type: 'LOGIN_START' });
     try {
       const response = await fetch(`${API_URL}/auth/register`, {
@@ -153,10 +153,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       dispatch({ type: 'LOGIN_FAILURE' });
       throw error;
     }
-  };
+  }, [normalizeUser]);
 
 
-  const googleLogin = async (idToken: string, role?: string): Promise<void> => {
+  const googleLogin = useCallback(async (idToken: string, role?: string): Promise<any> => {
     dispatch({ type: 'LOGIN_START' });
     try {
       const response = await fetch(`${API_URL}/auth/google`, {
@@ -181,15 +181,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       dispatch({ type: 'LOGIN_FAILURE' });
       throw error;
     }
-  };
+  }, [normalizeUser]);
 
-  const getNonce = async (): Promise<string> => {
+  const getNonce = useCallback(async (): Promise<string> => {
     const response = await fetch(`${API_URL}/auth/nonce`);
     const data = await response.json();
     return data.nonce;
-  };
+  }, []);
 
-  const walletLogin = async (address: string, message: string, signature: string, role?: string): Promise<void> => {
+  const walletLogin = useCallback(async (address: string, message: string, signature: string, role?: string): Promise<any> => {
     dispatch({ type: 'LOGIN_START' });
     try {
       const response = await fetch(`${API_URL}/auth/verify-wallet`, {
@@ -214,37 +214,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       dispatch({ type: 'LOGIN_FAILURE' });
       throw error;
     }
-  };
+  }, [normalizeUser]);
 
-  const logout = (): void => {
+  const logout = useCallback((): void => {
     localStorage.removeItem('ecolink_token');
     localStorage.removeItem('ecolink_user');
     dispatch({ type: 'LOGOUT' });
-  };
+  }, []);
 
-  const updateUser = (userData: Partial<User>): void => {
+  const updateUser = useCallback((userData: Partial<User>): void => {
     dispatch({ type: 'UPDATE_USER', payload: userData });
 
-    if (state.user) {
-      const updatedUser = { ...state.user, ...userData };
+    const token = localStorage.getItem('ecolink_token');
+    const userDataStr = localStorage.getItem('ecolink_user');
+    if (userDataStr) {
+      const currentUser = JSON.parse(userDataStr);
+      const updatedUser = { ...currentUser, ...userData };
       localStorage.setItem('ecolink_user', JSON.stringify(updatedUser));
     }
-  };
+  }, []);
+
+  const value = React.useMemo(() => ({
+    ...state,
+    login,
+    register,
+    googleLogin,
+    walletLogin,
+    getNonce,
+    logout,
+    updateUser,
+    dispatch
+  }), [state, login, register, googleLogin, walletLogin, getNonce, logout, updateUser, dispatch]);
 
   return (
-    <AuthContext.Provider
-      value={{
-        ...state,
-        login,
-        register,
-        googleLogin,
-        walletLogin,
-        getNonce,
-        logout,
-        updateUser,
-        dispatch
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

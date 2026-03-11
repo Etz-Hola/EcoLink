@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
     Package, CheckCircle, Clock,
     BadgeCheck, Bell
@@ -25,13 +25,16 @@ export default function ProcessingQueue() {
     const [priceInputs, setPriceInputs] = useState<Record<string, string>>({});
 
     const authToken = localStorage.getItem('ecolink_token');
-    const authHeaders = { Authorization: `Bearer ${authToken}`, 'Content-Type': 'application/json' };
+    const authHeaders = useMemo(() => ({
+        Authorization: `Bearer ${authToken}`,
+        'Content-Type': 'application/json'
+    }), [authToken]);
 
-    const fetchQueue = async () => {
+    const fetchQueue = useCallback(async () => {
         setLoading(true);
         try {
             const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
-            const statusFilter = activeTab === 'alerts' ? 'pending,approved,delivered' : activeTab;
+            const statusFilter = activeTab === 'alerts' ? 'pending,approved,delivered,pickup_scheduled' : activeTab;
             const res = await fetch(`${apiUrl}/materials/pending?status=${statusFilter}`, {
                 headers: authHeaders
             });
@@ -39,15 +42,15 @@ export default function ProcessingQueue() {
             if (data.success) {
                 const mapped = (data.data || []).map((m: any) => ({
                     id: m._id,
-                    collectorName: m.userId?.name || 'Anonymous',
+                    collectorName: m.submittedBy?.name || m.submittedBy?.username || 'Anonymous',
                     materialType: m.materialType,
                     weightKg: m.weight,
                     quality: m.condition,
                     status: m.status,
                     pricePerKg: m.pricing?.offeredPrice || 0,
                     totalValue: (m.weight * (m.pricing?.offeredPrice || 0)),
-                    location: m.location?.address || 'Unknown',
-                    photo: m.images?.[0]
+                    location: m.pickupLocation?.address || 'Unknown',
+                    photo: m.images?.[0]?.url
                 }));
                 setQueue(mapped);
             }
@@ -56,13 +59,13 @@ export default function ProcessingQueue() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [activeTab, authHeaders]);
 
     useEffect(() => {
         fetchQueue();
-    }, [activeTab]);
+    }, [activeTab, fetchQueue]);
 
-    const handleAccept = async (id: string) => {
+    const handleAccept = useCallback(async (id: string) => {
         const price = priceInputs[id];
         if (!price || isNaN(Number(price))) return toast.error('Enter a valid price');
 
@@ -81,9 +84,9 @@ export default function ProcessingQueue() {
         } catch {
             toast.error('Submission failed');
         }
-    };
+    }, [authHeaders, fetchQueue, priceInputs]);
 
-    const handleVerify = async (id: string) => {
+    const handleVerify = useCallback(async (id: string) => {
         try {
             const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
             const res = await fetch(`${apiUrl}/materials/${id}/verify`, {
@@ -99,7 +102,7 @@ export default function ProcessingQueue() {
         } catch {
             toast.error('Verification failed');
         }
-    };
+    }, [authHeaders, fetchQueue]);
 
     return (
         <div className="bg-white rounded-[2.5rem] shadow-xl shadow-purple-900/5 border border-gray-100 overflow-hidden">
@@ -185,7 +188,9 @@ export default function ProcessingQueue() {
                                 {activeTab === 'approved' && (
                                     <div className="bg-blue-50/50 rounded-2xl p-4 space-y-3">
                                         <div className="flex justify-between items-center">
-                                            <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Quote Sent</span>
+                                            <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">
+                                                {item.status === 'pickup_scheduled' ? 'Collection Target' : 'Quote Sent'}
+                                            </span>
                                             <span className="font-black text-blue-600 text-sm">₦{(item.pricePerKg * item.weightKg).toLocaleString()}</span>
                                         </div>
                                         <button
@@ -194,6 +199,9 @@ export default function ProcessingQueue() {
                                         >
                                             Verify & Release
                                         </button>
+                                        {item.status === 'approved' && (
+                                            <p className="text-[8px] text-center text-gray-400 font-bold uppercase tracking-widest mt-1 italic">Waiting for collector to schedule pickup</p>
+                                        )}
                                     </div>
                                 )}
 
@@ -219,24 +227,25 @@ const NotificationsList: React.FC<{ limit: number }> = ({ limit }) => {
     const [notifications, setNotifications] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchNotifs = async () => {
-            try {
-                const token = localStorage.getItem('ecolink_token');
-                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
-                const res = await fetch(`${apiUrl}/notifications/me`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                const data = await res.json();
-                if (data.success) setNotifications(data.data.slice(0, limit));
-            } catch {
-                console.error('Failed to fetch notifications');
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchNotifs();
+    const fetchNotifs = React.useCallback(async () => {
+        try {
+            const token = localStorage.getItem('ecolink_token');
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+            const res = await fetch(`${apiUrl}/notifications/me`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (data.success) setNotifications(data.data.slice(0, limit));
+        } catch {
+            console.error('Failed to fetch notifications');
+        } finally {
+            setLoading(false);
+        }
     }, [limit]);
+
+    useEffect(() => {
+        fetchNotifs();
+    }, [fetchNotifs]);
 
     if (loading) return <div className="p-20 text-center animate-pulse text-gray-300 font-black uppercase text-xs tracking-widest">Pulling Activity Stream...</div>;
 

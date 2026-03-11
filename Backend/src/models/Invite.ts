@@ -20,6 +20,10 @@ const InviteSchema = new Schema<IInvite>({
         lowercase: true,
         trim: true
     },
+    businessName: {
+        type: String,
+        trim: true
+    },
     role: {
         type: String,
         enum: Object.values(UserRole),
@@ -30,6 +34,10 @@ const InviteSchema = new Schema<IInvite>({
         type: Schema.Types.ObjectId,
         ref: 'User',
         required: true
+    },
+    usedBy: {
+        type: Schema.Types.ObjectId,
+        ref: 'User'
     },
     status: {
         type: String,

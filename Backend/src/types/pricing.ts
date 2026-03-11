@@ -37,31 +37,31 @@ export interface IMarketPrice {
 
 export interface IPricingRule extends Document {
   _id: Types.ObjectId;
-  
+
   // Basic Information
   name: string;
   description: string;
   isActive: boolean;
   priority: number; // Higher number = higher priority
-  
+
   // Applicability
   materialType: MaterialType;
   subTypes?: string[]; // Specific subtypes this rule applies to
   conditions?: MaterialCondition[];
   locations?: string[]; // States/cities where this rule applies
-  
+
   // Pricing Strategy
   strategy: PricingStrategy;
-  
+
   // Price Factors
   basePrice: number; // Per kg
   currency: string;
   priceFactors: IPriceFactor[];
-  
+
   // Market Integration
   marketPrices?: IMarketPrice[];
   marketPriceWeight: number; // How much market price influences final price (0-1)
-  
+
   // Quantity Tiers
   quantityTiers?: Array<{
     minQuantity: number; // kg
@@ -69,7 +69,7 @@ export interface IPricingRule extends Document {
     discountPercentage: number;
     description: string;
   }>;
-  
+
   // Time-based Rules
   validFrom: Date;
   validUntil?: Date;
@@ -79,7 +79,7 @@ export interface IPricingRule extends Document {
     multiplier: number;
     description: string;
   }>;
-  
+
   // Seasonal Adjustments
   seasonalAdjustments?: Array<{
     startMonth: number;
@@ -87,7 +87,7 @@ export interface IPricingRule extends Document {
     multiplier: number;
     description: string;
   }>;
-  
+
   // Treatment Pricing
   treatmentPricing?: Array<{
     treatmentType: string;
@@ -95,7 +95,7 @@ export interface IPricingRule extends Document {
     priceImprovement: number; // How much treatment improves price
     description: string;
   }>;
-  
+
   // Performance Metrics
   usage: {
     timesApplied: number;
@@ -103,16 +103,19 @@ export interface IPricingRule extends Document {
     averagePrice: number;
     lastUsed?: Date;
   };
-  
+
   // Approval & Governance
   createdBy: Types.ObjectId;
   approvedBy?: Types.ObjectId;
   approvalStatus: 'pending' | 'approved' | 'rejected';
   approvalNotes?: string;
-  
+
   // Timestamps
   createdAt: Date;
   updatedAt: Date;
+
+  // Methods
+  updateUsage(value: number): Promise<this>;
 }
 
 export interface IPriceCalculationResult {
@@ -124,7 +127,7 @@ export interface IPriceCalculationResult {
     finalPrice: number;
     factorsApplied: IPriceFactor[];
   }>;
-  
+
   // Final Pricing
   basePrice: number;
   adjustments: Array<{
@@ -135,11 +138,11 @@ export interface IPriceCalculationResult {
   }>;
   finalPrice: number;
   currency: string;
-  
+
   // Market Comparison
   marketAverage?: number;
   competitiveAdvantage?: number; // How much better our price is
-  
+
   // Breakdown
   breakdown: {
     materialCost: number;
@@ -148,7 +151,7 @@ export interface IPriceCalculationResult {
     platformFee: number;
     profit: number;
   };
-  
+
   // Treatment Analysis
   treatmentAnalysis?: {
     currentPrice: number;
@@ -157,7 +160,7 @@ export interface IPriceCalculationResult {
     netBenefit: number;
     recommendation: 'treat' | 'sell_as_is';
   };
-  
+
   // Validity
   validUntil: Date;
   calculatedAt: Date;

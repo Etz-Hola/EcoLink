@@ -2,7 +2,7 @@ import Material from '../models/Material';
 import PricingRule from '../models/PricingRule';
 import { IMaterial, IMaterialUploadData, MaterialStatus, IMaterialFilter } from '../types/material';
 import { PricingService } from './pricingService';
-import { UploadService } from './uploadService';
+import { UploadService, IUploadResult } from './uploadService';
 import { NotificationService } from './notificationService';
 import { AppError } from '../utils/logger';
 import logger from '../utils/logger';
@@ -40,7 +40,7 @@ export class MaterialService {
         ...materialData,
         submittedBy: userId,
         currentOwner: userId,
-        images: imageUploads.map(upload => ({
+        images: imageUploads.map((upload: IUploadResult) => ({
           url: upload.url,
           publicId: upload.key,
           filename: upload.originalName,
@@ -68,7 +68,7 @@ export class MaterialService {
       await material.save();
 
       logger.info(`Material uploaded successfully: ${material._id}`);
-      
+
       // Send notification to nearby branches
       await this.notifyNearbyBranches(material);
 
@@ -151,7 +151,7 @@ export class MaterialService {
     notes?: string
   ): Promise<IMaterial> {
     const material = await Material.findById(materialId);
-    
+
     if (!material) {
       throw new AppError('Material not found', 404);
     }
@@ -197,7 +197,7 @@ export class MaterialService {
     assignedBy: string
   ): Promise<IMaterial> {
     const material = await Material.findById(materialId);
-    
+
     if (!material) {
       throw new AppError('Material not found', 404);
     }
@@ -219,7 +219,7 @@ export class MaterialService {
    */
   static async addInterestedBuyer(materialId: string, buyerId: string): Promise<IMaterial> {
     const material = await Material.findById(materialId);
-    
+
     if (!material) {
       throw new AppError('Material not found', 404);
     }
@@ -278,9 +278,9 @@ export class MaterialService {
       },
       status: { $in: [MaterialStatus.PENDING, MaterialStatus.APPROVED] }
     })
-    .populate('submittedBy', 'firstName lastName username')
-    .limit(limit)
-    .sort({ createdAt: -1 });
+      .populate('submittedBy', 'firstName lastName username')
+      .limit(limit)
+      .sort({ createdAt: -1 });
   }
 
   /**
@@ -334,7 +334,7 @@ export class MaterialService {
    */
   static async deleteMaterial(materialId: string, userId: string): Promise<void> {
     const material = await Material.findById(materialId);
-    
+
     if (!material) {
       throw new AppError('Material not found', 404);
     }

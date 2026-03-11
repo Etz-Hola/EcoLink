@@ -66,6 +66,7 @@ const RegisterForm: React.FC = () => {
     confirmPassword: '',
     role: 'collector' as string,
     inviteCode: '',
+    businessName: '',
   });
   const [isJoining, setIsJoining] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -112,6 +113,8 @@ const RegisterForm: React.FC = () => {
         role: formData.role,
         username: formData.email.split('@')[0],
         inviteCode: isJoining ? formData.inviteCode : undefined,
+        businessName: formData.role !== 'collector' ? formData.businessName : undefined,
+        businessType: formData.role, // Default business type to the role for now
       });
       toast.success('Welcome to EcoLink! 🎉');
       navigateToDashboard(user.role);
@@ -407,6 +410,31 @@ const RegisterForm: React.FC = () => {
                       />
                     </div>
                   </motion.div>
+ 
+                   {/* Business Name (for non-collectors) */}
+                   {formData.role !== 'collector' && !isJoining && (
+                     <motion.div
+                       initial={{ opacity: 0, y: -10 }}
+                       animate={{ opacity: 1, y: 0 }}
+                       variants={fadeUp}
+                       custom={1.5}
+                     >
+                       <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">Business / Hub Name</label>
+                       <div className="relative">
+                         <div className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400">🏢</div>
+                         <input
+                           name="businessName"
+                           value={formData.businessName}
+                           onChange={handleChange}
+                           onFocus={() => setFocusedField('businessName')}
+                           onBlur={() => setFocusedField(null)}
+                           placeholder="e.g. Lagos Central Hub"
+                           required
+                           className={`${inputCls('businessName')} pl-10`}
+                         />
+                       </div>
+                     </motion.div>
+                   )}
 
                   {/* Email */}
                   <motion.div variants={fadeUp} custom={2} initial="hidden" animate="show">

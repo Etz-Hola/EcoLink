@@ -221,21 +221,22 @@ export class MaterialController {
                 throw new AppError('Material not found', 404);
             }
 
-            if (status) material.status = status;
-            if (offeredPrice) {
+            const finalPrice = offeredPrice || req.body.pricePerKg;
+            if (finalPrice) {
                 if (!material.pricing) material.pricing = {} as any;
-                material.pricing.offeredPrice = offeredPrice;
+                material.pricing.offeredPrice = finalPrice;
                 material.pricing.lastUpdated = new Date();
             }
             if (notes && material.qualityAssessment) {
                 material.qualityAssessment.notes = notes;
             }
 
-            if (status === MaterialStatus.APPROVED || status === MaterialStatus.REJECTED) {
+            if (status === MaterialStatus.APPROVED || status === MaterialStatus.REJECTED || status === 'accepted') {
+                material.status = status === 'accepted' ? MaterialStatus.APPROVED : status;
                 material.processingBranch = (req as any).user.branchId || (req as any).user.organizationId || (req as any).user._id;
                 // Track which organization is processing it
                 (material as any).processingOrganizationId = (req as any).user.organizationId || (req as any).user._id;
-                if (status === MaterialStatus.APPROVED) material.approvedAt = new Date();
+                if (material.status === MaterialStatus.APPROVED) material.approvedAt = new Date();
             }
 
             await material.save();
@@ -270,14 +271,14 @@ export class MaterialController {
                 throw new AppError('Material not found', 404);
             }
 
-            // Ensure this branch is assigned or it's a valid intake
-            // For now, simplicity: if status is approved/accepted
-            // if (material.status !== MaterialStatus.APPROVED && material.status !== 'accepted') {
-            //     throw new AppError('Material must be in approved status to verify delivery', 400);
-            // }
+            if (material.status !== MaterialStatus.APPROVED && material.status !== MaterialStatus.PICKUP_SCHEDULED) {
+                throw new AppError('Material must be in approved or pickup_scheduled status to verify delivery', 400);
+            }
 
-            if (material.status !== MaterialStatus.APPROVED) {
-                throw new AppError('Material must be in approved status to verify delivery', 400);
+            // Verify branch ownership
+            const materialProcessingBranch = material.processingBranch?.toString();
+            if (materialProcessingBranch !== branchId.toString()) {
+                throw new AppError('Only the assigned branch can verify delivery', 403);
             }
 
             const uploader = await User.findById(material.submittedBy);
@@ -339,11 +340,11 @@ export class MaterialController {
                 throw new AppError('Not authorized to schedule pickup for this material', 403);
             }
 
-            if (!['approved', 'accepted'].includes(material.status)) {
+            if (![MaterialStatus.APPROVED, 'accepted'].includes(material.status as any)) {
                 throw new AppError('Material must be accepted by a branch before scheduling pickup', 400);
             }
 
-            material.status = 'pickup_scheduled' as any;
+            material.status = MaterialStatus.PICKUP_SCHEDULED;
             await material.save();
 
             // Notify the branch manager (find admins/branches)
@@ -353,7 +354,7 @@ export class MaterialController {
                     title: 'Pickup Scheduled 🚚',
                     message: `Uploader has confirmed they are ready for pickup of ${material.materialType} (${material.weight}kg). Please arrange collection.`,
                     type: 'material',
-                    metadata: { materialId: material._id.toString(), status: 'pickup_scheduled' }
+                    metadata: { materialId: material._id.toString(), status: MaterialStatus.PICKUP_SCHEDULED }
                 });
             }
 
@@ -362,7 +363,7 @@ export class MaterialController {
                 title: 'Pickup Request Sent ✅',
                 message: `Your pickup request for ${material.materialType} (${material.weight}kg) has been submitted. The branch will contact you shortly.`,
                 type: 'material',
-                metadata: { materialId: material._id.toString(), status: 'pickup_scheduled' }
+                metadata: { materialId: material._id.toString(), status: MaterialStatus.PICKUP_SCHEDULED }
             });
 
             res.status(200).json({
@@ -447,7 +448,7 @@ export class MaterialController {
                 throw new AppError('Material must be approved before confirming pickup', 400);
             }
 
-            material.status = 'pickup_scheduled' as any;
+            material.status = MaterialStatus.PICKUP_SCHEDULED;
             await material.save();
 
             // Notify uploader
@@ -455,7 +456,7 @@ export class MaterialController {
                 title: 'Pickup Confirmed! 🚚',
                 message: `A branch manager has confirmed your pickup request. Please have your materials ready.`,
                 type: 'material',
-                metadata: { materialId: material._id.toString(), status: 'pickup_scheduled' }
+                metadata: { materialId: material._id.toString(), status: MaterialStatus.PICKUP_SCHEDULED }
             });
 
             res.status(200).json({

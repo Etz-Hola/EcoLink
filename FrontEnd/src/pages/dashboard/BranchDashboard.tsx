@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Package, CheckCircle, Clock, RefreshCw, MapPin, Layout, ShoppingCart, Bell, Search, Filter } from 'lucide-react';
+import { Package, CheckCircle, Clock, RefreshCw, MapPin, Layout, ShoppingCart, Bell, Search, Truck } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import ProcessingQueue from '../../components/dashboard/ProcessingQueue';
 import BundleCreator from '../../components/dashboard/BundleCreator';
@@ -50,8 +50,8 @@ const BranchDashboard: React.FC = () => {
         setStats([
           { label: 'Pending Review', value: s.pending || 0, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
           { label: 'Approved', value: s.approved || 0, icon: CheckCircle, color: 'text-blue-600', bg: 'bg-blue-50' },
-          { label: 'Hub Processed', value: s.delivered || 0, icon: Package, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-          { label: 'Disputed', value: s.rejected || 0, icon: Filter, color: 'text-rose-600', bg: 'bg-rose-50' }
+          { label: 'Logistics', value: s.pickup_scheduled || 0, icon: Truck, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+          { label: 'Hub Processed', value: s.delivered || 0, icon: Package, color: 'text-emerald-600', bg: 'bg-emerald-50' }
         ]);
       }
     } catch {

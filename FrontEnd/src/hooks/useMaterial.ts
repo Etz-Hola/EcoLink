@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Material } from '../types';
 import { useApp } from '../context/AppContext';
 import { generateMaterialId, uploadToCloudinary, validateImageFile } from '../utils/helpers';
@@ -165,7 +165,7 @@ export const useMaterial = () => {
     }
   }, [setLoading, setError]);
 
-  return {
+  const value = useMemo(() => ({
     materials,
     isUploading,
     uploadMaterial,
@@ -175,5 +175,17 @@ export const useMaterial = () => {
     gradeMaterial,
     deleteMaterial,
     fetchMyMaterials
-  };
+  }), [
+    materials,
+    isUploading,
+    uploadMaterial,
+    getMaterialsByUser,
+    getMaterialsByStatus,
+    updateMaterialStatus,
+    gradeMaterial,
+    deleteMaterial,
+    fetchMyMaterials
+  ]);
+
+  return value;
 };

@@ -202,3 +202,5 @@
 2026-03-05 16:48:34:4834 [31merror[39m: [31mDatabase connection failed: querySrv ESERVFAIL _mongodb._tcp.cluster0.ksak8ks.mongodb.net[39m
 2026-03-05 17:01:07:17 [31merror[39m: [31mDatabase connection failed: querySrv ESERVFAIL _mongodb._tcp.cluster0.ksak8ks.mongodb.net[39m
 2026-03-05 18:17:15:1715 [31merror[39m: [31mDatabase connection failed: queryTxt ESERVFAIL cluster0.ksak8ks.mongodb.net[39m
+2026-03-10 13:51:16:5116 [31merror[39m: [31mDatabase connection failed: queryTxt ESERVFAIL cluster0.ksak8ks.mongodb.net[39m
+2026-03-11 12:13:34:1334 [31merror[39m: [31mDatabase connection failed: queryTxt ESERVFAIL cluster0.ksak8ks.mongodb.net[39m

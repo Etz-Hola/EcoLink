@@ -1,6 +1,16 @@
-import mongoose, { Schema } from 'mongoose';
+import mongoose, { Schema, Model } from 'mongoose';
 import { IPricingRule, PricingStrategy, PriceFactorType } from '../types/pricing';
 import { MaterialType, MaterialCondition } from '../types/material';
+
+export interface IPricingRuleModel extends Model<IPricingRule> {
+  findApplicableRules(
+    materialType: MaterialType,
+    subType?: string,
+    condition?: MaterialCondition,
+    location?: string
+  ): Promise<IPricingRule[]>;
+  findByMaterialType(materialType: MaterialType): Promise<IPricingRule[]>;
+}
 
 const PriceFactorSchema = new Schema({
   type: {
@@ -349,4 +359,4 @@ PricingRuleSchema.statics.findByMaterialType = function (materialType: MaterialT
   return this.find({ materialType, isActive: true });
 };
 
-export default mongoose.model<IPricingRule>('PricingRule', PricingRuleSchema);
+export default mongoose.model<IPricingRule, IPricingRuleModel>('PricingRule', PricingRuleSchema);

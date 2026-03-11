@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import { useAuth } from './useAuth';
 
@@ -44,7 +44,7 @@ export const useBalance = () => {
         }
     }, [user, fetchBalance]);
 
-    const withdraw = async (amount: number, accountDetails: { bankName: string; accountNumber: string }) => {
+    const withdraw = useCallback(async (amount: number, accountDetails: { bankName: string; accountNumber: string }) => {
         try {
             const token = localStorage.getItem('ecolink_token');
             const response = await axios.post(`${API_URL}/payments/withdraw`,
@@ -61,15 +61,14 @@ export const useBalance = () => {
             const message = axios.isAxiosError(err) ? err.response?.data?.message : 'Withdrawal failed';
             return { success: false, message: message || 'Withdrawal failed' };
         }
-    };
+    }, [API_URL, fetchBalance]);
 
-    return {
+    return useMemo(() => ({
         balance: balanceData?.balance || 0,
         currency: balanceData?.currency || 'NGN',
         loading,
         error,
         refreshBalance: fetchBalance,
         withdraw,
-        isAdmin: user?.role === 'admin' || user?.role === 'organization' || user?.role === 'branch' || user?.role === 'owner'
-    };
+    }), [balanceData, loading, error, fetchBalance, withdraw, user?.role]);
 };
