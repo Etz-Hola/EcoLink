@@ -9,46 +9,43 @@ import EcoPointsDisplay from '../components/web3/EcoPointsDisplay';
 import PriceCalculator from '../components/feature/PriceCalculator';
 import { formatPrice } from '../utils/helpers';
 
-const Home: React.FC = () => {
   const { user } = useAuth();
   const { materials, getMaterialsByUser } = useMaterial();
-  // const { getMaterialsByUser } = useMaterial();
   
-  const userMaterials = getMaterialsByUser(user?.id || '');
+  const userMaterials = getMaterialsByUser(user?._id || user?.id || '');
   const recentMaterials = userMaterials.slice(0, 3);
   
-  // Mock data for dashboard
-  const totalEarnings = 12450;
-  const monthlyEarnings = 2850;
-  const totalMaterials = userMaterials.length;
+  const totalEarnings = user?.totalEarnings || 0;
+  const balance = user?.balance || 0;
+  const totalMaterialsPlat = user?.totalMaterialsSubmitted || userMaterials.length;
   const pendingMaterials = userMaterials.filter(m => m.status === 'pending').length;
 
   const quickStats = [
     {
       label: 'Total Earnings',
       value: formatPrice(totalEarnings),
-      change: '+12%',
+      change: 'Lifetime',
       positive: true,
       icon: <TrendingUp className="h-5 w-5" />
     },
     {
-      label: 'This Month',
-      value: formatPrice(monthlyEarnings),
-      change: '+8%',
+      label: 'Current Balance',
+      value: formatPrice(balance),
+      change: 'Withdrawable',
       positive: true,
       icon: <Award className="h-5 w-5" />
     },
     {
-      label: 'Materials Uploaded',
-      value: totalMaterials.toString(),
-      change: '+3 new',
+      label: 'Materials Submitted',
+      value: totalMaterialsPlat.toString(),
+      change: 'Total Weight',
       positive: true,
       icon: <Package className="h-5 w-5" />
     },
     {
-      label: 'Pending Review',
+      label: 'In Review',
       value: pendingMaterials.toString(),
-      change: 'Review needed',
+      change: 'Status: Pending',
       positive: false,
       icon: <Upload className="h-5 w-5" />
     }

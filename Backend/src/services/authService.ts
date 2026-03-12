@@ -29,29 +29,29 @@ export class AuthService {
             let organizationId = data.organizationId;
             let businessName = data.businessName;
 
-            // Handle Branch Signup logic (Option A - Invite Code)
+            // Handle Branch Signup logic (Option A - Invite Code OR Option B - Self-Signup)
             if (data.role === UserRole.BRANCH) {
-                if (!data.inviteCode) {
-                    throw new AppError('Branch signup requires a valid invite code from EcoLink admin.', 400);
+                if (data.inviteCode) {
+                    const invite = await Invite.findOne({
+                        code: data.inviteCode.toUpperCase(),
+                        status: InviteStatus.PENDING,
+                        expiresAt: { $gt: new Date() }
+                    });
+
+                    if (!invite) {
+                        throw new AppError('Invalid or expired invite code', 400);
+                    }
+
+                    // If invite is valid, auto-activate branch
+                    userStatus = UserStatus.ACTIVE;
+                    businessName = invite.businessName || businessName;
+                    
+                    // Store for later
+                    (data as any)._inviteFound = invite;
+                } else {
+                    // No invite code provided -> Option B: Self-Signup + Admin Approval
+                    userStatus = UserStatus.PENDING_APPROVAL;
                 }
-
-                const invite = await Invite.findOne({
-                    code: data.inviteCode.toUpperCase(),
-                    status: InviteStatus.PENDING,
-                    expiresAt: { $gt: new Date() }
-                });
-
-                if (!invite) {
-                    throw new AppError('Invalid or expired invite code', 400);
-                }
-
-                // If invite is valid, auto-activate branch
-                userStatus = UserStatus.ACTIVE;
-                businessName = invite.businessName || businessName;
-                // For a branch being its own organization as per PRD: organizationId = newUser._id (handled in model pre-save or here)
-                
-                // Mark invite as used after user creation (will do after user.save())
-                (data as any)._inviteFound = invite;
             }
 
             // Create new user

@@ -420,7 +420,7 @@ const RegisterForm: React.FC = () => {
                       className="space-y-1.5"
                     >
                       <label className="block text-xs font-black text-gray-500 uppercase tracking-widest">
-                        Required: Branch Invite Code
+                        Invite Code (Optional - Instant Access)
                       </label>
                       <div className="relative">
                         <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -430,13 +430,13 @@ const RegisterForm: React.FC = () => {
                           onChange={handleChange}
                           onFocus={() => setFocusedField('inviteCode')}
                           onBlur={() => setFocusedField(null)}
-                          placeholder="Enter your authorization code"
-                          required
+                          placeholder="Enter code (if you have one)"
+                          required={false}
                           className={`${inputCls('inviteCode')} pl-10`}
                         />
                       </div>
-                      <p className="text-[10px] font-medium text-amber-600 px-1">
-                        Branch signup requires a valid invite code from EcoLink admin.
+                      <p className="text-[10px] font-medium text-amber-600 px-1 leading-relaxed">
+                        If you have an invite code, your account is activated instantly. Otherwise, it will require 24h admin approval.
                       </p>
                     </motion.div>
                   )}

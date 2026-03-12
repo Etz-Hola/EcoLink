@@ -1,9 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import User from '../models/User';
+import Invite from '../models/Invite';
 import Material from '../models/Material';
 import Bundle from '../models/Bundle';
 import Transaction from '../models/Transaction';
-import { UserRole } from '../types/user';
+import { UserRole, UserStatus } from '../types/user';
 import { MaterialStatus } from '../types/material';
 import { TransactionStatus, TransactionType } from '../types/transaction';
 import { AppError } from '../utils/logger';
@@ -117,6 +118,82 @@ export class AdminController {
 
             res.status(200).json({
                 success: true,
+                data: user
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * Generate a new invite code
+     */
+    static async generateInvite(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { businessName, expiresDays = 7, role = UserRole.BRANCH } = req.body;
+            const adminId = (req as any).user._id;
+
+            const code = `BRANCH-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+            
+            const invite = new Invite({
+                code,
+                businessName,
+                role,
+                createdBy: adminId,
+                expiresAt: new Date(Date.now() + expiresDays * 24 * 60 * 60 * 1000)
+            });
+
+            await invite.save();
+
+            res.status(201).json({
+                success: true,
+                message: 'Invite code generated successfully',
+                data: invite
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * Approve a pending user
+     */
+    static async approveUser(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { id } = req.params;
+            const user = await User.findById(id);
+            
+            if (!user) throw new AppError('User not found', 404);
+            
+            user.status = UserStatus.ACTIVE;
+            await user.save();
+
+            res.status(200).json({
+                success: true,
+                message: 'User approved successfully',
+                data: user
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * Reject a pending user
+     */
+    static async rejectUser(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { id } = req.params;
+            const user = await User.findById(id);
+            
+            if (!user) throw new AppError('User not found', 404);
+            
+            user.status = UserStatus.REJECTED;
+            await user.save();
+
+            res.status(200).json({
+                success: true,
+                message: 'User rejected',
                 data: user
             });
         } catch (error) {

@@ -13,7 +13,7 @@ const InviteSchema = new Schema<IInvite>({
     organizationId: {
         type: Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+        required: false
     },
     invitedEmail: {
         type: String,
@@ -28,7 +28,7 @@ const InviteSchema = new Schema<IInvite>({
         type: String,
         enum: Object.values(UserRole),
         required: true,
-        default: UserRole.COLLECTOR
+        default: UserRole.BRANCH
     },
     createdBy: {
         type: Schema.Types.ObjectId,

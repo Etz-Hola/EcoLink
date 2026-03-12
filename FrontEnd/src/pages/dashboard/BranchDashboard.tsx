@@ -77,6 +77,24 @@ const BranchDashboard: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto space-y-10 pb-20 px-4 md:px-0 animate-in fade-in duration-700">
+      {/* Pending Approval Banner */}
+      {user?.status === 'pending_approval' && (
+        <div className="bg-amber-50 border border-amber-200 rounded-[2rem] p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm animate-pulse-slow">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-amber-100 rounded-2xl text-amber-600">
+              <Clock className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-amber-900 uppercase tracking-tight leading-none">Account Pending Verification</h3>
+              <p className="text-sm font-medium text-amber-700 mt-1">Your hub is currently being reviewed by EcoLink admin. You can set up your profile, but material intake is limited.</p>
+            </div>
+          </div>
+          <button className="px-6 py-3 bg-amber-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-amber-700 transition-all shadow-lg shadow-amber-900/10">
+            Contact Support
+          </button>
+        </div>
+      )}
+
       {/* Header with Sync Button */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-2">

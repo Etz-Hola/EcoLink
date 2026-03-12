@@ -32,7 +32,7 @@ const BranchManagement: React.FC = () => {
         setLoading(true);
         try {
             const token = localStorage.getItem('ecolink_token');
-            const statusFilter = activeTab === 'verification' ? 'pending_verification' : 'active';
+            const statusFilter = activeTab === 'verification' ? 'pending_approval' : 'active';
             const res = await axios.get(`${API_URL}/admin/users`, {
                 params: {
                     role: 'branch',
@@ -101,11 +101,11 @@ const BranchManagement: React.FC = () => {
                             Approved
                         </button>
                         <button
-                            onClick={() => setActiveTab('map')}
-                            className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'map' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-400'
+                            onClick={() => setActiveTab('invites')}
+                            className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'invites' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-400'
                                 }`}
                         >
-                            Map
+                            Invites
                         </button>
                     </div>
                 </div>
@@ -249,24 +249,88 @@ const BranchManagement: React.FC = () => {
                 </div>
             )}
 
-            {activeTab === 'map' && (
-                <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden h-[600px] flex flex-col items-center justify-center relative bg-gray-50/50">
-                    <MapIcon size={64} className="text-gray-200 mb-4 animate-pulse" />
-                    <p className="text-lg font-black text-gray-900 tracking-tight">Interactive Hub Topology</p>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1 opacity-60">Visualizing global decentralized network</p>
-
-                    <div className="mt-8 flex gap-4">
-                        <div className="flex items-center gap-2 bg-white px-4 py-2.5 rounded-2xl shadow-md border border-gray-100">
-                            <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                            <span className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Active Hubs</span>
-                        </div>
-                        <div className="flex items-center gap-2 bg-white px-4 py-2.5 rounded-2xl shadow-md border border-gray-100">
-                            <div className="w-2 h-2 rounded-full bg-amber-500" />
-                            <span className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Syncing</span>
-                        </div>
-                    </div>
-                </div>
+            {activeTab === 'invites' && (
+                <InviteManagement />
             )}
+        </div>
+    );
+};
+
+const InviteManagement: React.FC = () => {
+    const [invites, setInvites] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [generating, setGenerating] = useState(false);
+    const [businessName, setBusinessName] = useState('');
+
+    const fetchInvites = useCallback(async () => {
+        setLoading(true);
+        try {
+            const token = localStorage.getItem('ecolink_token');
+            // Assuming we have a way to list invites or reuse admin/users if needed, 
+            // but for now let's focus on generation. If no list endpoint, we ignore list for now.
+            // res = await axios.get(`${API_URL}/admin/invites`, { headers: { Authorization: `Bearer ${token}` } });
+            // setInvites(res.data.data);
+            setLoading(false);
+        } catch {
+            setLoading(false);
+        }
+    }, []);
+
+    const handleGenerate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setGenerating(true);
+        try {
+            const token = localStorage.getItem('ecolink_token');
+            const res = await axios.post(`${API_URL}/admin/invites/generate`, { businessName }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.data.success) {
+                toast.success('Invite code generated! 🎟️');
+                setBusinessName('');
+                fetchInvites();
+            }
+        } catch {
+            toast.error('Failed to generate invite');
+        } finally {
+            setGenerating(false);
+        }
+    };
+
+    return (
+        <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+            <div className="bg-gray-900 rounded-[2.5rem] p-10 text-white shadow-2xl relative overflow-hidden group">
+                <div className="absolute -top-24 -right-24 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl group-hover:bg-emerald-500/20 transition-all duration-700" />
+                <div className="relative z-10">
+                    <h2 className="text-2xl font-black uppercase tracking-tight mb-2">Issue Branch Authorization</h2>
+                    <p className="text-gray-400 text-sm font-medium max-w-md">Generate secure invite codes to bypass the 24h approval queue for trusted aggregation partners.</p>
+                    
+                    <form onSubmit={handleGenerate} className="mt-10 flex flex-col md:flex-row gap-4 items-end">
+                        <div className="flex-1 space-y-2">
+                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Proposed Hub Name</label>
+                            <input 
+                                type="text"
+                                placeholder="e.g. Lagos Mainland Aggregator"
+                                value={businessName}
+                                onChange={(e) => setBusinessName(e.target.value)}
+                                required
+                                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm font-bold placeholder:text-gray-600 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 outline-none transition-all"
+                            />
+                        </div>
+                        <button 
+                            type="submit"
+                            disabled={generating}
+                            className="bg-emerald-500 text-gray-900 px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-400 transition-all disabled:opacity-50 h-[58px]"
+                        >
+                            {generating ? 'Generating...' : 'Issue Code'}
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div className="bg-white rounded-[2.5rem] p-10 border border-gray-100 shadow-sm text-center">
+                 <RefreshCw className="mx-auto text-gray-100 mb-4 w-12 h-12" />
+                 <p className="text-sm font-black text-gray-300 uppercase tracking-widest">Recent invites list coming in next sync</p>
+            </div>
         </div>
     );
 };

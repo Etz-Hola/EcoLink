@@ -17,7 +17,9 @@ export enum UserStatus {
   ACTIVE = 'active',
   INACTIVE = 'inactive',
   SUSPENDED = 'suspended',
-  PENDING_VERIFICATION = 'pending_verification'
+  PENDING_VERIFICATION = 'pending_verification',
+  PENDING_APPROVAL = 'pending_approval',
+  REJECTED = 'rejected'
 }
 
 export enum AuthProvider {

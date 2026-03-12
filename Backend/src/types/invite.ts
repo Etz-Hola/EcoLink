@@ -11,7 +11,7 @@ export enum InviteStatus {
 export interface IInvite extends Document {
     _id: Types.ObjectId;
     code: string;
-    organizationId: Types.ObjectId;
+    organizationId?: Types.ObjectId;
     invitedEmail?: string;
     businessName?: string;
     role: UserRole;
