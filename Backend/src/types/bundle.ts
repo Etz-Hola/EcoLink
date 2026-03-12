@@ -2,9 +2,11 @@ import { Document, Types } from 'mongoose';
 
 export enum BundleStatus {
     AVAILABLE = 'available',
+    REQUESTED = 'requested',
     PURCHASED = 'purchased',
     IN_TRANSIT = 'in_transit',
-    COLLECTED = 'collected'
+    COLLECTED = 'collected',
+    SOLD = 'sold'
 }
 
 export interface IBundle extends Document {

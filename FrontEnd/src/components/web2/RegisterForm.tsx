@@ -108,11 +108,10 @@ const RegisterForm: React.FC = () => {
         firstName: formData.name.split(' ')[0],
         lastName: formData.name.split(' ').slice(1).join(' ') || 'User',
         email: formData.email,
-        phone: formData.phone,
         password: formData.password,
         role: formData.role,
         username: formData.email.split('@')[0],
-        inviteCode: isJoining ? formData.inviteCode : undefined,
+        inviteCode: (isJoining || formData.role === 'branch') ? formData.inviteCode : undefined,
         businessName: formData.role !== 'collector' ? formData.businessName : undefined,
         businessType: formData.role, // Default business type to the role for now
       });
@@ -395,7 +394,9 @@ const RegisterForm: React.FC = () => {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {/* Name */}
                   <motion.div variants={fadeUp} custom={1} initial="hidden" animate="show">
-                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">Full Name</label>
+                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">
+                      {formData.role === 'branch' ? 'Manager Full Name' : 'Full Name'}
+                    </label>
                     <div className="relative">
                       <UserIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <input
@@ -404,12 +405,41 @@ const RegisterForm: React.FC = () => {
                         onChange={handleChange}
                         onFocus={() => setFocusedField('name')}
                         onBlur={() => setFocusedField(null)}
-                        placeholder="Your full name"
+                        placeholder={formData.role === 'branch' ? 'Hub Manager Name' : 'Your full name'}
                         required
                         className={`${inputCls('name')} pl-10`}
                       />
                     </div>
                   </motion.div>
+
+                  {/* Invite Code for Branch */}
+                  {formData.role === 'branch' && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="space-y-1.5"
+                    >
+                      <label className="block text-xs font-black text-gray-500 uppercase tracking-widest">
+                        Required: Branch Invite Code
+                      </label>
+                      <div className="relative">
+                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                          name="inviteCode"
+                          value={formData.inviteCode}
+                          onChange={handleChange}
+                          onFocus={() => setFocusedField('inviteCode')}
+                          onBlur={() => setFocusedField(null)}
+                          placeholder="Enter your authorization code"
+                          required
+                          className={`${inputCls('inviteCode')} pl-10`}
+                        />
+                      </div>
+                      <p className="text-[10px] font-medium text-amber-600 px-1">
+                        Branch signup requires a valid invite code from EcoLink admin.
+                      </p>
+                    </motion.div>
+                  )}
  
                    {/* Business Name (for non-collectors) */}
                    {formData.role !== 'collector' && !isJoining && (
