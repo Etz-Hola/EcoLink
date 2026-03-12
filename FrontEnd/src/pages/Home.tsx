@@ -9,8 +9,9 @@ import EcoPointsDisplay from '../components/web3/EcoPointsDisplay';
 import PriceCalculator from '../components/feature/PriceCalculator';
 import { formatPrice } from '../utils/helpers';
 
+const Home: React.FC = () => {
   const { user } = useAuth();
-  const { materials, getMaterialsByUser } = useMaterial();
+  const { getMaterialsByUser } = useMaterial();
   
   const userMaterials = getMaterialsByUser(user?._id || user?.id || '');
   const recentMaterials = userMaterials.slice(0, 3);

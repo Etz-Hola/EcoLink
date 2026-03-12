@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
     MapPin, CheckCircle, XCircle,
-    ExternalLink, Map as MapIcon,
-    Search, ChevronRight, RefreshCw
+    ExternalLink, Search, ChevronRight, RefreshCw
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import axios from 'axios';
@@ -257,24 +256,8 @@ const BranchManagement: React.FC = () => {
 };
 
 const InviteManagement: React.FC = () => {
-    const [invites, setInvites] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
     const [generating, setGenerating] = useState(false);
     const [businessName, setBusinessName] = useState('');
-
-    const fetchInvites = useCallback(async () => {
-        setLoading(true);
-        try {
-            const token = localStorage.getItem('ecolink_token');
-            // Assuming we have a way to list invites or reuse admin/users if needed, 
-            // but for now let's focus on generation. If no list endpoint, we ignore list for now.
-            // res = await axios.get(`${API_URL}/admin/invites`, { headers: { Authorization: `Bearer ${token}` } });
-            // setInvites(res.data.data);
-            setLoading(false);
-        } catch {
-            setLoading(false);
-        }
-    }, []);
 
     const handleGenerate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -287,7 +270,6 @@ const InviteManagement: React.FC = () => {
             if (res.data.success) {
                 toast.success('Invite code generated! 🎟️');
                 setBusinessName('');
-                fetchInvites();
             }
         } catch {
             toast.error('Failed to generate invite');

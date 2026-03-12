@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Package, CheckCircle, Clock, RefreshCw, MapPin, Layout, ShoppingCart, Bell, Search, Truck } from 'lucide-react';
+import { Package, Clock, RefreshCw, MapPin, Layout, ShoppingCart, Bell, Search, TrendingUp, Award } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import ProcessingQueue from '../../components/dashboard/ProcessingQueue';
 import BundleCreator from '../../components/dashboard/BundleCreator';
@@ -12,10 +12,14 @@ const BranchDashboard: React.FC = () => {
   const { user } = useAuth();
   const { balance, refreshBalance } = useBalance();
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [stats, setStats] = useState<{ label: string; value: number | string; icon: React.ElementType; color: string; bg: string }[]>([]);
   const [loadingStats, setLoadingStats] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
+
+  // Stats from backend
+  const [processingCount, setProcessingCount] = useState(0);
+  const [activeBundles, setActiveBundles] = useState(0);
+  const [totalTraffic, setTotalTraffic] = useState(0);
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
@@ -31,49 +35,48 @@ const BranchDashboard: React.FC = () => {
     }
   }, []);
 
-  const fetchStats = useCallback(async () => {
+  const fetchDashboardStats = useCallback(async () => {
     setLoadingStats(true);
     try {
       const token = localStorage.getItem('ecolink_token');
-      const url = new URL(`${API_URL}/materials/stats/branch`);
-      if (userLocation) {
-        url.searchParams.append('lat', userLocation.lat.toString());
-        url.searchParams.append('lng', userLocation.lng.toString());
-      }
-
-      const res = await fetch(url.toString(), {
+      // Fetch stats using the consolidated endpoint
+      const res = await fetch(`${API_URL}/materials/stats/branch`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
       if (data.success) {
-        const s = data.data;
-        setStats([
-          { label: 'Pending Review', value: s.pending || 0, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
-          { label: 'Approved', value: s.approved || 0, icon: CheckCircle, color: 'text-blue-600', bg: 'bg-blue-50' },
-          { label: 'Logistics', value: s.pickup_scheduled || 0, icon: Truck, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-          { label: 'Hub Processed', value: s.delivered || 0, icon: Package, color: 'text-emerald-600', bg: 'bg-emerald-50' }
-        ]);
+        setProcessingCount(data.data.processing || 0);
+        setActiveBundles(data.data.activeBundles || 0);
+        setTotalTraffic(data.data.totalWeight || 0);
       }
     } catch {
-      console.error('Failed to fetch branch stats');
+      console.error('Failed to fetch dashboard stats');
     } finally {
       setLoadingStats(false);
     }
-  }, [API_URL, userLocation]);
+  }, [API_URL]);
 
   useEffect(() => {
-    if (userLocation) fetchStats();
-  }, [userLocation, fetchStats, refreshKey]);
+    fetchDashboardStats();
+  }, [fetchDashboardStats, refreshKey]);
 
   const handleSync = async () => {
     setIsSyncing(true);
     setRefreshKey(prev => prev + 1);
-    await refreshBalance();
+    await Promise.all([refreshBalance(), fetchDashboardStats()]);
+    
     setTimeout(() => {
       setIsSyncing(false);
-      toast.success('Hub synchronization complete!');
-    }, 1000);
+      toast.success('Organization data synced! 🏢');
+    }, 800);
   };
+
+  const stats = [
+    { label: 'In Queue', value: processingCount.toString(), icon: Layout, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Active Bundles', value: activeBundles.toString(), icon: Package, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { label: 'Monthly Traffic', value: `${totalTraffic.toLocaleString()}kg`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Platform Credit', value: `₦${balance.toLocaleString()}`, icon: Award, color: 'text-amber-600', bg: 'bg-amber-50' },
+  ];
 
   return (
     <div className="max-w-7xl mx-auto space-y-10 pb-20 px-4 md:px-0 animate-in fade-in duration-700">

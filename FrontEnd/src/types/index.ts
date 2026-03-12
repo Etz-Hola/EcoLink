@@ -27,6 +27,7 @@ export interface User {
     country?: string;
   };
   businessName?: string;
+  status: 'active' | 'suspended' | 'pending_approval' | 'rejected' | 'pending';
 }
 
 export interface Material {
