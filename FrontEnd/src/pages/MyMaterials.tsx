@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Package, Clock, CheckCircle, XCircle, Filter, Search, TrendingUp, ChevronRight, Plus } from 'lucide-react';
+import { Package, Clock, CheckCircle, XCircle, Search, TrendingUp, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { formatPrice, formatWeight, formatDate, getMaterialStatusColor } from '../utils/helpers';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
@@ -25,25 +24,46 @@ const MyMaterials: React.FC = () => {
     const [selectedStatus, setSelectedStatus] = useState<Status>('all');
     const [searchQuery, setSearchQuery] = useState('');
 
-    useEffect(() => {
-        const fetchMaterials = async () => {
-            try {
-                const token = localStorage.getItem('ecolink_token');
-                const res = await fetch(`${API_URL}/materials/my`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                const data = await res.json();
-                if (data.success) {
-                    setMaterials(data.data);
-                }
-            } catch (err) {
-                console.error('Failed to fetch materials:', err);
-            } finally {
-                setLoading(false);
+    const fetchMaterials = useCallback(async () => {
+        try {
+            const token = localStorage.getItem('ecolink_token');
+            const res = await fetch(`${API_URL}/materials/my`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (data.success) {
+                setMaterials(data.data);
             }
-        };
-        fetchMaterials();
+        } catch (err) {
+            console.error('Failed to fetch materials:', err);
+        } finally {
+            setLoading(false);
+        }
     }, []);
+
+    useEffect(() => {
+        fetchMaterials();
+    }, [fetchMaterials]);
+
+    const handleSchedulePickup = async (id: string) => {
+        try {
+            const token = localStorage.getItem('ecolink_token');
+            const res = await fetch(`${API_URL}/materials/${id}/schedule-pickup`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            const data = await res.json();
+            if (data.success) {
+                import('react-hot-toast').then(m => m.default.success('Pickup Scheduled! Branch notified. 🚚'));
+                fetchMaterials();
+            }
+        } catch (err) {
+            console.error('Failed to schedule pickup:', err);
+        }
+    };
 
     const getFiltered = () => {
         let result = materials;
@@ -273,7 +293,14 @@ const MyMaterials: React.FC = () => {
                                                     </p>
                                                 </td>
                                                 <td className="px-6 py-4 text-sm text-gray-500">
-                                                    {m.pickupLocation?.address ? (
+                                                    {m.status === 'approved' ? (
+                                                        <button
+                                                            onClick={() => handleSchedulePickup(m._id)}
+                                                            className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-sm"
+                                                        >
+                                                            Schedule Pickup
+                                                        </button>
+                                                    ) : m.pickupLocation?.address ? (
                                                         <span className="text-[11px] font-medium text-gray-600 line-clamp-1">
                                                             📍 {m.pickupLocation.city || m.pickupLocation.address}
                                                         </span>

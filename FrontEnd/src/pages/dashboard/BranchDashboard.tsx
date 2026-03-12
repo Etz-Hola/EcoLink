@@ -10,7 +10,7 @@ import toast from 'react-hot-toast';
 
 const BranchDashboard: React.FC = () => {
   const { user } = useAuth();
-  const { balance, refreshBalance, isAdmin } = useBalance();
+  const { balance, refreshBalance } = useBalance();
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [stats, setStats] = useState<{ label: string; value: number | string; icon: React.ElementType; color: string; bg: string }[]>([]);
   const [loadingStats, setLoadingStats] = useState(true);
@@ -96,14 +96,10 @@ const BranchDashboard: React.FC = () => {
               <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Entity Balance</p>
               <p className="text-xl font-black text-emerald-600">₦{balance.toLocaleString()}</p>
             </div>
-            {isAdmin && (
-              <div className="h-8 w-px bg-gray-100 mx-2" />
-            )}
-            {isAdmin && (
-              <button className="text-[10px] font-black text-gray-900 uppercase tracking-widest hover:text-emerald-600 transition-colors">
-                Withdraw
-              </button>
-            )}
+            <div className="h-8 w-px bg-gray-100 mx-2" />
+            <button className="text-[10px] font-black text-gray-900 uppercase tracking-widest hover:text-emerald-600 transition-colors">
+              Withdraw
+            </button>
           </div>
           <button
             onClick={handleSync}
@@ -246,41 +242,75 @@ const CreatedBundlesSection: React.FC = () => {
   if (loading) return <div className="h-32 bg-gray-50 animate-pulse rounded-[2rem]" />;
   if (bundles.length === 0) return null;
 
-  return (
-    <div className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between mb-8 px-4">
-        <div>
-          <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase leading-none">Export Inventory</h2>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2">{bundles.length} Created Bundles</p>
-        </div>
-        <ShoppingCart className="w-6 h-6 text-gray-300" />
-      </div>
+    const handleAcceptRequest = async (bundleId: string) => {
+      try {
+        const token = localStorage.getItem('ecolink_token');
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+        const res = await fetch(`${apiUrl}/bundles/${bundleId}/accept-request`, {
+          method: 'PATCH',
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.success) {
+          toast.success('Purchase Request Accepted! Exporter notified. ✅');
+          // Refresh list
+          const updatedRes = await fetch(`${apiUrl}/bundles/my-bundles`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const updatedData = await updatedRes.json();
+          if (updatedData.success) setBundles(updatedData.data);
+        }
+      } catch {
+        toast.error('Failed to accept request');
+      }
+    };
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {bundles.map((bundle) => (
-          <div key={bundle._id} className="p-6 rounded-[2rem] border border-gray-50 hover:shadow-lg hover:border-emerald-100 transition-all group">
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="font-black text-gray-900 text-sm group-hover:text-emerald-700 transition-colors truncate w-2/3">{bundle.name}</h3>
-              <span className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-tighter ${bundle.status === 'purchased' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-50 text-blue-600'
-                }`}>
-                {bundle.status}
-              </span>
-            </div>
-            <div className="flex justify-between items-end">
-              <div>
-                <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Lot Weight</p>
-                <p className="text-xl font-black text-gray-900">{bundle.totalWeight}kg</p>
-              </div>
-              <div className="text-right">
-                <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Hub Value</p>
-                <p className="text-sm font-black text-emerald-600">₦{bundle.totalPrice?.toLocaleString()}</p>
-              </div>
-            </div>
+    return (
+      <div className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between mb-8 px-4">
+          <div>
+            <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase leading-none">Export Inventory</h2>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2">{bundles.length} Created Bundles</p>
           </div>
-        ))}
+          <ShoppingCart className="w-6 h-6 text-gray-300" />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {bundles.map((bundle) => (
+            <div key={bundle._id} className="p-6 rounded-[2rem] border border-gray-50 hover:shadow-lg hover:border-emerald-100 transition-all group">
+              <div className="flex justify-between items-start mb-4">
+                <h3 className="font-black text-gray-900 text-sm group-hover:text-emerald-700 transition-colors truncate w-2/3">{bundle.name}</h3>
+                <span className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-tighter ${bundle.status === 'purchased' ? 'bg-emerald-100 text-emerald-700' :
+                  bundle.status === 'requested' ? 'bg-amber-100 text-amber-700' :
+                    'bg-blue-50 text-blue-600'
+                  }`}>
+                  {bundle.status.replace('_', ' ')}
+                </span>
+              </div>
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Lot Weight</p>
+                  <p className="text-xl font-black text-gray-900">{bundle.totalWeight}kg</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Hub Value</p>
+                  <p className="text-sm font-black text-emerald-600">₦{bundle.totalPrice?.toLocaleString()}</p>
+                </div>
+              </div>
+
+              {bundle.status === 'requested' && (
+                <button
+                  onClick={() => handleAcceptRequest(bundle._id)}
+                  className="w-full py-3 bg-amber-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-amber-600 transition-all shadow-lg shadow-amber-900/10"
+                >
+                  Accept Purchase Request
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
-  );
+    );
 };
 
 const NotificationsList: React.FC<{ limit: number }> = ({ limit }) => {

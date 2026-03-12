@@ -12,14 +12,17 @@ interface AvailableBundle {
     branchName?: string;
     totalWeight: number;
     totalPrice: number;
+    status: string;
 }
 
 const ExporterDashboard: React.FC = () => {
     const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
     const [bundles, setBundles] = useState<AvailableBundle[]>([]);
     const [loadingBundles, setLoadingBundles] = useState(false);
-    const { balance, refreshBalance, isAdmin } = useBalance();
+    const [myPurchases, setMyPurchases] = useState<any[]>([]);
     const [isSyncing, setIsSyncing] = useState(false);
+
+    const { balance, refreshBalance } = useBalance();
 
     useEffect(() => {
         if (navigator.geolocation) {
@@ -47,6 +50,7 @@ const ExporterDashboard: React.FC = () => {
                 branchName: b.branchId?.name,
                 totalWeight: b.totalWeight,
                 totalPrice: b.totalPrice,
+                status: b.status
             }));
             setBundles(mapped);
         } catch (err: any) {
@@ -56,9 +60,29 @@ const ExporterDashboard: React.FC = () => {
         }
     }, []);
 
+    const fetchMyPurchases = useCallback(async () => {
+        try {
+            const token = localStorage.getItem('ecolink_token');
+            // Assuming we reuse getAvailableBundles or have a way to filter, 
+            // but let's assume we can fetch all and filter or have a specific route if needed.
+            // For now, let's fetch my-bundles if the backend supports it for exporters too, 
+            // or just bundles I'm involved in.
+            const res = await fetch(`${API_URL}/bundles/my-bundles`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (data.success) setMyPurchases(data.data);
+        } catch (err) {
+            console.error('Failed to fetch my purchases');
+        } finally {
+            // Loading handled by fetchBundles if needed, or simple refresh
+        }
+    }, []);
+
     useEffect(() => {
         fetchBundles();
-    }, [fetchBundles]);
+        fetchMyPurchases();
+    }, [fetchBundles, fetchMyPurchases]);
 
     const handleSync = async () => {
         setIsSyncing(true);
@@ -77,20 +101,38 @@ const ExporterDashboard: React.FC = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const data = await res.json();
-            if (!res.ok || !data.success) throw new Error(data.message || 'Failed to purchase bundle');
-            toast.success('Bundle purchase recorded — materials marked as sold ✅');
+            if (!res.ok || !data.success) throw new Error(data.message || 'Failed to request purchase');
+            toast.success('Purchase request sent to branch! 📨');
             fetchBundles();
+            fetchMyPurchases();
+        } catch (err: any) {
+            toast.error(err.message || 'Could not send request');
+        }
+    };
+
+    const handleVerifyReceipt = async (bundleId: string) => {
+        try {
+            const token = localStorage.getItem('ecolink_token');
+            const res = await fetch(`${API_URL}/bundles/${bundleId}/verify-receipt`, {
+                method: 'PATCH',
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success) throw new Error(data.message || 'Failed to verify receipt');
+            toast.success('Bundle receipt verified! Payment released to branch. 🚢');
+            fetchBundles();
+            fetchMyPurchases();
             refreshBalance();
         } catch (err: any) {
-            toast.error(err.message || 'Could not complete purchase');
+            toast.error(err.message || 'Verification failed');
         }
     };
 
     const stats = [
-        { label: 'Active Purchases', value: '12', icon: ShoppingCart, color: 'text-blue-600', bg: 'bg-blue-50' },
-        { label: 'Bundles Verified', value: '450', icon: Package, color: 'text-green-600', bg: 'bg-green-50' },
-        { label: 'In Transit', value: '5', icon: Truck, color: 'text-purple-600', bg: 'bg-purple-50' },
-        { label: 'Market Savings', value: '₦245k', icon: TrendingUp, color: 'text-orange-600', bg: 'bg-orange-50' },
+        { label: 'Active Requests', value: myPurchases.filter(b => b.status === 'requested').length, icon: ShoppingCart, color: 'text-blue-600', bg: 'bg-blue-50' },
+        { label: 'Purchased Lots', value: myPurchases.filter(b => b.status === 'purchased' || b.status === 'in_transit').length, icon: Package, color: 'text-green-600', bg: 'bg-green-50' },
+        { label: 'In Transit', value: myPurchases.filter(b => b.status === 'in_transit').length, icon: Truck, color: 'text-purple-600', bg: 'bg-purple-50' },
+        { label: 'Total Volume', value: `${myPurchases.reduce((acc, b) => acc + (b.totalWeight || 0), 0).toLocaleString()}kg`, icon: TrendingUp, color: 'text-orange-600', bg: 'bg-orange-50' },
     ];
 
     return (
@@ -107,14 +149,10 @@ const ExporterDashboard: React.FC = () => {
                             <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Entity Balance</p>
                             <p className="text-xl font-black text-emerald-600">₦{balance.toLocaleString()}</p>
                         </div>
-                        {isAdmin && (
-                            <div className="h-8 w-px bg-gray-100 mx-2" />
-                        )}
-                        {isAdmin && (
-                            <button className="text-[10px] font-black text-gray-900 uppercase tracking-widest hover:text-emerald-600 transition-colors">
-                                Withdraw
-                            </button>
-                        )}
+                        <div className="h-8 w-px bg-gray-100 mx-2" />
+                        <button className="text-[10px] font-black text-gray-900 uppercase tracking-widest hover:text-emerald-600 transition-colors">
+                            Withdraw
+                        </button>
                     </div>
                     <button
                         onClick={handleSync}
@@ -135,7 +173,7 @@ const ExporterDashboard: React.FC = () => {
                                 <stat.icon className="w-6 h-6" />
                             </div>
                             <span className="text-xs font-bold text-green-600 bg-green-50 px-2.5 py-1 rounded-full flex items-center gap-1">
-                                +12% <ArrowUpRight className="w-3 h-3" />
+                                + Live <ArrowUpRight className="w-3 h-3" />
                             </span>
                         </div>
                         <h3 className="text-gray-500 text-sm font-semibold uppercase tracking-wider">{stat.label}</h3>
@@ -155,11 +193,10 @@ const ExporterDashboard: React.FC = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Marketplace Section */}
-                <div className="lg:col-span-2 space-y-6">
+                <div className="lg:col-span-2 space-y-8">
                     <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
                         <div className="p-6 border-b border-gray-50 flex items-center justify-between">
-                            <h2 className="text-xl font-bold text-gray-900">Available Bundles from Branches</h2>
-                            <button className="text-sm font-bold text-green-600 hover:text-green-700">View Map Mode</button>
+                            <h2 className="text-xl font-bold text-gray-900">Bundles for Purchase</h2>
                         </div>
                         <div className="overflow-x-auto">
                             {loadingBundles ? (
@@ -167,7 +204,7 @@ const ExporterDashboard: React.FC = () => {
                                     <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mb-3" />
                                     <p className="text-sm font-medium text-gray-400">Loading available bundles...</p>
                                 </div>
-                            ) : bundles.length === 0 ? (
+                            ) : bundles.filter(b => b.status === 'available').length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-12 text-center">
                                     <Package className="w-10 h-10 text-gray-200 mb-3" />
                                     <p className="text-sm font-medium text-gray-500">No export bundles available yet.</p>
@@ -184,26 +221,18 @@ const ExporterDashboard: React.FC = () => {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-50">
-                                        {bundles.map((bundle) => (
+                                        {bundles.filter(b => b.status === 'available').map((bundle) => (
                                             <tr key={bundle._id} className="hover:bg-gray-50/50 transition-colors group">
-                                                <td className="px-6 py-4 font-bold text-gray-900">
-                                                    {bundle.name}
-                                                </td>
-                                                <td className="px-6 py-4 text-sm font-medium text-gray-600">
-                                                    {bundle.branchName || '—'}
-                                                </td>
-                                                <td className="px-6 py-4 text-sm font-bold text-gray-900">
-                                                    {bundle.totalWeight.toLocaleString()} kg
-                                                </td>
-                                                <td className="px-6 py-4 text-sm font-black text-green-600">
-                                                    ₦{bundle.totalPrice.toLocaleString()}
-                                                </td>
+                                                <td className="px-6 py-4 font-bold text-gray-900">{bundle.name}</td>
+                                                <td className="px-6 py-4 text-sm font-medium text-gray-600">{bundle.branchName || '—'}</td>
+                                                <td className="px-6 py-4 text-sm font-bold text-gray-900">{bundle.totalWeight.toLocaleString()} kg</td>
+                                                <td className="px-6 py-4 text-sm font-black text-green-600">₦{bundle.totalPrice.toLocaleString()}</td>
                                                 <td className="px-6 py-4">
                                                     <button
                                                         onClick={() => handlePurchase(bundle._id)}
-                                                        className="text-sm font-bold text-white bg-gray-900 px-4 py-2 rounded-xl hover:bg-green-600 transition-all opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0"
+                                                        className="text-sm font-bold text-white bg-gray-900 px-4 py-2 rounded-xl hover:bg-purple-600 transition-all shadow-lg"
                                                     >
-                                                        Purchase
+                                                        Request Buy
                                                     </button>
                                                 </td>
                                             </tr>
@@ -213,6 +242,55 @@ const ExporterDashboard: React.FC = () => {
                             )}
                         </div>
                     </div>
+
+                    {/* My Purchases / Tracking Section */}
+                    {myPurchases.length > 0 && (
+                        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+                            <div className="p-6 border-b border-gray-50">
+                                <h2 className="text-xl font-bold text-gray-900">Purchase History & Tracking</h2>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead className="bg-gray-50/50 text-gray-400 text-xs font-bold uppercase tracking-widest">
+                                        <tr>
+                                            <th className="px-6 py-4">Bundle</th>
+                                            <th className="px-6 py-4">Status</th>
+                                            <th className="px-6 py-4">Weight</th>
+                                            <th className="px-6 py-4">Price</th>
+                                            <th className="px-6 py-4">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-50">
+                                        {myPurchases.map((bundle) => (
+                                            <tr key={bundle._id} className="hover:bg-gray-50/50 transition-colors">
+                                                <td className="px-6 py-4 font-bold text-gray-900">{bundle.name}</td>
+                                                <td className="px-6 py-4">
+                                                    <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter ${bundle.status === 'purchased' ? 'bg-emerald-100 text-emerald-700' :
+                                                        bundle.status === 'requested' ? 'bg-amber-100 text-amber-700' :
+                                                            'bg-blue-50 text-blue-600'
+                                                        }`}>
+                                                        {bundle.status.replace('_', ' ')}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 text-sm font-bold text-gray-900">{bundle.totalWeight}kg</td>
+                                                <td className="px-6 py-4 text-sm font-black text-green-600">₦{bundle.totalPrice?.toLocaleString()}</td>
+                                                <td className="px-6 py-4">
+                                                    {(bundle.status === 'purchased' || bundle.status === 'in_transit') && (
+                                                        <button
+                                                            onClick={() => handleVerifyReceipt(bundle._id)}
+                                                            className="text-[10px] font-black text-white bg-emerald-600 px-3 py-2 rounded-lg hover:bg-emerald-700 transition-all uppercase tracking-widest"
+                                                        >
+                                                            Verify Receipt
+                                                        </button>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Sidebar Insights */}
