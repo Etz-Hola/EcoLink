@@ -4,6 +4,7 @@ import Material from '../models/Material';
 import User from '../models/User';
 import { MaterialStatus } from '../types/material';
 import { AppError } from '../utils/logger';
+import logger from '../utils/logger';
 import { PaymentService } from '../services/paymentService';
 import { NotificationService } from '../services/notificationService';
 
@@ -294,12 +295,23 @@ export class MaterialController {
             // Process Payment Release (Org to Org)
             const amount = (material as any).totalValue || (material.weight * (material.pricing?.finalPrice || material.pricing?.offeredPrice || 0));
 
-            await PaymentService.processInternalTransfer(
-                material._id.toString(),
-                branchOrgId.toString(),
-                uploaderOrgId.toString(),
-                amount
-            );
+            // Implementation of protection against double payment
+            const existingPayment = await require('../models/Transaction').default.findOne({
+                material: material._id,
+                type: 'transfer',
+                status: 'success'
+            });
+
+            if (existingPayment) {
+                logger.warn(`Payment already exists for material ${material._id}. Skipping transfer.`);
+            } else {
+                await PaymentService.processInternalTransfer(
+                    material._id.toString(),
+                    branchOrgId.toString(),
+                    uploaderOrgId.toString(),
+                    amount
+                );
+            }
 
             await material.save();
 

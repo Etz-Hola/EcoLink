@@ -91,7 +91,7 @@ export class BundleController {
     }
 
     /**
-     * Purchase a bundle (Exporter)
+     * Purchase a bundle (Exporter) - Changes status to REQUESTED
      */
     static async purchaseBundle(req: Request, res: Response, next: NextFunction) {
         try {
@@ -103,19 +103,123 @@ export class BundleController {
                 throw new AppError('Bundle not available for purchase', 404);
             }
 
-            bundle.status = BundleStatus.PURCHASED;
+            bundle.status = BundleStatus.REQUESTED;
             bundle.exporterId = exporterId;
             bundle.organizationId = (req as any).user.organizationId || exporterId; // The buying organization
             await bundle.save();
 
-            // Mark materials as sold
+            // Notify branch
+            const { NotificationService } = require('../services/notificationService');
+            await NotificationService.sendNotification(bundle.branchId.toString(), {
+                title: 'Bundle Purchase Requested! 💰',
+                message: `An exporter has requested to purchase bundle "${bundle.name}". Please review and accept.`,
+                type: 'bundle',
+                metadata: { bundleId: bundle._id }
+            });
+
+            res.status(200).json({
+                success: true,
+                message: 'Purchase request sent to branch',
+                data: bundle
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * Accept purchase request (Branch)
+     */
+    static async acceptBundleRequest(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { id } = req.params;
+            const branchId = (req as any).user.branchId || (req as any).user.organizationId || (req as any).user._id;
+
+            const bundle = await Bundle.findById(id);
+            if (!bundle) throw new AppError('Bundle not found', 404);
+
+            if (bundle.branchId.toString() !== branchId.toString()) {
+                throw new AppError('Not authorized to accept requests for this bundle', 403);
+            }
+
+            if (bundle.status !== BundleStatus.REQUESTED) {
+                throw new AppError('Bundle is not in requested status', 400);
+            }
+
+            bundle.status = BundleStatus.PURCHASED;
+            await bundle.save();
+
+            // Notify exporter
+            const { NotificationService } = require('../services/notificationService');
+            if (bundle.exporterId) {
+                await NotificationService.sendNotification(bundle.exporterId.toString(), {
+                    title: 'Purchase Request Accepted! ✅',
+                    message: `Your request to purchase bundle "${bundle.name}" has been accepted. You can now schedule pickup.`,
+                    type: 'bundle',
+                    metadata: { bundleId: bundle._id }
+                });
+            }
+
+            res.status(200).json({
+                success: true,
+                message: 'Purchase request accepted',
+                data: bundle
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * Verify receipt of bundle and release payment (Exporter)
+     */
+    static async verifyBundleReceipt(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { id } = req.params;
+            const exporterOrgId = (req as any).user.organizationId || (req as any).user._id;
+
+            const bundle = await Bundle.findById(id);
+            if (!bundle) throw new AppError('Bundle not found', 404);
+
+            if (bundle.organizationId.toString() !== exporterOrgId.toString()) {
+                throw new AppError('Only the purchasing organization can verify receipt', 403);
+            }
+
+            if (bundle.status !== BundleStatus.PURCHASED && bundle.status !== BundleStatus.IN_TRANSIT) {
+                throw new AppError('Bundle must be purchased or in transit to verify receipt', 400);
+            }
+
+            bundle.status = BundleStatus.SOLD;
+            await bundle.save();
+
+            // Mark materials as sold (if not already)
             await Material.updateMany(
                 { _id: { $in: bundle.materialIds } },
                 { $set: { status: MaterialStatus.SOLD, soldAt: new Date() } }
             );
 
+            // Release Payment (Exporter Org -> Branch Org)
+            const { PaymentService } = require('../services/paymentService');
+            await PaymentService.processInternalTransfer(
+                `bundle_${bundle._id}`, // Fake material ID for tracking
+                exporterOrgId.toString(),
+                bundle.branchId.toString(),
+                bundle.totalPrice,
+                bundle._id.toString() // batchId/bundleId
+            );
+
+            // Notify Branch
+            const { NotificationService } = require('../services/notificationService');
+            await NotificationService.sendNotification(bundle.branchId.toString(), {
+                title: 'Payment Received for Bundle! 🚢',
+                message: `Payment of ₦${bundle.totalPrice.toLocaleString()} has been received for bundle "${bundle.name}".`,
+                type: 'payment',
+                metadata: { bundleId: bundle._id, amount: bundle.totalPrice }
+            });
+
             res.status(200).json({
                 success: true,
+                message: 'Bundle receipt verified and payment released',
                 data: bundle
             });
         } catch (error) {
