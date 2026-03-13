@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
     Package, CheckCircle, Clock,
     BadgeCheck, Bell
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { Material } from '../../types';
 
 interface QueueItem {
     id: string;
@@ -18,10 +19,14 @@ interface QueueItem {
     photo?: string;
 }
 
-export default function ProcessingQueue() {
+interface ProcessingQueueProps {
+    materials: Material[];
+    refreshData: () => Promise<void>;
+    loading: boolean;
+}
+
+export default function ProcessingQueue({ materials, refreshData, loading }: ProcessingQueueProps) {
     const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'delivered' | 'alerts'>('pending');
-    const [queue, setQueue] = useState<QueueItem[]>([]);
-    const [loading, setLoading] = useState(true);
     const [priceInputs, setPriceInputs] = useState<Record<string, string>>({});
 
     const authToken = localStorage.getItem('ecolink_token');
@@ -30,40 +35,25 @@ export default function ProcessingQueue() {
         'Content-Type': 'application/json'
     }), [authToken]);
 
-    const fetchQueue = useCallback(async () => {
-        setLoading(true);
-        try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
-            const statusFilter = activeTab === 'alerts' ? 'pending,approved,delivered,pickup_scheduled' : activeTab;
-            const res = await fetch(`${apiUrl}/materials/pending?status=${statusFilter}`, {
-                headers: authHeaders
-            });
-            const data = await res.json();
-            if (data.success) {
-                const mapped = (data.data || []).map((m: any) => ({
-                    id: m._id,
-                    collectorName: m.submittedBy?.name || m.submittedBy?.username || 'Anonymous',
-                    materialType: m.materialType,
-                    weightKg: m.weight,
-                    quality: m.condition,
-                    status: m.status,
-                    pricePerKg: m.pricing?.offeredPrice || 0,
-                    totalValue: (m.weight * (m.pricing?.offeredPrice || 0)),
-                    location: m.pickupLocation?.address || 'Unknown',
-                    photo: m.images?.[0]?.url
-                }));
-                setQueue(mapped);
-            }
-        } catch {
-            toast.error('Failed to sync queue');
-        } finally {
-            setLoading(false);
-        }
-    }, [activeTab, authHeaders]);
+    const queue = useMemo(() => {
+        const filtered = materials.filter(m => {
+            if (activeTab === 'alerts') return ['pending', 'approved', 'delivered', 'pickup_scheduled'].includes(m.status);
+            return m.status === activeTab;
+        });
 
-    useEffect(() => {
-        fetchQueue();
-    }, [activeTab, fetchQueue]);
+        return filtered.map((m: any) => ({
+            id: m._id,
+            collectorName: m.submittedBy?.name || m.submittedBy?.username || 'Anonymous',
+            materialType: m.materialType,
+            weightKg: m.weight,
+            quality: m.condition,
+            status: m.status,
+            pricePerKg: m.pricing?.offeredPrice || 0,
+            totalValue: (m.weight * (m.pricing?.offeredPrice || 0)),
+            location: m.pickupLocation?.address || 'Unknown',
+            photo: m.images?.[0]?.url
+        }));
+    }, [materials, activeTab]);
 
     const handleAccept = useCallback(async (id: string) => {
         const price = priceInputs[id];
@@ -79,12 +69,12 @@ export default function ProcessingQueue() {
 
             if (res.ok) {
                 toast.success('Material Accepted & Uploader Notified!');
-                fetchQueue();
+                refreshData();
             }
         } catch {
             toast.error('Submission failed');
         }
-    }, [authHeaders, fetchQueue, priceInputs]);
+    }, [authHeaders, refreshData, priceInputs]);
 
     const handleVerify = useCallback(async (id: string) => {
         try {
@@ -97,12 +87,12 @@ export default function ProcessingQueue() {
 
             if (res.ok) {
                 toast.success('Delivery Verified & Payment Released! 💸');
-                fetchQueue();
+                refreshData();
             }
         } catch {
             toast.error('Verification failed');
         }
-    }, [authHeaders, fetchQueue]);
+    }, [authHeaders, refreshData]);
 
     return (
         <div className="bg-white rounded-[2.5rem] shadow-xl shadow-purple-900/5 border border-gray-100 overflow-hidden">
@@ -131,7 +121,7 @@ export default function ProcessingQueue() {
             {/* Content Area */}
             <div className="p-8">
                 {activeTab === 'alerts' ? (
-                    <NotificationsList limit={10} />
+                    <p className="p-20 text-center text-gray-300 font-bold italic">Activity logging is managed in the Sidebar Alerts.</p>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {loading ? (
@@ -222,47 +212,3 @@ export default function ProcessingQueue() {
         </div>
     );
 }
-
-const NotificationsList: React.FC<{ limit: number }> = ({ limit }) => {
-    const [notifications, setNotifications] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    const fetchNotifs = React.useCallback(async () => {
-        try {
-            const token = localStorage.getItem('ecolink_token');
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
-            const res = await fetch(`${apiUrl}/notifications/me`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            const data = await res.json();
-            if (data.success) setNotifications(data.data.slice(0, limit));
-        } catch {
-            console.error('Failed to fetch notifications');
-        } finally {
-            setLoading(false);
-        }
-    }, [limit]);
-
-    useEffect(() => {
-        fetchNotifs();
-    }, [fetchNotifs]);
-
-    if (loading) return <div className="p-20 text-center animate-pulse text-gray-300 font-black uppercase text-xs tracking-widest">Pulling Activity Stream...</div>;
-
-    return (
-        <div className="space-y-4 max-w-2xl mx-auto">
-            {notifications.length === 0 ? (
-                <div className="p-12 text-center border-2 border-dashed border-gray-50 rounded-[2rem] text-gray-300 font-bold italic">No recent activity.</div>
-            ) : notifications.map((note, i) => (
-                <div key={i} className="flex gap-5 p-5 bg-gray-50/30 rounded-3xl hover:bg-white hover:shadow-xl hover:shadow-purple-900/5 transition-all border border-transparent hover:border-gray-50 group">
-                    <div className="w-2 h-2 rounded-full bg-purple-400 mt-2 shrink-0 group-hover:scale-150 transition-all" />
-                    <div>
-                        <p className="text-sm font-black text-gray-900 tracking-tight leading-none mb-1">{note.title}</p>
-                        <p className="text-xs text-gray-500 font-medium leading-relaxed">{note.message}</p>
-                        <p className="text-[9px] text-gray-300 font-black uppercase mt-2 tracking-widest">{new Date(note.createdAt).toLocaleTimeString()}</p>
-                    </div>
-                </div>
-            ))}
-        </div>
-    );
-};

@@ -1,27 +1,28 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Package, Clock, RefreshCw, MapPin, Layout, ShoppingCart, Bell, Search, TrendingUp, Award } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import ProcessingQueue from '../../components/dashboard/ProcessingQueue';
 import BundleCreator from '../../components/dashboard/BundleCreator';
 import NearbyBuyersMap from '../../components/dashboard/NearbyBuyersMap';
-import { useBalance } from '../../hooks/useBalance';
-import { Notification } from '../../types';
+import { useBranchData } from '../../hooks/useBranchData';
+import { Notification, Material } from '../../types';
 import toast from 'react-hot-toast';
 
 const BranchDashboard: React.FC = () => {
   const { user } = useAuth();
-  const { balance, refreshBalance } = useBalance();
+  const { 
+    stats, 
+    pendingMaterials, 
+    verifiedMaterials, 
+    bundles, 
+    notifications, 
+    balance, 
+    loading, 
+    refreshData 
+  } = useBranchData();
+  
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [loadingStats, setLoadingStats] = useState(true);
-  const [refreshKey, setRefreshKey] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
-
-  // Stats from backend
-  const [processingCount, setProcessingCount] = useState(0);
-  const [activeBundles, setActiveBundles] = useState(0);
-  const [totalTraffic, setTotalTraffic] = useState(0);
-
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
   // Geolocation
   useEffect(() => {
@@ -35,48 +36,23 @@ const BranchDashboard: React.FC = () => {
     }
   }, []);
 
-  const fetchDashboardStats = useCallback(async () => {
-    setLoadingStats(true);
-    try {
-      const token = localStorage.getItem('ecolink_token');
-      // Fetch stats using the consolidated endpoint
-      const res = await fetch(`${API_URL}/materials/stats/branch`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (data.success) {
-        setProcessingCount(data.data.processing || 0);
-        setActiveBundles(data.data.activeBundles || 0);
-        setTotalTraffic(data.data.totalWeight || 0);
-      }
-    } catch {
-      console.error('Failed to fetch dashboard stats');
-    } finally {
-      setLoadingStats(false);
-    }
-  }, [API_URL]);
-
-  useEffect(() => {
-    fetchDashboardStats();
-  }, [fetchDashboardStats, refreshKey]);
-
   const handleSync = async () => {
     setIsSyncing(true);
-    setRefreshKey(prev => prev + 1);
-    await Promise.all([refreshBalance(), fetchDashboardStats()]);
-    
+    await refreshData();
     setTimeout(() => {
       setIsSyncing(false);
       toast.success('Organization data synced! 🏢');
     }, 800);
   };
 
-  const stats = [
-    { label: 'In Queue', value: processingCount.toString(), icon: Layout, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Active Bundles', value: activeBundles.toString(), icon: Package, color: 'text-purple-600', bg: 'bg-purple-50' },
-    { label: 'Monthly Traffic', value: `${totalTraffic.toLocaleString()}kg`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Platform Credit', value: `₦${balance.toLocaleString()}`, icon: Award, color: 'text-amber-600', bg: 'bg-amber-50' },
+  const dashboardStats = [
+    { label: 'In Queue', value: stats?.processing?.toString() || '0', icon: Layout, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Active Bundles', value: stats?.activeBundles?.toString() || '0', icon: Package, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { label: 'Monthly Traffic', value: `${(stats?.totalWeight || 0).toLocaleString()}kg`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Platform Credit', value: `₦${(balance || 0).toLocaleString()}`, icon: Award, color: 'text-amber-600', bg: 'bg-amber-50' },
   ];
+
+  const firstName = user?.firstName || user?.name?.split(' ')[0] || 'Member';
 
   return (
     <div className="max-w-7xl mx-auto space-y-10 pb-20 px-4 md:px-0 animate-in fade-in duration-700">
@@ -115,7 +91,7 @@ const BranchDashboard: React.FC = () => {
           <div className="bg-white border border-gray-100 rounded-[1.5rem] px-6 py-3 shadow-sm flex items-center gap-4">
             <div>
               <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Entity Balance</p>
-              <p className="text-xl font-black text-emerald-600">₦{balance.toLocaleString()}</p>
+              <p className="text-xl font-black text-emerald-600">₦{(balance || 0).toLocaleString()}</p>
             </div>
             <div className="h-8 w-px bg-gray-100 mx-2" />
             <button className="text-[10px] font-black text-gray-900 uppercase tracking-widest hover:text-emerald-600 transition-colors">
@@ -134,7 +110,7 @@ const BranchDashboard: React.FC = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, index) => {
+        {dashboardStats.map((stat, index) => {
           const Icon = stat.icon;
           return (
             <div key={index} className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all group overflow-hidden relative">
@@ -146,7 +122,7 @@ const BranchDashboard: React.FC = () => {
                   <Icon className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-2xl font-black text-gray-900 leading-none mb-1">{loadingStats ? '...' : stat.value}</p>
+                  <p className="text-2xl font-black text-gray-900 leading-none mb-1">{loading ? '...' : stat.value}</p>
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{stat.label}</p>
                 </div>
               </div>
@@ -169,7 +145,11 @@ const BranchDashboard: React.FC = () => {
               <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Shared Organization Queue</span>
             </div>
             <div className="overflow-x-auto">
-              <ProcessingQueue key={refreshKey} />
+              <ProcessingQueue 
+                materials={[...pendingMaterials, ...verifiedMaterials]} 
+                refreshData={refreshData}
+                loading={loading}
+              />
             </div>
           </div>
 
@@ -184,10 +164,14 @@ const BranchDashboard: React.FC = () => {
               </div>
               <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Aggregation Layer</span>
             </div>
-            <BundleCreator key={refreshKey} />
+            <BundleCreator 
+                availableMaterials={verifiedMaterials} 
+                refreshData={refreshData}
+                loading={loading}
+            />
           </div>
 
-          <CreatedBundlesSection key={refreshKey} />
+          <CreatedBundlesSection bundles={bundles} refreshData={refreshData} loading={loading} />
         </div>
 
         {/* Sidebar Controls */}
@@ -217,7 +201,7 @@ const BranchDashboard: React.FC = () => {
               <h2 className="text-lg font-black text-gray-900 uppercase tracking-tight">Hub Alerts</h2>
               <Bell className="w-5 h-5 text-gray-400" />
             </div>
-            <NotificationsList limit={5} key={refreshKey} />
+            <NotificationsList notifications={notifications} limit={5} loading={loading} />
             <button className="w-full mt-6 py-4 border-t border-gray-50 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-gray-900 transition-colors">
               Enter Alert History
             </button>
@@ -237,131 +221,94 @@ interface ExportBundle {
   materialIds: string[];
 }
 
-const CreatedBundlesSection: React.FC = () => {
-  const [bundles, setBundles] = useState<ExportBundle[]>([]);
-  const [loading, setLoading] = useState(true);
+interface CreatedBundlesSectionProps {
+  bundles: ExportBundle[];
+  refreshData: () => Promise<void>;
+  loading: boolean;
+}
 
-  useEffect(() => {
-    const fetchBundles = async () => {
-      try {
-        const token = localStorage.getItem('ecolink_token');
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
-        const res = await fetch(`${apiUrl}/bundles/my-bundles`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const data = await res.json();
-        if (data.success) setBundles(data.data);
-      } catch {
-        console.error('Failed to fetch bundles');
-      } finally {
-        setLoading(false);
+const CreatedBundlesSection: React.FC<CreatedBundlesSectionProps> = ({ bundles, refreshData, loading }) => {
+  const handleAcceptRequest = async (bundleId: string) => {
+    try {
+      const token = localStorage.getItem('ecolink_token');
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+      const res = await fetch(`${apiUrl}/bundles/${bundleId}/accept-request`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success('Purchase Request Accepted! Exporter notified. ✅');
+        refreshData();
       }
-    };
-    fetchBundles();
-  }, []);
+    } catch {
+      toast.error('Failed to accept request');
+    }
+  };
 
   if (loading) return <div className="h-32 bg-gray-50 animate-pulse rounded-[2rem]" />;
   if (bundles.length === 0) return null;
 
-    const handleAcceptRequest = async (bundleId: string) => {
-      try {
-        const token = localStorage.getItem('ecolink_token');
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
-        const res = await fetch(`${apiUrl}/bundles/${bundleId}/accept-request`, {
-          method: 'PATCH',
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const data = await res.json();
-        if (data.success) {
-          toast.success('Purchase Request Accepted! Exporter notified. ✅');
-          // Refresh list
-          const updatedRes = await fetch(`${apiUrl}/bundles/my-bundles`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          const updatedData = await updatedRes.json();
-          if (updatedData.success) setBundles(updatedData.data);
-        }
-      } catch {
-        toast.error('Failed to accept request');
-      }
-    };
-
-    return (
-      <div className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between mb-8 px-4">
-          <div>
-            <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase leading-none">Export Inventory</h2>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2">{bundles.length} Created Bundles</p>
-          </div>
-          <ShoppingCart className="w-6 h-6 text-gray-300" />
+  return (
+    <div className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between mb-8 px-4">
+        <div>
+          <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase leading-none">Export Inventory</h2>
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2">{bundles.length} Created Bundles</p>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {bundles.map((bundle) => (
-            <div key={bundle._id} className="p-6 rounded-[2rem] border border-gray-50 hover:shadow-lg hover:border-emerald-100 transition-all group">
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="font-black text-gray-900 text-sm group-hover:text-emerald-700 transition-colors truncate w-2/3">{bundle.name}</h3>
-                <span className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-tighter ${bundle.status === 'purchased' ? 'bg-emerald-100 text-emerald-700' :
-                  bundle.status === 'requested' ? 'bg-amber-100 text-amber-700' :
-                    'bg-blue-50 text-blue-600'
-                  }`}>
-                  {bundle.status.replace('_', ' ')}
-                </span>
-              </div>
-              <div className="flex justify-between items-center mb-4">
-                <div>
-                  <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Lot Weight</p>
-                  <p className="text-xl font-black text-gray-900">{bundle.totalWeight}kg</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Hub Value</p>
-                  <p className="text-sm font-black text-emerald-600">₦{bundle.totalPrice?.toLocaleString()}</p>
-                </div>
-              </div>
-
-              {bundle.status === 'requested' && (
-                <button
-                  onClick={() => handleAcceptRequest(bundle._id)}
-                  className="w-full py-3 bg-amber-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-amber-600 transition-all shadow-lg shadow-amber-900/10"
-                >
-                  Accept Purchase Request
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
+        <ShoppingCart className="w-6 h-6 text-gray-300" />
       </div>
-    );
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {bundles.map((bundle) => (
+          <div key={bundle._id} className="p-6 rounded-[2rem] border border-gray-50 hover:shadow-lg hover:border-emerald-100 transition-all group">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="font-black text-gray-900 text-sm group-hover:text-emerald-700 transition-colors truncate w-2/3">{bundle.name}</h3>
+              <span className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-tighter ${bundle.status === 'purchased' ? 'bg-emerald-100 text-emerald-700' :
+                bundle.status === 'requested' ? 'bg-amber-100 text-amber-700' :
+                  'bg-blue-50 text-blue-600'
+                }`}>
+                {bundle.status.replace('_', ' ')}
+              </span>
+            </div>
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Lot Weight</p>
+                <p className="text-xl font-black text-gray-900">{bundle.totalWeight}kg</p>
+              </div>
+              <div className="text-right">
+                <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Hub Value</p>
+                <p className="text-sm font-black text-emerald-600">₦{bundle.totalPrice?.toLocaleString()}</p>
+              </div>
+            </div>
+
+            {bundle.status === 'requested' && (
+              <button
+                onClick={() => handleAcceptRequest(bundle._id)}
+                className="w-full py-3 bg-amber-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-amber-600 transition-all shadow-lg shadow-amber-900/10"
+              >
+                Accept Purchase Request
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 };
 
-const NotificationsList: React.FC<{ limit: number }> = ({ limit }) => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
+interface NotificationsListProps {
+  notifications: Notification[];
+  limit: number;
+  loading: boolean;
+}
 
-  useEffect(() => {
-    const fetchNotifs = async () => {
-      try {
-        const token = localStorage.getItem('ecolink_token');
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
-        const res = await fetch(`${apiUrl}/notifications/me`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const data = await res.json();
-        if (data.success) setNotifications(data.data.slice(0, limit));
-      } catch (err) {
-        console.error('Failed to fetch notifications', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchNotifs();
-  }, [limit]);
-
+const NotificationsList: React.FC<NotificationsListProps> = ({ notifications, limit, loading }) => {
   if (loading) return <div className="space-y-4">{Array.from({ length: 3 }).map((_, idx) => <div key={idx} className="h-16 bg-gray-50 animate-pulse rounded-2xl" />)}</div>;
 
   return (
     <div className="space-y-4">
-      {notifications.map((note, idx) => (
+      {notifications.slice(0, limit).map((note, idx) => (
         <div key={idx} className="flex gap-4 p-4 rounded-2xl hover:bg-gray-50 transition-colors cursor-pointer border border-transparent hover:border-gray-100 group">
           <div className="w-1.5 h-1.5 rounded-full mt-2 shrink-0 bg-emerald-500 shadow-lg shadow-emerald-500/50" />
           <div className="flex-1">
@@ -375,6 +322,9 @@ const NotificationsList: React.FC<{ limit: number }> = ({ limit }) => {
           </div>
         </div>
       ))}
+      {notifications.length === 0 && (
+        <p className="text-center text-[10px] font-bold text-gray-300 uppercase tracking-widest py-10">No alerts found</p>
+      )}
     </div>
   );
 };

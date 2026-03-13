@@ -21,23 +21,41 @@ interface BranchHub {
     balance: number;
 }
 
+interface Invite {
+    _id: string;
+    code: string;
+    businessName: string;
+    expiresAt: string;
+    status: string;
+    usedBy?: string;
+}
+
 const BranchManagement: React.FC = () => {
     const [activeTab, setActiveTab] = useState('verification');
     const [hubs, setHubs] = useState<BranchHub[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [rejectingId, setRejectingId] = useState<string | null>(null);
+    const [rejectReason, setRejectReason] = useState('');
+    const [showInviteModal, setShowInviteModal] = useState(false);
 
     const fetchHubs = useCallback(async () => {
         setLoading(true);
         try {
             const token = localStorage.getItem('ecolink_token');
-            const statusFilter = activeTab === 'verification' ? 'pending_approval' : 'active';
-            const res = await axios.get(`${API_URL}/admin/users`, {
-                params: {
-                    role: 'branch',
-                    status: statusFilter,
-                    search: searchTerm
-                },
+            // User requested specific endpoints: GET /admin/branches/pending
+            const endpoint = activeTab === 'verification' 
+                ? `${API_URL}/admin/branches/pending` 
+                : `${API_URL}/admin/users`;
+            
+            const params = activeTab === 'verification' ? {} : {
+                role: 'branch',
+                status: 'active',
+                search: searchTerm
+            };
+
+            const res = await axios.get(endpoint, {
+                params,
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.data.success) {
@@ -54,19 +72,37 @@ const BranchManagement: React.FC = () => {
         fetchHubs();
     }, [fetchHubs]);
 
-    const handleUpdateStatus = async (id: string, newStatus: string) => {
+    const handleApprove = async (id: string) => {
         try {
             const token = localStorage.getItem('ecolink_token');
-            const res = await axios.patch(`${API_URL}/admin/users/${id}`,
-                { status: newStatus },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            const res = await axios.patch(`${API_URL}/admin/branches/${id}/approve`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
             if (res.data.success) {
-                toast.success(`Hub ${newStatus === 'active' ? 'approved' : 'rejected'} successfully`);
+                toast.success('Branch approved successfully! 🏢');
                 fetchHubs();
             }
         } catch {
-            toast.error('Failed to update hub status');
+            toast.error('Failed to approve branch');
+        }
+    };
+
+    const handleReject = async () => {
+        if (!rejectingId) return;
+        try {
+            const token = localStorage.getItem('ecolink_token');
+            const res = await axios.patch(`${API_URL}/admin/branches/${rejectingId}/reject`, 
+                { reason: rejectReason },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (res.data.success) {
+                toast.success('Branch rejected');
+                setRejectingId(null);
+                setRejectReason('');
+                fetchHubs();
+            }
+        } catch {
+            toast.error('Failed to reject branch');
         }
     };
 
@@ -78,6 +114,12 @@ const BranchManagement: React.FC = () => {
                     <p className="text-[10px] md:text-sm font-bold text-gray-400 uppercase tracking-widest font-black">Verify and monitor regional collection hubs</p>
                 </div>
                 <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setShowInviteModal(true)}
+                        className="px-6 py-3 bg-gray-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-600 transition-all active:scale-95 shadow-lg shadow-emerald-200/10"
+                    >
+                        Generate Invite Code
+                    </button>
                     <button
                         onClick={fetchHubs}
                         className="p-3 bg-white border border-gray-100 rounded-xl shadow-sm text-gray-400 hover:text-emerald-500 transition-all active:scale-95"
@@ -136,7 +178,11 @@ const BranchManagement: React.FC = () => {
                                     <span className="px-3 py-1.5 bg-amber-50 text-amber-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-amber-100">Verification</span>
                                 </div>
                                 <h3 className="text-xl font-black text-gray-900 tracking-tight uppercase">{branch.businessName || `${branch.firstName} ${branch.lastName}`}</h3>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1 opacity-60">Manager: {branch.firstName} {branch.lastName}</p>
+                                <div className="space-y-1 mt-1">
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest opacity-60">Manager: {branch.firstName} {branch.lastName}</p>
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest opacity-60">{branch.email}</p>
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest opacity-60">Joined: {new Date(branch.createdAt).toLocaleDateString()}</p>
+                                </div>
 
                                 <div className="mt-6 flex items-center gap-2 text-xs font-bold text-gray-500">
                                     <MapPin size={16} className="text-emerald-500" />
@@ -146,20 +192,46 @@ const BranchManagement: React.FC = () => {
 
                             <div className="p-8 grid grid-cols-2 gap-4">
                                 <button
-                                    onClick={() => handleUpdateStatus(branch._id, 'active')}
-                                    className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-600 transition-all active:scale-95 shadow-lg shadow-emerald-200/10"
+                                    onClick={() => handleApprove(branch._id)}
+                                    className="flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-700 transition-all active:scale-95 shadow-lg shadow-emerald-200/20"
                                 >
                                     <CheckCircle size={16} /> Approve
                                 </button>
                                 <button
-                                    onClick={() => handleUpdateStatus(branch._id, 'suspended')}
+                                    onClick={() => setRejectingId(branch._id)}
                                     className="flex items-center justify-center gap-2 px-4 py-3 bg-rose-50 text-rose-600 border border-rose-100 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all active:scale-95"
                                 >
                                     <XCircle size={16} /> Reject
                                 </button>
                             </div>
 
-                            <button className="px-8 py-4 border-t border-gray-50 text-[10px] font-black text-gray-400 uppercase tracking-widest text-left hover:text-emerald-500 transition-colors flex items-center justify-between group">
+                            {rejectingId === branch._id && (
+                                <div className="px-8 pb-8 animate-in slide-in-from-top-2">
+                                    <input 
+                                        type="text"
+                                        placeholder="Reason for rejection..."
+                                        className="w-full bg-gray-50 border border-rose-100 rounded-xl py-3 px-4 text-xs font-bold mb-3 outline-none focus:ring-2 focus:ring-rose-100"
+                                        value={rejectReason}
+                                        onChange={(e) => setRejectReason(e.target.value)}
+                                    />
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handleReject}
+                                            className="flex-1 py-3 bg-rose-600 text-white rounded-xl font-black text-[9px] uppercase tracking-widest"
+                                        >
+                                            Confirm Rejection
+                                        </button>
+                                        <button 
+                                            onClick={() => setRejectingId(null)}
+                                            className="px-4 py-3 bg-gray-100 text-gray-500 rounded-xl font-black text-[9px] uppercase tracking-widest"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            <button className="px-8 py-4 border-t border-gray-50 text-[10px] font-black text-gray-400 uppercase tracking-widest text-left hover:text-emerald-500 transition-colors flex items-center justify-between group mt-auto">
                                 View Legal Documents
                                 <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
                             </button>
@@ -251,25 +323,65 @@ const BranchManagement: React.FC = () => {
             {activeTab === 'invites' && (
                 <InviteManagement />
             )}
+
+            {showInviteModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        className="bg-white rounded-[2.5rem] w-full max-w-lg shadow-2xl overflow-hidden"
+                    >
+                        <InviteManagement closeModal={() => setShowInviteModal(false)} hideExistingList />
+                    </motion.div>
+                </div>
+            )}
         </div>
     );
 };
 
-const InviteManagement: React.FC = () => {
+const InviteManagement: React.FC<{ closeModal?: () => void, hideExistingList?: boolean }> = ({ closeModal, hideExistingList }) => {
     const [generating, setGenerating] = useState(false);
     const [businessName, setBusinessName] = useState('');
+    const [expiresDays, setExpiresDays] = useState(30);
+    const [invites, setInvites] = useState<Invite[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [lastGenerated, setLastGenerated] = useState<string | null>(null);
+
+    const fetchInvites = useCallback(async () => {
+        if (hideExistingList) return;
+        setLoading(true);
+        try {
+            const token = localStorage.getItem('ecolink_token');
+            const res = await axios.get(`${API_URL}/admin/invites`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.data.success) {
+                setInvites(res.data.data);
+            }
+        } catch {
+            toast.error('Failed to load invites');
+        } finally {
+            setLoading(false);
+        }
+    }, [hideExistingList]);
+
+    useEffect(() => {
+        fetchInvites();
+    }, [fetchInvites]);
 
     const handleGenerate = async (e: React.FormEvent) => {
         e.preventDefault();
         setGenerating(true);
         try {
             const token = localStorage.getItem('ecolink_token');
-            const res = await axios.post(`${API_URL}/admin/invites/generate`, { businessName }, {
+            const res = await axios.post(`${API_URL}/admin/invites/generate`, { businessName, expiresDays }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.data.success) {
                 toast.success('Invite code generated! 🎟️');
+                setLastGenerated(res.data.data.code);
                 setBusinessName('');
+                if (!hideExistingList) fetchInvites();
             }
         } catch {
             toast.error('Failed to generate invite');
@@ -280,39 +392,138 @@ const InviteManagement: React.FC = () => {
 
     return (
         <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
-            <div className="bg-gray-900 rounded-[2.5rem] p-10 text-white shadow-2xl relative overflow-hidden group">
+            <div className={`bg-gray-900 ${closeModal ? 'rounded-none' : 'rounded-[2.5rem]'} p-10 text-white shadow-2xl relative overflow-hidden group`}>
                 <div className="absolute -top-24 -right-24 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl group-hover:bg-emerald-500/20 transition-all duration-700" />
                 <div className="relative z-10">
-                    <h2 className="text-2xl font-black uppercase tracking-tight mb-2">Issue Branch Authorization</h2>
+                    <div className="flex justify-between items-start mb-2">
+                        <h2 className="text-2xl font-black uppercase tracking-tight">Issue Branch Authorization</h2>
+                        {closeModal && (
+                            <button onClick={closeModal} className="p-2 hover:bg-white/10 rounded-full transition-colors font-black text-emerald-400">✕</button>
+                        )}
+                    </div>
                     <p className="text-gray-400 text-sm font-medium max-w-md">Generate secure invite codes to bypass the 24h approval queue for trusted aggregation partners.</p>
                     
-                    <form onSubmit={handleGenerate} className="mt-10 flex flex-col md:flex-row gap-4 items-end">
-                        <div className="flex-1 space-y-2">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Proposed Hub Name</label>
-                            <input 
-                                type="text"
-                                placeholder="e.g. Lagos Mainland Aggregator"
-                                value={businessName}
-                                onChange={(e) => setBusinessName(e.target.value)}
-                                required
-                                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm font-bold placeholder:text-gray-600 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 outline-none transition-all"
-                            />
+                    <form onSubmit={handleGenerate} className="mt-10 space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Proposed Hub Name</label>
+                                <input 
+                                    type="text"
+                                    placeholder="e.g. Lagos Mainland Aggregator"
+                                    value={businessName}
+                                    onChange={(e) => setBusinessName(e.target.value)}
+                                    required
+                                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm font-bold placeholder:text-gray-600 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 outline-none transition-all"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Expires in (days)</label>
+                                <input 
+                                    type="number"
+                                    value={expiresDays}
+                                    onChange={(e) => setExpiresDays(Number(e.target.value))}
+                                    required
+                                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm font-bold placeholder:text-gray-600 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 outline-none transition-all"
+                                />
+                            </div>
                         </div>
                         <button 
                             type="submit"
                             disabled={generating}
-                            className="bg-emerald-500 text-gray-900 px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-400 transition-all disabled:opacity-50 h-[58px]"
+                            className="w-full bg-emerald-500 text-gray-900 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-400 transition-all disabled:opacity-50"
                         >
                             {generating ? 'Generating...' : 'Issue Code'}
                         </button>
                     </form>
+
+                    {lastGenerated && (
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="mt-8 p-6 bg-white/5 border border-emerald-500/30 rounded-2xl flex items-center justify-between"
+                        >
+                            <div>
+                                <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Latest Generated Code</p>
+                                <p className="text-2xl font-black text-white tracking-widest">{lastGenerated}</p>
+                            </div>
+                            <button 
+                                onClick={() => {
+                                    navigator.clipboard.writeText(lastGenerated);
+                                    toast.success('Copied to clipboard!');
+                                }}
+                                className="p-3 bg-emerald-500/10 text-emerald-500 rounded-xl hover:bg-emerald-500 hover:text-gray-900 transition-all"
+                            >
+                                Copy Code
+                            </button>
+                        </motion.div>
+                    )}
                 </div>
             </div>
 
-            <div className="bg-white rounded-[2.5rem] p-10 border border-gray-100 shadow-sm text-center">
-                 <RefreshCw className="mx-auto text-gray-100 mb-4 w-12 h-12" />
-                 <p className="text-sm font-black text-gray-300 uppercase tracking-widest">Recent invites list coming in next sync</p>
-            </div>
+            {!hideExistingList && (
+                <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+                    <div className="px-8 py-6 border-b border-gray-50 flex items-center justify-between">
+                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">Active Authorization Codes</h3>
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{invites.length} Issued</span>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead>
+                                <tr className="bg-gray-50/50">
+                                    <th className="px-8 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest">Code</th>
+                                    <th className="px-8 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest">Target Business</th>
+                                    <th className="px-8 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest">Expires</th>
+                                    <th className="px-8 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest">Status</th>
+                                    <th className="px-8 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50">
+                                {loading ? (
+                                    Array(3).fill(0).map((_, i) => (
+                                        <tr key={i} className="animate-pulse">
+                                            <td colSpan={5} className="px-8 py-4"><div className="h-4 bg-gray-50 rounded w-full" /></td>
+                                        </tr>
+                                    ))
+                                ) : invites.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={5} className="px-8 py-10 text-center text-[10px] font-bold text-gray-300 uppercase tracking-widest">
+                                            No active codes found
+                                        </td>
+                                    </tr>
+                                ) : invites.map((inv) => (
+                                    <tr key={inv._id} className="hover:bg-gray-50/50 transition-colors">
+                                        <td className="px-8 py-4">
+                                            <code className="bg-gray-100 text-gray-900 px-3 py-1 rounded-lg text-xs font-black tracking-wider">{inv.code}</code>
+                                        </td>
+                                        <td className="px-8 py-4 text-xs font-bold text-gray-600">{inv.businessName || 'N/A'}</td>
+                                        <td className="px-8 py-4 text-[10px] font-medium text-gray-400">
+                                            {new Date(inv.expiresAt).toLocaleDateString()}
+                                        </td>
+                                        <td className="px-8 py-4">
+                                            <span className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-tighter ${
+                                                inv.status === 'pending' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'
+                                            }`}>
+                                                {inv.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-8 py-4 text-right">
+                                            <button 
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(inv.code);
+                                                    toast.success('Code copied!');
+                                                }}
+                                                className="text-[9px] font-black text-emerald-600 uppercase tracking-widest hover:underline"
+                                            >
+                                                Copy
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

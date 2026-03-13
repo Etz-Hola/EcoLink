@@ -393,6 +393,16 @@ const BranchSchema = new Schema<IBranch>({
     default: () => ({})
   },
 
+  balance: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  currency: {
+    type: String,
+    default: 'NGN'
+  },
+
   // Timestamps
   registeredAt: {
     type: Date,

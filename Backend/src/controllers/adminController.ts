@@ -8,6 +8,7 @@ import { UserRole, UserStatus } from '../types/user';
 import { MaterialStatus } from '../types/material';
 import { TransactionStatus, TransactionType } from '../types/transaction';
 import { AppError } from '../utils/logger';
+import { AuthService } from '../services/authService';
 
 export class AdminController {
     /**
@@ -130,7 +131,7 @@ export class AdminController {
      */
     static async generateInvite(req: Request, res: Response, next: NextFunction) {
         try {
-            const { businessName, expiresDays = 7, role = UserRole.BRANCH } = req.body;
+            const { businessName, expiresDays = 30, role = UserRole.BRANCH } = req.body;
             const adminId = (req as any).user._id;
 
             const code = `BRANCH-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
@@ -156,15 +157,153 @@ export class AdminController {
     }
 
     /**
-     * Approve a pending user
+     * Get pending branches
+     */
+    static async getPendingBranches(req: Request, res: Response, next: NextFunction) {
+        try {
+            const query = { role: UserRole.BRANCH, status: UserStatus.PENDING_APPROVAL };
+            const branches = await User.find(query).sort({ createdAt: -1 });
+
+            res.status(200).json({
+                success: true,
+                count: branches.length,
+                data: branches
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * Approve branch - sets user status to active and creates Branch entity if not already linked
+     */
+    static async approveBranch(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { id } = req.params;
+            const user = await User.findById(id);
+            if (!user) throw new AppError('Branch not found', 404);
+
+            user.status = UserStatus.ACTIVE;
+
+            // Create Branch entity doc if not already linked
+            if (!user.branchId) {
+                user.branchId = await AuthService._createBranchForUser(user, user.businessName);
+            }
+
+            await user.save();
+
+            res.status(200).json({
+                success: true,
+                message: 'Branch approved successfully',
+                data: user
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * Reject branch
+     */
+    static async rejectBranch(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { id } = req.params;
+            const { reason } = req.body;
+            const user = await User.findById(id);
+            if (!user) throw new AppError('Branch not found', 404);
+
+            user.status = UserStatus.REJECTED;
+            await user.save();
+
+            res.status(200).json({
+                success: true,
+                message: `Branch rejected: ${reason || 'No reason provided'}`,
+                data: user
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * Approve a pending exporter/company user - creates Company entity doc if not already linked
+     */
+    static async approveExporter(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { id } = req.params;
+            const user = await User.findById(id);
+            if (!user) throw new AppError('User not found', 404);
+
+            user.status = UserStatus.ACTIVE;
+
+            // Create Company entity doc if not already linked
+            if (!user.companyId) {
+                user.companyId = await AuthService._createCompanyForUser(user, user.businessName);
+            }
+
+            await user.save();
+
+            res.status(200).json({
+                success: true,
+                message: 'Exporter/Company approved successfully',
+                data: user
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * Get pending exporters/companies
+     */
+    static async getPendingExporters(req: Request, res: Response, next: NextFunction) {
+        try {
+            const query = { role: UserRole.EXPORTER, status: UserStatus.PENDING_APPROVAL };
+            const exporters = await User.find(query).sort({ createdAt: -1 });
+
+            res.status(200).json({
+                success: true,
+                count: exporters.length,
+                data: exporters
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * Reject exporter
+     */
+    static async rejectExporter(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { id } = req.params;
+            const { reason } = req.body;
+            const user = await User.findById(id);
+            if (!user) throw new AppError('Exporter not found', 404);
+
+            user.status = UserStatus.REJECTED;
+            await user.save();
+
+            res.status(200).json({
+                success: true,
+                message: `Exporter rejected: ${reason || 'No reason provided'}`,
+                data: user
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * Generic approve a pending user (for roles other than branch/exporter)
      */
     static async approveUser(req: Request, res: Response, next: NextFunction) {
         try {
             const { id } = req.params;
             const user = await User.findById(id);
-            
+
             if (!user) throw new AppError('User not found', 404);
-            
+
             user.status = UserStatus.ACTIVE;
             await user.save();
 
@@ -185,9 +324,9 @@ export class AdminController {
         try {
             const { id } = req.params;
             const user = await User.findById(id);
-            
+
             if (!user) throw new AppError('User not found', 404);
-            
+
             user.status = UserStatus.REJECTED;
             await user.save();
 
@@ -295,6 +434,37 @@ export class AdminController {
                 count: transactions.length,
                 total,
                 data: transactions
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+    /**
+     * Get all generated invite codes
+     */
+    static async getInvites(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { role, page = 1, limit = 50 } = req.query;
+            const skip = (Number(page) - 1) * Number(limit);
+
+            const query: any = {};
+            if (role) query.role = role;
+
+            const [invites, total] = await Promise.all([
+                Invite.find(query)
+                    .populate('createdBy', 'firstName lastName')
+                    .populate('usedBy', 'firstName lastName businessName')
+                    .sort({ createdAt: -1 })
+                    .skip(skip)
+                    .limit(Number(limit)),
+                Invite.countDocuments(query)
+            ]);
+
+            res.status(200).json({
+                success: true,
+                count: invites.length,
+                total,
+                data: invites
             });
         } catch (error) {
             next(error);

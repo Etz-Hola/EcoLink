@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { PackageCheck, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { Material } from '../../types';
 
 interface AvailableMaterial {
     id: string;
@@ -10,42 +11,26 @@ interface AvailableMaterial {
     value: number;
 }
 
-export default function BundleCreator() {
-    const [availableItems, setAvailableItems] = useState<AvailableMaterial[]>([]);
+interface BundleCreatorProps {
+    availableMaterials: Material[];
+    refreshData: () => Promise<void>;
+    loading: boolean;
+}
+
+export default function BundleCreator({ availableMaterials, refreshData, loading }: BundleCreatorProps) {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [bundleName, setBundleName] = useState('');
     const [creating, setCreating] = useState(false);
-    const [loading, setLoading] = useState(true);
 
-    const fetchAvailableMaterials = async () => {
-        try {
-            const token = localStorage.getItem('ecolink_token');
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
-
-            const res = await fetch(`${apiUrl}/materials/pending?status=approved,delivered`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-
-            const data = await res.json();
-            if (data.success) {
-                setAvailableItems(data.data.map((m: any) => ({
-                    id: m._id,
-                    type: m.materialType,
-                    weightKg: m.weight,
-                    quality: m.condition,
-                    value: (m.weight * (m.pricing?.offeredPrice || m.pricing?.finalPrice || 0))
-                })));
-            }
-        } catch {
-            toast.error('Failed to load materials');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchAvailableMaterials();
-    }, []);
+    const availableItems: AvailableMaterial[] = useMemo(() => {
+        return (availableMaterials || []).map((m: any) => ({
+            id: m._id,
+            type: m.materialType,
+            weightKg: m.weight,
+            quality: m.condition,
+            value: (m.weight * (m.pricing?.offeredPrice || m.pricing?.finalPrice || 0))
+        }));
+    }, [availableMaterials]);
 
     const toggleSelection = (id: string) => {
         setSelectedIds(prev => {
@@ -85,7 +70,7 @@ export default function BundleCreator() {
                 toast.success('Bundle Sealed & Ready! 🚢');
                 setBundleName('');
                 setSelectedIds(new Set());
-                fetchAvailableMaterials();
+                refreshData();
             }
         } catch {
             toast.error('Bundling failed');

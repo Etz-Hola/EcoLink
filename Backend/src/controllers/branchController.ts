@@ -4,6 +4,32 @@ import { AppError } from '../utils/logger';
 
 export class BranchController {
     /**
+     * Get the authenticated user's own Branch document
+     * @route GET /api/v1/branches/my-branch
+     */
+    static async getMyBranch(req: Request, res: Response, next: NextFunction) {
+        try {
+            const user = (req as any).user;
+
+            if (!user.branchId) {
+                throw new AppError('No branch linked to this account', 404);
+            }
+
+            const branch = await Branch.findById(user.branchId);
+            if (!branch) {
+                throw new AppError('Branch not found', 404);
+            }
+
+            res.status(200).json({
+                success: true,
+                data: branch
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
      * Get nearby branches based on coordinates
      * @route GET /api/v1/branches/nearby
      */
@@ -18,8 +44,6 @@ export class BranchController {
             const center: [number, number] = [Number(lng), Number(lat)];
             const searchRadius = radius ? Number(radius) : 50; // default 50km
 
-            // Use the findNearby static method defined in Branch model
-            // findNearby uses $centerSphere with radius in radians (radius / 6371)
             const branches = await (Branch as any).findNearby(center, searchRadius);
 
             res.status(200).json({

@@ -198,6 +198,10 @@ const UserSchema = new Schema<IUser>({
     type: Schema.Types.ObjectId,
     ref: 'Branch'
   },
+  companyId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Company'
+  },
 
   // Timestamps
   lastLogin: Date
@@ -260,12 +264,9 @@ UserSchema.pre('save', async function (this: any) { // Removed next parameter
   }
 });
 
-// Default organizationId to self if not provided
-UserSchema.pre('save', function (this: any) {
-  if (this.isNew && !this.organizationId) {
-    this.organizationId = this._id;
-  }
-});
+// Note: organizationId is NOT auto-set to self anymore.
+// Suppliers (collector/organization) may have organizationId set to their group owner.
+// Branch users are identified by branchId. Exporters by companyId.
 
 // Methods
 UserSchema.methods.comparePassword = async function (password: string): Promise<boolean> {

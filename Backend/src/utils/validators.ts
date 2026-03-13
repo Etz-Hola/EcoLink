@@ -26,7 +26,7 @@ export const registerSchema = Joi.object({
     authProvider: Joi.string().valid('email', 'phone', 'wallet', 'google').required(),
     organizationId: Joi.string().optional(),
     branchId: Joi.string().optional(),
-    inviteCode: Joi.string().optional(),
+    inviteCode: Joi.string().allow('').optional(),
     businessName: Joi.string().optional(),
     businessType: Joi.string().optional()
 });

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Package, TrendingUp, Truck, ShoppingCart, ArrowUpRight, RefreshCw } from 'lucide-react';
-import { useBalance } from '../../hooks/useBalance';
+import { Package, TrendingUp, Truck, ShoppingCart, ArrowUpRight, RefreshCw, Clock } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
+import { useCompanyData } from '../../hooks/useCompanyData';
 import NearbyBuyersMap from '../../components/dashboard/NearbyBuyersMap';
 import toast from 'react-hot-toast';
 
@@ -22,7 +23,8 @@ const ExporterDashboard: React.FC = () => {
     const [myPurchases, setMyPurchases] = useState<any[]>([]);
     const [isSyncing, setIsSyncing] = useState(false);
 
-    const { balance, refreshBalance } = useBalance();
+    const { user } = useAuth();
+    const { balance, refreshData: refreshCompany } = useCompanyData();
 
     useEffect(() => {
         if (navigator.geolocation) {
@@ -86,7 +88,7 @@ const ExporterDashboard: React.FC = () => {
 
     const handleSync = async () => {
         setIsSyncing(true);
-        await Promise.all([fetchBundles(), refreshBalance()]);
+        await Promise.all([fetchBundles(), refreshCompany()]);
         setTimeout(() => {
             setIsSyncing(false);
             toast.success('Organization data synchronized');
@@ -122,7 +124,7 @@ const ExporterDashboard: React.FC = () => {
             toast.success('Bundle receipt verified! Payment released to branch. 🚢');
             fetchBundles();
             fetchMyPurchases();
-            refreshBalance();
+            refreshCompany();
         } catch (err: any) {
             toast.error(err.message || 'Verification failed');
         }
@@ -137,6 +139,26 @@ const ExporterDashboard: React.FC = () => {
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
+            {/* Pending Approval Banner */}
+            {user?.status === 'pending_approval' && (
+                <div className="bg-amber-50 border-2 border-amber-100 rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-4 animate-in slide-in-from-top-4 duration-500">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-amber-100 text-amber-600 rounded-2xl">
+                            <Clock className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-black text-amber-900 uppercase tracking-tight">Account Pending Approval</h3>
+                            <p className="text-amber-700 font-medium text-sm">Our team is currently verifying your business details. You'll have full access once approved.</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <span className="px-4 py-2 bg-amber-600/10 text-amber-700 rounded-xl text-xs font-black uppercase tracking-widest">
+                            In Review
+                        </span>
+                    </div>
+                </div>
+            )}
+
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>

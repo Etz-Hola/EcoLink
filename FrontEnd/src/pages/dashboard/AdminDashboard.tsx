@@ -8,6 +8,8 @@ import BranchManagement from '../../components/dashboard/admin/BranchManagement'
 import MaterialMonitor from '../../components/dashboard/admin/MaterialMonitor';
 import BundleMonitor from '../../components/dashboard/admin/BundleMonitor';
 import FinanceManager from '../../components/dashboard/admin/FinanceManager';
+import CompanyManagement from '../../components/dashboard/admin/CompanyManagement';
+import InviteManager from '../../components/dashboard/admin/InviteManager';
 import PlatformSettings from '../../components/dashboard/admin/PlatformSettings';
 
 const AdminDashboard: React.FC = () => {
@@ -41,12 +43,16 @@ const AdminDashboard: React.FC = () => {
         );
       case 'branches':
         return <BranchManagement />;
+      case 'companies':
+        return <CompanyManagement />;
       case 'materials':
         return <MaterialMonitor />;
       case 'bundles':
         return <BundleMonitor />;
       case 'financials':
         return <FinanceManager />;
+      case 'invites':
+        return <InviteManager />;
       case 'settings':
         return <PlatformSettings />;
       default:
