@@ -47,7 +47,7 @@ const ACCOUNT_TYPES = [
     active: 'border-amber-500 bg-amber-50 ring-2 ring-amber-500/20',
   },
   {
-    value: 'buyer',
+    value: 'exporter',
     label: 'Final Company (Exporter / Provider)',
     desc: 'Buy and export processed materials',
     icon: '🚢',
@@ -111,7 +111,7 @@ const RegisterForm: React.FC = () => {
         password: formData.password,
         role: formData.role,
         username: formData.email.split('@')[0],
-        inviteCode: (isJoining || formData.role === 'branch') ? formData.inviteCode : undefined,
+        inviteCode: (isJoining || ['branch', 'exporter'].includes(formData.role)) ? formData.inviteCode : undefined,
         businessName: formData.role !== 'collector' ? formData.businessName : undefined,
         businessType: formData.role, // Default business type to the role for now
       });
@@ -392,10 +392,9 @@ const RegisterForm: React.FC = () => {
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  {/* Name */}
                   <motion.div variants={fadeUp} custom={1} initial="hidden" animate="show">
                     <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">
-                      {formData.role === 'branch' ? 'Manager Full Name' : 'Full Name'}
+                      {['branch', 'exporter'].includes(formData.role) ? 'Manager Full Name' : 'Full Name'}
                     </label>
                     <div className="relative">
                       <UserIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -405,15 +404,15 @@ const RegisterForm: React.FC = () => {
                         onChange={handleChange}
                         onFocus={() => setFocusedField('name')}
                         onBlur={() => setFocusedField(null)}
-                        placeholder={formData.role === 'branch' ? 'Hub Manager Name' : 'Your full name'}
+                        placeholder={['branch', 'exporter'].includes(formData.role) ? 'Manager Full Name' : 'Your full name'}
                         required
                         className={`${inputCls('name')} pl-10`}
                       />
                     </div>
                   </motion.div>
 
-                  {/* Invite Code for Branch */}
-                  {formData.role === 'branch' && (
+                  {/* Invite Code for Business Accounts (Instant Access) */}
+                  {['branch', 'exporter'].includes(formData.role) && !isJoining && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
@@ -436,7 +435,7 @@ const RegisterForm: React.FC = () => {
                         />
                       </div>
                       <p className="text-[10px] font-medium text-amber-600 px-1 leading-relaxed">
-                        If you have an invite code, your account is activated instantly. Otherwise, it will require 24h admin approval.
+                        If you have an invite code, your account is activated instantly. Otherwise, it will require admin approval.
                       </p>
                     </motion.div>
                   )}
