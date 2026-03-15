@@ -51,6 +51,7 @@ export enum MaterialStatus {
   PENDING = 'pending',
   APPROVED = 'approved',
   REJECTED = 'rejected',
+  PICKUP_SCHEDULED = 'pickup_scheduled',
   IN_TRANSIT = 'in_transit',
   DELIVERED = 'delivered',
   PROCESSED = 'processed',

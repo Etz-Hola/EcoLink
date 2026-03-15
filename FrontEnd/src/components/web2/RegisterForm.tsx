@@ -47,7 +47,7 @@ const ACCOUNT_TYPES = [
     active: 'border-amber-500 bg-amber-50 ring-2 ring-amber-500/20',
   },
   {
-    value: 'buyer',
+    value: 'exporter',
     label: 'Final Company (Exporter / Provider)',
     desc: 'Buy and export processed materials',
     icon: '🚢',
@@ -66,6 +66,7 @@ const RegisterForm: React.FC = () => {
     confirmPassword: '',
     role: 'collector' as string,
     inviteCode: '',
+    businessName: '',
   });
   const [isJoining, setIsJoining] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -107,11 +108,12 @@ const RegisterForm: React.FC = () => {
         firstName: formData.name.split(' ')[0],
         lastName: formData.name.split(' ').slice(1).join(' ') || 'User',
         email: formData.email,
-        phone: formData.phone,
         password: formData.password,
         role: formData.role,
         username: formData.email.split('@')[0],
-        inviteCode: isJoining ? formData.inviteCode : undefined,
+        inviteCode: (isJoining || ['branch', 'exporter'].includes(formData.role)) ? formData.inviteCode : undefined,
+        businessName: formData.role !== 'collector' ? formData.businessName : undefined,
+        businessType: formData.role, // Default business type to the role for now
       });
       toast.success('Welcome to EcoLink! 🎉');
       navigateToDashboard(user.role);
@@ -390,9 +392,10 @@ const RegisterForm: React.FC = () => {
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  {/* Name */}
                   <motion.div variants={fadeUp} custom={1} initial="hidden" animate="show">
-                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">Full Name</label>
+                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">
+                      {['branch', 'exporter'].includes(formData.role) ? 'Manager Full Name' : 'Full Name'}
+                    </label>
                     <div className="relative">
                       <UserIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <input
@@ -401,12 +404,66 @@ const RegisterForm: React.FC = () => {
                         onChange={handleChange}
                         onFocus={() => setFocusedField('name')}
                         onBlur={() => setFocusedField(null)}
-                        placeholder="Your full name"
+                        placeholder={['branch', 'exporter'].includes(formData.role) ? 'Manager Full Name' : 'Your full name'}
                         required
                         className={`${inputCls('name')} pl-10`}
                       />
                     </div>
                   </motion.div>
+
+                  {/* Invite Code for Business Accounts (Instant Access) */}
+                  {['branch', 'exporter'].includes(formData.role) && !isJoining && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="space-y-1.5"
+                    >
+                      <label className="block text-xs font-black text-gray-500 uppercase tracking-widest">
+                        Invite Code (Optional - Instant Access)
+                      </label>
+                      <div className="relative">
+                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                          name="inviteCode"
+                          value={formData.inviteCode}
+                          onChange={handleChange}
+                          onFocus={() => setFocusedField('inviteCode')}
+                          onBlur={() => setFocusedField(null)}
+                          placeholder="Enter code (if you have one)"
+                          required={false}
+                          className={`${inputCls('inviteCode')} pl-10`}
+                        />
+                      </div>
+                      <p className="text-[10px] font-medium text-amber-600 px-1 leading-relaxed">
+                        If you have an invite code, your account is activated instantly. Otherwise, it will require admin approval.
+                      </p>
+                    </motion.div>
+                  )}
+ 
+                   {/* Business Name (for non-collectors) */}
+                   {formData.role !== 'collector' && !isJoining && (
+                     <motion.div
+                       initial={{ opacity: 0, y: -10 }}
+                       animate={{ opacity: 1, y: 0 }}
+                       variants={fadeUp}
+                       custom={1.5}
+                     >
+                       <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">Business / Hub Name</label>
+                       <div className="relative">
+                         <div className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400">🏢</div>
+                         <input
+                           name="businessName"
+                           value={formData.businessName}
+                           onChange={handleChange}
+                           onFocus={() => setFocusedField('businessName')}
+                           onBlur={() => setFocusedField(null)}
+                           placeholder="e.g. Lagos Central Hub"
+                           required
+                           className={`${inputCls('businessName')} pl-10`}
+                         />
+                       </div>
+                     </motion.div>
+                   )}
 
                   {/* Email */}
                   <motion.div variants={fadeUp} custom={2} initial="hidden" animate="show">

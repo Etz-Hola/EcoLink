@@ -17,7 +17,9 @@ export enum UserStatus {
   ACTIVE = 'active',
   INACTIVE = 'inactive',
   SUSPENDED = 'suspended',
-  PENDING_VERIFICATION = 'pending_verification'
+  PENDING_VERIFICATION = 'pending_verification',
+  PENDING_APPROVAL = 'pending_approval',
+  REJECTED = 'rejected'
 }
 
 export enum AuthProvider {
@@ -77,9 +79,10 @@ export interface IUser extends Document {
 
   balance: number;
 
-  // Organization & Branch Mapping
+  // Organization & Branch & Company Mapping
   organizationId?: Types.ObjectId;
   branchId?: Types.ObjectId;
+  companyId?: Types.ObjectId;
 
   // Settings
   notifications: {
@@ -121,6 +124,7 @@ export interface IRegisterData {
   businessType?: string;
   organizationId?: string;
   branchId?: string;
+  companyId?: string;
   inviteCode?: string;
 }
 

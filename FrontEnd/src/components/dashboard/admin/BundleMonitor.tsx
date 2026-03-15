@@ -16,9 +16,9 @@ interface Bundle {
     totalWeight: number;
     totalPrice: number;
     status: string;
-    items: any[];
-    branch: { firstName: string; lastName: string; businessName?: string };
-    organization: { firstName: string; lastName: string; businessName?: string };
+    materialIds: string[];
+    branchId: { name: string; location: { address: string } };
+    organizationId: { businessName?: string; username: string };
     createdAt: string;
 }
 
@@ -147,7 +147,7 @@ const BundleMonitor: React.FC = () => {
 
                             <div className="p-6">
                                 <div className="flex items-center justify-between mb-2">
-                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{bundle.items.length} Items • {bundle.totalWeight} kg</p>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{bundle.materialIds.length} Items • {bundle.totalWeight} kg</p>
                                     <p className="text-lg font-black text-gray-900">₦{bundle.totalPrice.toLocaleString()}</p>
                                 </div>
                                 <h4 className="text-sm font-black text-gray-900 mb-1 flex items-center gap-2 group-hover:text-emerald-600 transition-colors uppercase">
@@ -155,15 +155,15 @@ const BundleMonitor: React.FC = () => {
                                     <ArrowRight size={14} className="text-gray-300 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                                 </h4>
                                 <div className="flex items-center gap-4 text-[9px] font-black text-gray-400 uppercase tracking-widest">
-                                    <span className="flex items-center gap-1 opacity-70"><MapPin size={12} /> {bundle.branch.businessName || 'Platform Hub'}</span>
+                                    <span className="flex items-center gap-1 opacity-70"><MapPin size={12} /> {bundle.branchId.name || 'Platform Hub'}</span>
                                     <span className="flex items-center gap-1 opacity-50"><Clock size={12} /> {new Date(bundle.createdAt).toLocaleDateString()}</span>
                                 </div>
 
                                 <div className="mt-6 flex items-center justify-between border-t border-gray-50 pt-4">
                                     <div className="flex -space-x-2">
                                         {[1, 2].map(i => (
-                                            <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-gray-900 flex items-center justify-center text-[10px] text-white font-black">
-                                                {i === 1 ? bundle.branch.firstName.charAt(0) : bundle.organization.firstName.charAt(0)}
+                                            <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-gray-900 flex items-center justify-center text-[10px] text-white font-black uppercase">
+                                                {i === 1 ? bundle.branchId.name.charAt(0) : (bundle.organizationId.businessName?.charAt(0) || bundle.organizationId.username.charAt(0))}
                                             </div>
                                         ))}
                                     </div>

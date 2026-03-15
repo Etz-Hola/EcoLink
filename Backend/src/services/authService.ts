@@ -1,487 +1,266 @@
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcryptjs';
-import { ethers } from 'ethers';
-import { OAuth2Client } from 'google-auth-library';
-import { SiweMessage, generateNonce } from 'siwe';
 import User from '../models/User';
-import { IUser, ILoginCredentials, IRegisterData, IAuthResponse, AuthProvider, UserStatus, UserRole } from '../types/user';
-import { AppError } from '../utils/logger';
-import { sendWelcomeEmail, sendVerificationEmail } from './notificationService';
 import Invite from '../models/Invite';
+import { IRegisterData, ILoginCredentials, IAuthResponse, UserRole, UserStatus, AuthProvider } from '../types/user';
 import { InviteStatus } from '../types/invite';
-
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+import { AppError } from '../utils/logger';
+import logger from '../utils/logger';
 
 export class AuthService {
-  /**
-   * Register a new user
-   */
-  static async register(userData: IRegisterData): Promise<IAuthResponse> {
-    console.log('AuthService.register called with:', { ...userData, password: '***' });
-    try {
-      // Check if user already exists
-      const existingUser = await this.findExistingUser(userData);
-      console.log('Existing user check result:', existingUser ? 'Found' : 'Not found');
-      if (existingUser) {
-        throw new AppError('User already exists with this email, phone, or wallet address', 400);
-      }
+    /**
+     * Register a new user
+     */
+    static async register(data: IRegisterData): Promise<IAuthResponse> {
+        try {
+            // Check if user already exists
+            const existingUser = await User.findOne({
+                $or: [
+                    { email: data.email },
+                    { username: data.username },
+                    { phone: data.phone }
+                ].filter(condition => Object.values(condition)[0] !== undefined)
+            });
 
-      // Create new user
-      console.log('Creating new user instance...');
-      const user = new User(userData);
+            if (existingUser) {
+                throw new AppError('User with these credentials already exists', 400);
+            }
 
-      // Handle Organizational Linking via Invite Code
-      if (userData.inviteCode) {
-        const invite = await Invite.findOne({
-          code: userData.inviteCode.toUpperCase(),
-          status: InviteStatus.PENDING,
-          expiresAt: { $gt: new Date() }
-        });
+            let userStatus = UserStatus.PENDING_VERIFICATION;
+            let businessName = data.businessName;
+            let resolvedInvite: any = null;
+            let inviteActivated = false;
 
-        if (!invite) {
-          throw new AppError('Invalid or expired invite code', 400);
-        }
+            // Handle Branch / Exporter Signup (Option A - Invite Code OR Option B - Self-Signup pending admin)
+            if (data.role === UserRole.BRANCH || data.role === UserRole.EXPORTER) {
+                if (data.inviteCode) {
+                    const invite = await Invite.findOne({
+                        code: data.inviteCode.toUpperCase(),
+                        status: InviteStatus.PENDING,
+                        expiresAt: { $gt: new Date() }
+                    });
 
-        user.organizationId = invite.organizationId;
-        user.role = invite.role; // Auto-assign role from invite
-        invite.status = InviteStatus.ACCEPTED;
-        await invite.save();
-      }
+                    if (!invite) {
+                        throw new AppError('Invalid or expired invite code', 400);
+                    }
 
-      console.log('Saving user to database...');
-      await user.save();
-      console.log('User saved successfully. ID:', user._id);
+                    // Invite is valid → auto-activate
+                    userStatus = UserStatus.ACTIVE;
+                    businessName = invite.businessName || businessName;
+                    resolvedInvite = invite;
+                    inviteActivated = true;
+                } else {
+                    // No invite code → Self-Signup + pending admin approval
+                    userStatus = UserStatus.PENDING_APPROVAL;
+                }
+            }
 
-      // Generate tokens
-      console.log('Generating tokens...');
-      const accessToken = user.generateAuthToken();
-      const refreshToken = user.generateRefreshToken();
-      console.log('Tokens generated.');
+            // Create the User document
+            const newUser = new User({
+                ...data,
+                status: userStatus,
+                businessName
+            });
 
-      // Send welcome notification
-      console.log('Sending welcome notification...');
-      await this.sendWelcomeNotification(user);
-      console.log('Welcome notification process finished.');
+            await newUser.save();
 
-      return {
-        success: true,
-        message: 'User registered successfully',
-        user: this.sanitizeUser(user),
-        tokens: {
-          accessToken,
-          refreshToken
-        }
-      };
-    } catch (error: any) {
-      console.error('Registration internal error:', error);
-      if (error instanceof AppError) throw error;
+            // Mark invite as used
+            if (resolvedInvite) {
+                resolvedInvite.status = InviteStatus.USED;
+                resolvedInvite.usedBy = newUser._id;
+                await resolvedInvite.save();
+            }
 
-      // Handle MongoDB duplication error
-      if (error.code === 11000) {
-        const field = Object.keys(error.keyPattern)[0];
-        throw new AppError(`User with this ${field} already exists`, 400);
-      }
+            // If immediately approved (invite code), create the entity document and link it
+            if (inviteActivated) {
+                if (data.role === UserRole.BRANCH) {
+                    newUser.branchId = await AuthService._createBranchForUser(newUser, businessName);
+                } else if (data.role === UserRole.EXPORTER) {
+                    newUser.companyId = await AuthService._createCompanyForUser(newUser, businessName);
+                }
+                await newUser.save();
+            }
 
-      throw new AppError(`Registration failed: ${error.message}`, 500);
-    }
-  }
+            const accessToken = newUser.generateAuthToken();
+            const refreshToken = newUser.generateRefreshToken();
 
-  /**
-   * Login user with credentials
-   */
-  static async login(credentials: ILoginCredentials): Promise<IAuthResponse> {
-    try {
-      // ── Hardcoded Admin Check (Emergency Access) ──
-      if (
-        process.env.ADMIN_EMAIL &&
-        credentials.identifier.toLowerCase() === process.env.ADMIN_EMAIL.toLowerCase()
-      ) {
-        const adminPasswordHash = process.env.ADMIN_PASSWORD;
-        const adminSecret = process.env.ADMIN_SECRET_KEY;
+            const message = (data.role === UserRole.BRANCH || data.role === UserRole.EXPORTER)
+                ? inviteActivated
+                    ? 'Registration successful. Your account is now active.'
+                    : 'Registration submitted. Your account is pending admin approval.'
+                : 'Registration successful';
 
-        if (adminPasswordHash && adminSecret) {
-          const isMatch = await bcrypt.compare(credentials.password || '', adminPasswordHash);
-          if (isMatch) {
-            // Admin login success → sign special token with admin secret
-            const accessToken = jwt.sign(
-              {
-                userId: 'admin-emergency',
-                email: process.env.ADMIN_EMAIL,
-                role: UserRole.ADMIN,
-                status: 'active',
-                isAdmin: true
-              },
-              adminSecret,
-              { expiresIn: (process.env.JWT_EXPIRE || '24h') as any }
-            );
+            logger.info(`User registered successfully: ${newUser._id} (${newUser.role})`);
 
             return {
-              success: true,
-              message: 'Emergency admin login successful',
-              user: {
-                username: 'admin',
-                email: process.env.ADMIN_EMAIL,
-                role: UserRole.ADMIN,
-                firstName: 'EcoLink',
-                lastName: 'Admin'
-              } as any,
-              tokens: {
-                accessToken,
-                refreshToken: accessToken // Simple for emergency admin
-              }
+                success: true,
+                message,
+                user: newUser,
+                tokens: { accessToken, refreshToken }
             };
-          }
+        } catch (error) {
+            logger.error('Registration failed:', error);
+            if (error instanceof AppError) throw error;
+            throw new AppError('Registration failed. Please try again.', 500);
         }
-      }
-
-      let user: IUser | null = null;
-
-      // Find user by identifier (email, phone, or wallet)
-      if (credentials.identifier.includes('@')) {
-        user = await User.findOne({ email: credentials.identifier.toLowerCase() });
-      } else if (credentials.identifier.startsWith('+') || /^\d+$/.test(credentials.identifier)) {
-        user = await User.findOne({ phone: credentials.identifier });
-      } else if (credentials.identifier.startsWith('0x')) {
-        user = await User.findOne({ walletAddress: credentials.identifier.toLowerCase() });
-      }
-
-      if (!user) {
-        throw new AppError('Invalid credentials', 401);
-      }
-
-      // Check user status
-      if (user.status === UserStatus.SUSPENDED) {
-        throw new AppError('Account suspended. Please contact support', 403);
-      }
-
-      // Verify credentials based on auth provider
-      const isValid = await this.verifyCredentials(user, credentials);
-      if (!isValid) {
-        throw new AppError('Invalid credentials', 401);
-      }
-
-      // Update last login
-      user.lastLogin = new Date();
-      await user.save();
-
-      // Generate tokens
-      const accessToken = user.generateAuthToken();
-      const refreshToken = user.generateRefreshToken();
-
-      return {
-        success: true,
-        message: 'Login successful',
-        user: this.sanitizeUser(user),
-        tokens: {
-          accessToken,
-          refreshToken
-        }
-      };
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-      throw new AppError('Login failed', 500);
     }
-  }
 
-  /**
-   * Login or Register with Google
-   */
-  static async googleLogin(token: string, role?: UserRole): Promise<IAuthResponse> {
-    try {
-      let payload;
+    /**
+     * Create a Branch document for a newly registered branch user.
+     * Returns the Branch _id.
+     */
+    static async _createBranchForUser(user: any, businessName?: string): Promise<any> {
+        // Lazy-require to avoid circular dependency issues
+        const Branch = require('../models/Branch').default;
+        const { BranchStatus, BranchType } = require('../types/branch');
 
-      // Check if it's a JWT (ID Token) or an opaque Access Token
-      if (token.split('.').length === 3) {
-        // Handle ID Token
-        const ticket = await googleClient.verifyIdToken({
-          idToken: token,
-          audience: process.env.GOOGLE_CLIENT_ID,
+        // Use user's location if available, otherwise fall back to Lagos default
+        const location = (user.location && user.location.coordinates && user.location.coordinates.length === 2)
+            ? user.location
+            : {
+                type: 'Point',
+                coordinates: [3.3792, 6.5244],
+                address: 'To be updated',
+                city: 'Lagos',
+                state: 'Lagos',
+                country: 'Nigeria'
+            };
+
+        const branch = new Branch({
+            name: businessName || user.businessName || `${user.firstName}'s Branch`,
+            code: `BR${Math.floor(Math.random() * 100000).toString().padStart(5, '0')}`,
+            description: `Branch owned by ${user.firstName} ${user.lastName}`,
+            branchType: BranchType.COLLECTION_POINT,
+            status: BranchStatus.ACTIVE,
+            ownerId: user._id,
+            contactPerson: {
+                name: `${user.firstName} ${user.lastName}`,
+                phone: user.phone || '0000000000',
+                email: user.email || `${user.username}@ecolink.ng`,
+                position: 'Owner'
+            },
+            location,
+            servingRadius: 50,
+            capacity: {
+                current: 0,
+                maximum: 10000,
+                reserved: 0,
+                available: 10000
+            },
+            processingCapabilities: {
+                materialTypes: ['plastic', 'metal', 'paper', 'glass', 'household'],
+                treatments: [],
+                maxBatchSize: 1000,
+                processingTimeHours: 24,
+                qualityGrades: ['A', 'B', 'C', 'D']
+            },
+            commissionRate: 5
         });
-        payload = ticket.getPayload();
-      } else {
-        // Handle Access Token - Fetch from userinfo endpoint
-        const response = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${token}`);
-        if (!response.ok) {
-          throw new AppError('Failed to verify Google access token', 400);
-        }
-        payload = await response.json() as any;
-      }
 
-      if (!payload || !payload.email) {
-        throw new AppError('Invalid Google token data', 400);
-      }
+        await branch.save();
+        logger.info(`Branch document created: ${branch._id} for user ${user._id}`);
+        return branch._id;
+    }
 
-      const email = payload.email.toLowerCase();
-      let user = await User.findOne({ email });
+    /**
+     * Create a Company document for a newly registered exporter user.
+     * Returns the Company _id.
+     */
+    static async _createCompanyForUser(user: any, businessName?: string): Promise<any> {
+        const Company = require('../models/Company').default;
+        const { CompanyStatus } = require('../types/company');
 
-      if (!user) {
-        // Create new user if not exists
-        user = new User({
-          username: (email.split('@')[0] || 'user') + Math.floor(Math.random() * 1000),
-          email,
-          firstName: payload.given_name || 'Google',
-          lastName: payload.family_name || 'User',
-          role: role || UserRole.PENDING,
-          authProvider: AuthProvider.GOOGLE,
-          isEmailVerified: true,
-          status: UserStatus.ACTIVE
+        const company = new Company({
+            name: businessName || user.businessName || `${user.firstName}'s Company`,
+            businessType: user.businessType || 'exporter',
+            ownerId: user._id,
+            status: CompanyStatus.ACTIVE,
+            location: user.location,
+            balance: 0,
+            currency: 'NGN',
+            isVerified: false
         });
-        await user.save();
-        await this.sendWelcomeNotification(user);
-      } else if (user.status === UserStatus.SUSPENDED) {
-        throw new AppError('Account suspended', 403);
-      }
 
-      // Update last login
-      user.lastLogin = new Date();
-      await user.save();
-
-      const accessToken = user.generateAuthToken();
-      const refreshToken = user.generateRefreshToken();
-
-      return {
-        success: true,
-        message: 'Google login successful',
-        user: this.sanitizeUser(user),
-        tokens: { accessToken, refreshToken }
-      };
-    } catch (error: any) {
-      console.error('Google login internal error:', error);
-      if (error instanceof AppError) throw error;
-      throw new AppError(`Google authentication failed: ${error.message}`, 500);
+        await company.save();
+        logger.info(`Company document created: ${company._id} for user ${user._id}`);
+        return company._id;
     }
-  }
 
-  /**
-   * Generate a nonce for SIWE
-   */
-  static generateNonce(): string {
-    return generateNonce();
-  }
+    /**
+     * Login user
+     */
+    static async login(credentials: ILoginCredentials): Promise<IAuthResponse> {
+        try {
+            const { identifier, password, signature, message } = credentials;
 
-  /**
-   * Verify SIWE signature and login/register
-   */
-  static async verifyWalletLogin(data: { message: string; signature: string; role?: UserRole }): Promise<IAuthResponse> {
-    try {
-      const siweMessage = new SiweMessage(data.message);
-      const { data: verifiedData } = await siweMessage.verify({ signature: data.signature });
+            const user = await User.findOne({
+                $or: [
+                    { email: identifier.toLowerCase() },
+                    { username: identifier.toLowerCase() },
+                    { phone: identifier },
+                    { walletAddress: identifier.toLowerCase() }
+                ]
+            });
 
-      const walletAddress = verifiedData.address.toLowerCase();
-      let user = await User.findOne({ walletAddress });
+            if (!user) {
+                throw new AppError('Invalid credentials', 401);
+            }
 
-      if (!user) {
-        // Create new user if not exists
-        user = new User({
-          username: `wallet_${walletAddress.substring(0, 6)}_${walletAddress.substring(38)}`,
-          walletAddress,
-          firstName: 'Web3',
-          lastName: 'User',
-          role: data.role || UserRole.PENDING,
-          authProvider: AuthProvider.WALLET,
-          status: UserStatus.ACTIVE
-        });
-        await user.save();
-        // Skip email notification for pure wallet users
-      } else if (user.status === UserStatus.SUSPENDED) {
-        throw new AppError('Account suspended', 403);
-      }
+            // Verify password if using email/phone/username
+            if (user.authProvider !== AuthProvider.WALLET) {
+                if (!password) throw new AppError('Password is required', 400);
+                const isMatch = await user.comparePassword(password);
+                if (!isMatch) {
+                    throw new AppError('Invalid credentials', 401);
+                }
+            } else {
+                if (!signature || !message) {
+                    throw new AppError('Signature and message are required for wallet login', 400);
+                }
+            }
 
-      // Update last login
-      user.lastLogin = new Date();
-      await user.save();
+            if (user.status === UserStatus.SUSPENDED) {
+                throw new AppError('Account is suspended. Please contact support.', 403);
+            }
 
-      const accessToken = user.generateAuthToken();
-      const refreshToken = user.generateRefreshToken();
+            user.lastLogin = new Date();
+            await user.save();
 
-      return {
-        success: true,
-        message: 'Wallet login successful',
-        user: this.sanitizeUser(user),
-        tokens: { accessToken, refreshToken }
-      };
-    } catch (error: any) {
-      console.error('Wallet verification internal error:', error);
-      if (error instanceof AppError) throw error;
-      throw new AppError(`Wallet verification failed: ${error.message}`, 500);
-    }
-  }
+            const accessToken = user.generateAuthToken();
+            const refreshToken = user.generateRefreshToken();
 
-  /**
-   * Refresh access token
-   */
-  static async refreshToken(refreshToken: string): Promise<IAuthResponse> {
-    try {
-      const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!) as any;
-      const user = await User.findById(payload.userId);
+            logger.info(`User logged in: ${user._id}`);
 
-      if (!user || user.status === UserStatus.SUSPENDED) {
-        throw new AppError('Invalid refresh token', 401);
-      }
-
-      const newAccessToken = user.generateAuthToken();
-      const newRefreshToken = user.generateRefreshToken();
-
-      return {
-        success: true,
-        message: 'Token refreshed successfully',
-        user: this.sanitizeUser(user),
-        tokens: {
-          accessToken: newAccessToken,
-          refreshToken: newRefreshToken
+            return {
+                success: true,
+                message: 'Login successful',
+                user,
+                tokens: { accessToken, refreshToken }
+            };
+        } catch (error) {
+            logger.error('Login failed:', error);
+            if (error instanceof AppError) throw error;
+            throw new AppError('Login failed', 500);
         }
-      };
-    } catch (error) {
-      throw new AppError('Invalid refresh token', 401);
-    }
-  }
-
-  /**
-   * Verify wallet signature for wallet authentication
-   */
-  static async verifyWalletSignature(walletAddress: string, message: string, signature: string): Promise<boolean> {
-    try {
-      const recoveredAddress = ethers.verifyMessage(message, signature);
-      return recoveredAddress.toLowerCase() === walletAddress.toLowerCase();
-    } catch (error) {
-      return false;
-    }
-  }
-
-  /**
-   * Get user profile by ID
-   */
-  static async getUserProfile(userId: string): Promise<IUser | null> {
-    return User.findById(userId).select('-password') as Promise<IUser | null>;
-  }
-
-  /**
-   * Update user profile
-   */
-  static async updateProfile(userId: string, updateData: Partial<IUser>): Promise<IUser> {
-    const user = await User.findByIdAndUpdate(
-      userId,
-      updateData,
-      { new: true, runValidators: true }
-    ).select('-password');
-
-    if (!user) {
-      throw new AppError('User not found', 404);
     }
 
-    return user;
-  }
-
-  /**
-   * Change password
-   */
-  static async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
-    const user = await User.findById(userId);
-    if (!user) {
-      throw new AppError('User not found', 404);
+    /**
+     * Google Login/Signup
+     */
+    static async googleLogin(idToken: string, role?: string): Promise<IAuthResponse> {
+        throw new AppError('Google login reconstruction in progress', 501);
     }
 
-    const isCurrentPasswordValid = await user.comparePassword(currentPassword);
-    if (!isCurrentPasswordValid) {
-      throw new AppError('Current password is incorrect', 400);
+    /**
+     * Generate Nonce for SIWE
+     */
+    static generateNonce(): string {
+        return Math.random().toString(36).substring(2, 15);
     }
 
-    user.password = newPassword;
-    await user.save();
-  }
-
-  /**
-   * Send email verification
-   */
-  static async sendEmailVerification(userId: string): Promise<void> {
-    const user = await User.findById(userId);
-    if (!user || !user.email) {
-      throw new AppError('User not found or email not provided', 404);
+    /**
+     * Verify Wallet Login
+     */
+    static async verifyWalletLogin(data: any): Promise<IAuthResponse> {
+        throw new AppError('Wallet login reconstruction in progress', 501);
     }
-
-    if (user.isEmailVerified) {
-      throw new AppError('Email already verified', 400);
-    }
-
-    await sendVerificationEmail(user.email, user.firstName);
-  }
-
-  /**
-   * Verify email
-   */
-  static async verifyEmail(userId: string, token: string): Promise<void> {
-    // Implementation would depend on your verification token system
-    const user = await User.findById(userId);
-    if (!user) {
-      throw new AppError('User not found', 404);
-    }
-
-    user.isEmailVerified = true;
-    if (user.status === UserStatus.PENDING_VERIFICATION) {
-      user.status = UserStatus.ACTIVE;
-    }
-    await user.save();
-  }
-
-  /**
-   * Logout user (invalidate tokens - would require token blacklisting)
-   */
-  static async logout(userId: string): Promise<void> {
-    // In a production system, you would add the tokens to a blacklist
-    // For now, we'll just update the last login
-    await User.findByIdAndUpdate(userId, { lastLogin: new Date() });
-  }
-
-  // Private helper methods
-  private static async findExistingUser(userData: IRegisterData): Promise<IUser | null> {
-    const conditions = [];
-
-    if (userData.email) {
-      conditions.push({ email: userData.email.toLowerCase() });
-    }
-    if (userData.phone) {
-      conditions.push({ phone: userData.phone });
-    }
-    if (userData.walletAddress) {
-      conditions.push({ walletAddress: userData.walletAddress.toLowerCase() });
-    }
-
-    if (conditions.length === 0) return null;
-
-    return User.findOne({ $or: conditions });
-  }
-
-  private static async verifyCredentials(user: IUser, credentials: ILoginCredentials): Promise<boolean> {
-    switch (user.authProvider) {
-      case AuthProvider.EMAIL:
-      case AuthProvider.PHONE:
-        if (!credentials.password) return false;
-        return user.comparePassword(credentials.password);
-
-      case AuthProvider.WALLET:
-        if (!credentials.signature || !credentials.message) return false;
-        return this.verifyWalletSignature(user.walletAddress!, credentials.message, credentials.signature);
-
-      default:
-        return false;
-    }
-  }
-
-  private static async sendWelcomeNotification(user: IUser): Promise<void> {
-    try {
-      if (user.email && user.notifications.email) {
-        await sendWelcomeEmail(user.email, user.firstName);
-      }
-      // Add SMS welcome notification if needed
-    } catch (error) {
-      // Log error but don't fail registration
-      console.error('Failed to send welcome notification:', error);
-    }
-  }
-
-  private static sanitizeUser(user: IUser): Partial<IUser> {
-    const sanitized = user.toJSON();
-    delete sanitized.password;
-    return sanitized;
-  }
 }

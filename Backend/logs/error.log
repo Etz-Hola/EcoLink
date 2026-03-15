@@ -201,3 +201,12 @@
 2026-03-05 16:09:44:944 [31merror[39m: [31mDatabase connection failed: queryTxt ESERVFAIL cluster0.ksak8ks.mongodb.net[39m
 2026-03-05 16:48:34:4834 [31merror[39m: [31mDatabase connection failed: querySrv ESERVFAIL _mongodb._tcp.cluster0.ksak8ks.mongodb.net[39m
 2026-03-05 17:01:07:17 [31merror[39m: [31mDatabase connection failed: querySrv ESERVFAIL _mongodb._tcp.cluster0.ksak8ks.mongodb.net[39m
+2026-03-05 18:17:15:1715 [31merror[39m: [31mDatabase connection failed: queryTxt ESERVFAIL cluster0.ksak8ks.mongodb.net[39m
+2026-03-10 13:51:16:5116 [31merror[39m: [31mDatabase connection failed: queryTxt ESERVFAIL cluster0.ksak8ks.mongodb.net[39m
+2026-03-11 12:13:34:1334 [31merror[39m: [31mDatabase connection failed: queryTxt ESERVFAIL cluster0.ksak8ks.mongodb.net[39m
+2026-03-13 10:52:12:5212 [31merror[39m: [31mRegistration failed: User with these credentials already exists[39m
+2026-03-13 10:52:51:5251 [31merror[39m: [31mRegistration failed: User with these credentials already exists[39m
+2026-03-13 11:24:58:2458 [31merror[39m: [31mFailed to save notification for user 69a21d9c8d82916d87b5adad: Notification validation failed: type: `bundle` is not a valid enum value for path `type`.[39m
+2026-03-13 11:47:42:4742 [31merror[39m: [31mDatabase connection failed: queryTxt ESERVFAIL cluster0.ksak8ks.mongodb.net[39m
+2026-03-13 11:48:11:4811 [31merror[39m: [31mDatabase connection failed: queryTxt ESERVFAIL cluster0.ksak8ks.mongodb.net[39m
+2026-03-13 12:00:29:029 [31merror[39m: [31mRegistration failed: User with these credentials already exists[39m

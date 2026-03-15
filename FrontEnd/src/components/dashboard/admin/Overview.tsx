@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import {
     Users, Package, DollarSign, TrendingUp,
     MapPin, Clock, ArrowUpRight, ArrowDownRight,
-    ShieldCheck, AlertCircle, RefreshCw
+    ShieldCheck, RefreshCw
 } from 'lucide-react';
 import { useAuth } from '../../../hooks/useAuth';
 import axios from 'axios';
@@ -78,26 +78,86 @@ interface DashboardStats {
     };
 }
 
+interface PendingEntity {
+    _id: string;
+    businessName?: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    status: string;
+    location?: { address: string; city: string; state: string };
+    createdAt: string;
+}
+
 const AdminOverview: React.FC = () => {
     const { user } = useAuth();
     const [stats, setStats] = useState<DashboardStats | null>(null);
+    const [pendingBranches, setPendingBranches] = useState<PendingEntity[]>([]);
+    const [pendingExporters, setPendingExporters] = useState<PendingEntity[]>([]);
     const [loading, setLoading] = useState(true);
+    const [rejectingId, setRejectingId] = useState<string | null>(null);
+    const [rejectReason, setRejectReason] = useState('');
     const firstName = user?.firstName || user?.name?.split(' ')[0] || 'Admin';
 
     const fetchStats = async () => {
         setLoading(true);
         try {
             const token = localStorage.getItem('ecolink_token');
-            const res = await axios.get(`${API_URL}/admin/stats`, {
+            const [statsRes, pendingRes, pendingExpRes] = await Promise.all([
+                axios.get(`${API_URL}/admin/stats`, { headers: { Authorization: `Bearer ${token}` } }),
+                axios.get(`${API_URL}/admin/branches/pending`, { headers: { Authorization: `Bearer ${token}` } }),
+                axios.get(`${API_URL}/admin/exporters/pending`, { headers: { Authorization: `Bearer ${token}` } })
+            ]);
+
+            if (statsRes.data.success) setStats(statsRes.data.data);
+            if (pendingRes.data.success) setPendingBranches(pendingRes.data.data);
+            if (pendingExpRes.data.success) setPendingExporters(pendingExpRes.data.data);
+        } catch {
+            toast.error('Failed to load dashboard data');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleApprove = async (id: string, role: string) => {
+        try {
+            const token = localStorage.getItem('ecolink_token');
+            const endpoint = role === 'branch' 
+                ? `${API_URL}/admin/branches/${id}/approve`
+                : `${API_URL}/admin/exporters/${id}/approve`;
+            
+            const res = await axios.patch(endpoint, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.data.success) {
-                setStats(res.data.data);
+                toast.success(`${role === 'branch' ? 'Branch' : 'Exporter'} approved successfully! 🏢`);
+                fetchStats();
             }
         } catch {
-            toast.error('Failed to load global stats');
-        } finally {
-            setLoading(false);
+            toast.error(`Failed to approve ${role}`);
+        }
+    };
+
+    const handleReject = async (role: string) => {
+        if (!rejectingId) return;
+        try {
+            const token = localStorage.getItem('ecolink_token');
+            const endpoint = role === 'branch'
+                ? `${API_URL}/admin/branches/${rejectingId}/reject`
+                : `${API_URL}/admin/exporters/${rejectingId}/reject`;
+
+            const res = await axios.patch(endpoint, 
+                { reason: rejectReason },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (res.data.success) {
+                toast.success(`${role === 'branch' ? 'Branch' : 'Exporter'} rejected`);
+                setRejectingId(null);
+                setRejectReason('');
+                fetchStats();
+            }
+        } catch {
+            toast.error(`Failed to reject ${role}`);
         }
     };
 
@@ -149,8 +209,9 @@ const AdminOverview: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Main Chart / Stats Area */}
+                {/* Main Content Area */}
                 <div className="lg:col-span-2 space-y-8">
+                    {/* Performance Chart Card */}
                     <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
                             <TrendingUp size={200} />
@@ -193,41 +254,175 @@ const AdminOverview: React.FC = () => {
                         </div>
                     </div>
 
+                    {/* Secondary Cards Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Pending Branches Section */}
                         <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
                             <div className="absolute -top-4 -right-4 w-24 h-24 bg-amber-50 rounded-full blur-2xl opacity-50 group-hover:bg-amber-100 transition-colors" />
-                            <div className="flex items-center gap-3 mb-6">
-                                <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shadow-sm">
-                                    <AlertCircle size={20} />
+                            <div className="flex items-center justify-between mb-8">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shadow-sm">
+                                        <ShieldCheck size={20} />
+                                    </div>
+                                    <h3 className="text-lg font-black text-gray-900 tracking-tight uppercase">Pending Branches</h3>
                                 </div>
-                                <h3 className="text-lg font-black text-gray-900 tracking-tight uppercase">Verifications</h3>
+                                <span className="px-3 py-1 bg-amber-50 text-amber-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-amber-100">
+                                    {pendingBranches.length} Requests
+                                </span>
                             </div>
+
                             <div className="space-y-4">
-                                <p className="text-sm font-medium text-gray-500 leading-relaxed">
-                                    There are currently <span className="text-amber-600 font-black">4 pending</span> entity verification requests.
-                                </p>
-                                <button className="w-full bg-gray-900 text-white font-black text-[10px] uppercase tracking-widest py-3.5 rounded-2xl hover:bg-emerald-600 transition-all shadow-xl shadow-gray-200 active:scale-[0.98]">
-                                    Enter Review Queue
-                                </button>
+                                {loading ? (
+                                    <div className="h-20 bg-gray-50 animate-pulse rounded-2xl" />
+                                ) : pendingBranches.length === 0 ? (
+                                    <div className="py-10 text-center">
+                                        <p className="text-xs font-bold text-gray-300 uppercase tracking-widest">No pending verifications</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 gap-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                                        {pendingBranches.map((branch) => (
+                                            <div key={branch._id} className="p-4 bg-gray-50/50 rounded-3xl border border-gray-100 hover:border-emerald-100 transition-all">
+                                                <div className="flex flex-col gap-3">
+                                                    <div>
+                                                        <h4 className="text-sm font-black text-gray-900 uppercase tracking-tight truncate">{branch.businessName || `${branch.firstName} ${branch.lastName}`}</h4>
+                                                        <div className="space-y-0.5 mt-1">
+                                                            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest truncate">{branch.email}</p>
+                                                            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1">
+                                                                <MapPin size={10} className="text-emerald-500" />
+                                                                {branch.location?.city || 'City'}, {branch.location?.state || 'State'}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <button 
+                                                            onClick={() => handleApprove(branch._id, 'branch')}
+                                                            className="flex-1 py-2 bg-emerald-600 text-white rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-emerald-700 transition-all active:scale-95 shadow-lg shadow-emerald-200/20"
+                                                        >
+                                                            Approve
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => setRejectingId(branch._id)}
+                                                            className="px-3 py-2 bg-white text-rose-600 border border-rose-100 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-rose-50 transition-all active:scale-95"
+                                                        >
+                                                            Reject
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                {rejectingId === branch._id && (
+                                                    <div className="mt-4 pt-4 border-t border-gray-100 animate-in slide-in-from-top-2">
+                                                        <input 
+                                                            type="text"
+                                                            placeholder="Reason..."
+                                                            className="w-full bg-white border border-rose-100 rounded-xl py-2 px-3 text-[9px] font-bold mb-2 outline-none"
+                                                            value={rejectReason}
+                                                            onChange={(e) => setRejectReason(e.target.value)}
+                                                        />
+                                                        <div className="flex gap-2">
+                                                            <button 
+                                                                onClick={() => handleReject('branch')}
+                                                                className="flex-1 py-2 bg-rose-600 text-white rounded-xl font-black text-[9px] uppercase tracking-widest"
+                                                            >
+                                                                Confirm
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => setRejectingId(null)}
+                                                                className="px-3 py-2 bg-gray-100 text-gray-500 rounded-xl font-black text-[9px] uppercase tracking-widest"
+                                                            >
+                                                                ✕
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
 
+                        {/* Pending Exporters Section */}
                         <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
-                            <div className="flex items-center gap-3 mb-6">
-                                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm">
-                                    <ShieldCheck size={20} />
+                            <div className="absolute -top-4 -right-4 w-24 h-24 bg-blue-50 rounded-full blur-2xl opacity-50 group-hover:bg-blue-100 transition-colors" />
+                            <div className="flex items-center justify-between mb-8">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm">
+                                        <ShieldCheck size={20} />
+                                    </div>
+                                    <h3 className="text-lg font-black text-gray-900 tracking-tight uppercase">Pending Exporters</h3>
                                 </div>
-                                <h3 className="text-lg font-black text-gray-900 tracking-tight uppercase">Network</h3>
+                                <span className="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-blue-100">
+                                    {pendingExporters.length} Requests
+                                </span>
                             </div>
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Health Score</span>
-                                    <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">98% Optimal</span>
-                                </div>
-                                <div className="w-full h-2 bg-gray-50 rounded-full overflow-hidden">
-                                    <motion.div initial={{ width: 0 }} animate={{ width: '98%' }} transition={{ duration: 1.5, ease: "easeOut" }} className="h-full bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.3)]" />
-                                </div>
-                                <p className="text-[10px] font-bold text-gray-400 mt-2 leading-tight">All clusters operational. Next scheduled audit: <span className="text-gray-900">4:00 AM CST</span>.</p>
+
+                            <div className="space-y-4">
+                                {loading ? (
+                                    <div className="h-20 bg-gray-50 animate-pulse rounded-2xl" />
+                                ) : pendingExporters.length === 0 ? (
+                                    <div className="py-10 text-center">
+                                        <p className="text-xs font-bold text-gray-300 uppercase tracking-widest">No pending exporters</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 gap-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                                        {pendingExporters.map((exporter) => (
+                                            <div key={exporter._id} className="p-4 bg-gray-50/50 rounded-3xl border border-gray-100 hover:border-emerald-100 transition-all">
+                                                <div className="flex flex-col gap-3">
+                                                    <div>
+                                                        <h4 className="text-sm font-black text-gray-900 uppercase tracking-tight truncate">{exporter.businessName || `${exporter.firstName} ${exporter.lastName}`}</h4>
+                                                        <div className="space-y-0.5 mt-1">
+                                                            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest truncate">{exporter.email}</p>
+                                                            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1">
+                                                                <MapPin size={10} className="text-emerald-500" />
+                                                                {exporter.location?.city || 'City'}, {exporter.location?.state || 'State'}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <button 
+                                                            onClick={() => handleApprove(exporter._id, 'exporter')}
+                                                            className="flex-1 py-2 bg-emerald-600 text-white rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-emerald-700 transition-all active:scale-95 shadow-lg shadow-emerald-200/20"
+                                                        >
+                                                            Approve
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => setRejectingId(exporter._id)}
+                                                            className="px-3 py-2 bg-white text-rose-600 border border-rose-100 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-rose-50 transition-all active:scale-95"
+                                                        >
+                                                            Reject
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                {rejectingId === exporter._id && (
+                                                    <div className="mt-4 pt-4 border-t border-gray-100 animate-in slide-in-from-top-2">
+                                                        <input 
+                                                            type="text"
+                                                            placeholder="Reason..."
+                                                            className="w-full bg-white border border-rose-100 rounded-xl py-2 px-3 text-[9px] font-bold mb-2 outline-none"
+                                                            value={rejectReason}
+                                                            onChange={(e) => setRejectReason(e.target.value)}
+                                                        />
+                                                        <div className="flex gap-2">
+                                                            <button 
+                                                                onClick={() => handleReject('exporter')}
+                                                                className="flex-1 py-2 bg-rose-600 text-white rounded-xl font-black text-[9px] uppercase tracking-widest"
+                                                            >
+                                                                Confirm
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => setRejectingId(null)}
+                                                                className="px-3 py-2 bg-gray-100 text-gray-500 rounded-xl font-black text-[9px] uppercase tracking-widest"
+                                                            >
+                                                                ✕
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

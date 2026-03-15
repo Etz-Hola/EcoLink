@@ -3,17 +3,20 @@ import { UserRole } from './user';
 
 export enum InviteStatus {
     PENDING = 'pending',
-    ACCEPTED = 'accepted',
-    EXPIRED = 'expired'
+    USED = 'used',
+    EXPIRED = 'expired',
+    REVOKED = 'revoked'
 }
 
 export interface IInvite extends Document {
     _id: Types.ObjectId;
     code: string;
-    organizationId: Types.ObjectId; // The entity that created the invite
+    organizationId?: Types.ObjectId;
     invitedEmail?: string;
-    role: UserRole; // Role to assign to the new user (e.g., manager, staff)
+    businessName?: string;
+    role: UserRole;
     createdBy: Types.ObjectId;
+    usedBy?: Types.ObjectId;
     status: InviteStatus;
     expiresAt: Date;
     createdAt: Date;

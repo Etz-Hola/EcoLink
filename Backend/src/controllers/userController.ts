@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import User from '../models/User';
 import { AppError } from '../utils/logger';
-import { UserRole } from '../types/user';
+import { UserRole, UserStatus } from '../types/user';
 
 export class UserController {
     /**
@@ -29,10 +29,13 @@ export class UserController {
             // Update role
             user.role = role;
 
-            // If user was pending, changing role activates them (or moves them to next step)
-            // For now, let's assume it keeps them active or sets them to active if they were pending verification?
-            // Actually, if they are 'pending' role, they might be 'active' status. 
-            // Let's just update the role.
+            // If switching to a business-level role after signup, require admin approval
+            if (role === UserRole.BRANCH || role === UserRole.EXPORTER) {
+                user.status = UserStatus.PENDING_APPROVAL;
+            } else {
+                // Collectors and standard organizations are active by default
+                user.status = UserStatus.ACTIVE;
+            }
 
             await user.save();
 

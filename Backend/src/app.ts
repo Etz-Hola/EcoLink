@@ -31,6 +31,7 @@ import bundleRoutes from './routes/bundleRoutes';
 import paymentRoutes from './routes/paymentRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import pricingRoutes from './routes/pricingRoutes';
+import companyRoutes from './routes/companyRoutes';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -52,7 +53,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Rate limiting
-app.use(rateLimitMiddleware); 
+app.use(rateLimitMiddleware);  
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -82,6 +83,7 @@ app.use(`/api/${API_VERSION}/bundles`, bundleRoutes);
 app.use(`/api/${API_VERSION}/payments`, paymentRoutes);
 app.use(`/api/${API_VERSION}/notifications`, notificationRoutes);
 app.use(`/api/${API_VERSION}/pricing`, pricingRoutes);
+app.use(`/api/${API_VERSION}/companies`, companyRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

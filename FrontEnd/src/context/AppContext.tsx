@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, ReactNode, useCallback, useMemo } from 'react';
 import { Material, Branch, AppState } from '../types';
 
 interface AppContextType extends AppState {
@@ -89,47 +89,47 @@ interface AppProviderProps {
 export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(appReducer, initialState);
 
-  const addMaterial = (material: Material): void => {
+  const addMaterial = useCallback((material: Material): void => {
     dispatch({ type: 'ADD_MATERIAL', payload: material });
-  };
+  }, []);
 
-  const updateMaterial = (materialId: string, updates: Partial<Material>): void => {
+  const updateMaterial = useCallback((materialId: string, updates: Partial<Material>): void => {
     dispatch({ type: 'UPDATE_MATERIAL', payload: { id: materialId, updates } });
-  };
+  }, []);
 
-  const deleteMaterial = (materialId: string): void => {
+  const deleteMaterial = useCallback((materialId: string): void => {
     dispatch({ type: 'DELETE_MATERIAL', payload: materialId });
-  };
+  }, []);
 
-  const setCurrentMaterial = (material: Material | null): void => {
+  const setCurrentMaterial = useCallback((material: Material | null): void => {
     dispatch({ type: 'SET_CURRENT_MATERIAL', payload: material });
-  };
+  }, []);
 
-  const setBranches = (branches: Branch[]): void => {
+  const setBranches = useCallback((branches: Branch[]): void => {
     dispatch({ type: 'SET_BRANCHES', payload: branches });
-  };
+  }, []);
 
-  const setLoading = (loading: boolean): void => {
+  const setLoading = useCallback((loading: boolean): void => {
     dispatch({ type: 'SET_LOADING', payload: loading });
-  };
+  }, []);
 
-  const setError = (error: string | null): void => {
+  const setError = useCallback((error: string | null): void => {
     dispatch({ type: 'SET_ERROR', payload: error });
-  };
+  }, []);
+
+  const value = useMemo(() => ({
+    ...state,
+    addMaterial,
+    updateMaterial,
+    deleteMaterial,
+    setCurrentMaterial,
+    setBranches,
+    setLoading,
+    setError
+  }), [state, addMaterial, updateMaterial, deleteMaterial, setCurrentMaterial, setBranches, setLoading, setError]);
 
   return (
-    <AppContext.Provider
-      value={{
-        ...state,
-        addMaterial,
-        updateMaterial,
-        deleteMaterial,
-        setCurrentMaterial,
-        setBranches,
-        setLoading,
-        setError
-      }}
-    >
+    <AppContext.Provider value={value}>
       {children}
     </AppContext.Provider>
   );

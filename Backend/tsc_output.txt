@@ -1,0 +1,3 @@
+src/services/materialService.ts(5,31): error TS2307: Cannot find module './uploadService' or its corresponding type declarations.
+src/services/materialService.ts(43,34): error TS7006: Parameter 'upload' implicitly has an 'any' type.
+src/services/pricingService.ts(19,49): error TS2339: Property 'findApplicableRules' does not exist on type 'Model<IPricingRule, {}, {}, {}, Document<unknown, {}, IPricingRule, {}, DefaultSchemaOptions> & IPricingRule & Required<...> & { ...; } & { ...; }, any, IPricingRule>'.

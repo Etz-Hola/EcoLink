@@ -140,6 +140,9 @@ export interface IBranch extends Document {
     maintenanceReminders: boolean;
     paymentUpdates: boolean;
   };
+
+  balance: number;
+  currency: string;
   
   // Timestamps
   registeredAt: Date;
