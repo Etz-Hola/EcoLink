@@ -22,7 +22,7 @@ interface ExportBundle {
   materialIds: string[];
 }
 
-export const useBranchData = () => {
+export const useBranchData = (lat?: number, lng?: number, radius: number = 50) => {
   const { user } = useAuth();
   const [stats, setStats] = useState<BranchStats | null>(null);
   const [pendingMaterials, setPendingMaterials] = useState<Material[]>([]);
@@ -43,10 +43,16 @@ export const useBranchData = () => {
       const token = localStorage.getItem('ecolink_token');
       const headers = { Authorization: `Bearer ${token}` };
 
-      const [statsRes, pendingRes, verifiedRes, bundlesRes, notifsRes, branchRes] = await Promise.all([
+      // Build query for nearby pending materials
+      let pendingUrl = `${API_URL}/materials/pending?status=pending`;
+      if (lat && lng) {
+        pendingUrl += `&lat=${lat}&lng=${lng}&radius=${radius}`;
+      }
+
+      const [statsRes, pendingRes, claimedRes, bundlesRes, notifsRes, branchRes] = await Promise.all([
         axios.get(`${API_URL}/materials/stats/branch`, { headers }),
-        axios.get(`${API_URL}/materials/pending?status=pending`, { headers }),
-        axios.get(`${API_URL}/materials/pending?status=approved,delivered`, { headers }),
+        axios.get(pendingUrl, { headers }),
+        axios.get(`${API_URL}/materials/pending?status=approved,pickup_scheduled,delivered`, { headers }),
         axios.get(`${API_URL}/bundles/my-bundles`, { headers }),
         axios.get(`${API_URL}/notifications/me`, { headers }),
         axios.get(`${API_URL}/branches/my-branch`, { headers })
@@ -54,18 +60,21 @@ export const useBranchData = () => {
 
       if (statsRes.data.success) setStats(statsRes.data.data);
       if (pendingRes.data.success) setPendingMaterials(pendingRes.data.data);
-      if (verifiedRes.data.success) setVerifiedMaterials(verifiedRes.data.data);
+      if (claimedRes.data.success) setVerifiedMaterials(claimedRes.data.data);
       if (bundlesRes.data.success) setBundles(bundlesRes.data.data);
       if (notifsRes.data.success) setNotifications(notifsRes.data.data);
       if (branchRes.data.success) setBalance(branchRes.data.data.balance || 0);
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching branch data:', err);
-      setError(err.response?.data?.message || 'Failed to sync hub data');
+      const errorMessage = axios.isAxiosError(err) 
+        ? err.response?.data?.message || 'Failed to sync hub data'
+        : 'An unexpected error occurred';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
-  }, [API_URL, user]);
+  }, [API_URL, user, lat, lng, radius]);
 
   useEffect(() => {
     fetchData();

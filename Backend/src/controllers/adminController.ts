@@ -134,7 +134,8 @@ export class AdminController {
             const { businessName, expiresDays = 30, role = UserRole.BRANCH } = req.body;
             const adminId = (req as any).user._id;
 
-            const code = `BRANCH-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+            const prefix = role.toUpperCase();
+            const code = `${prefix}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
             
             const invite = new Invite({
                 code,

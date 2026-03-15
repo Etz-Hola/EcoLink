@@ -5,11 +5,13 @@ import ProcessingQueue from '../../components/dashboard/ProcessingQueue';
 import BundleCreator from '../../components/dashboard/BundleCreator';
 import NearbyBuyersMap from '../../components/dashboard/NearbyBuyersMap';
 import { useBranchData } from '../../hooks/useBranchData';
-import { Notification, Material } from '../../types';
+import { Notification } from '../../types';
 import toast from 'react-hot-toast';
 
 const BranchDashboard: React.FC = () => {
   const { user } = useAuth();
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  
   const { 
     stats, 
     pendingMaterials, 
@@ -19,9 +21,7 @@ const BranchDashboard: React.FC = () => {
     balance, 
     loading, 
     refreshData 
-  } = useBranchData();
-  
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  } = useBranchData(userLocation?.lat, userLocation?.lng);
   const [isSyncing, setIsSyncing] = useState(false);
 
   // Geolocation
@@ -51,8 +51,6 @@ const BranchDashboard: React.FC = () => {
     { label: 'Monthly Traffic', value: `${(stats?.totalWeight || 0).toLocaleString()}kg`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
     { label: 'Platform Credit', value: `₦${(balance || 0).toLocaleString()}`, icon: Award, color: 'text-amber-600', bg: 'bg-amber-50' },
   ];
-
-  const firstName = user?.firstName || user?.name?.split(' ')[0] || 'Member';
 
   return (
     <div className="max-w-7xl mx-auto space-y-10 pb-20 px-4 md:px-0 animate-in fade-in duration-700">
