@@ -234,7 +234,7 @@ export class MaterialController {
             }
             if (notes && material.qualityAssessment) {
                 material.qualityAssessment.notes = notes;
-            }
+            } 
 
             if (status === MaterialStatus.APPROVED || status === MaterialStatus.REJECTED || status === 'accepted') {
                 material.status = status === 'accepted' ? MaterialStatus.APPROVED : status;
