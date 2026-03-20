@@ -210,3 +210,6 @@
 2026-03-13 11:47:42:4742 [31merror[39m: [31mDatabase connection failed: queryTxt ESERVFAIL cluster0.ksak8ks.mongodb.net[39m
 2026-03-13 11:48:11:4811 [31merror[39m: [31mDatabase connection failed: queryTxt ESERVFAIL cluster0.ksak8ks.mongodb.net[39m
 2026-03-13 12:00:29:029 [31merror[39m: [31mRegistration failed: User with these credentials already exists[39m
+2026-03-15 05:23:32:2332 [31merror[39m: [31mLogin failed: Invalid credentials[39m
+2026-03-15 05:39:10:3910 [31merror[39m: [31mInternal transfer failed: Insufficient balance in organization account[39m
+2026-03-15 05:39:30:3930 [31merror[39m: [31mInternal transfer failed: Insufficient balance in organization account[39m

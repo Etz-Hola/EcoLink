@@ -36,7 +36,7 @@ export const useBranchData = (lat?: number, lng?: number, radius: number = 50) =
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
   const fetchData = useCallback(async () => {
-    if (!user) return;
+    if (!user || user.status === 'pending_approval' || lat === undefined || lng === undefined) return;
     setLoading(true);
     setError(null);
     try {

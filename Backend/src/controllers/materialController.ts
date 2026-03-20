@@ -178,9 +178,13 @@ export class MaterialController {
                 const statusList = status.split(',').map(s => s.trim()).filter(Boolean);
                 query.status = statusList.length > 1 ? { $in: statusList } : statusList[0];
 
-                // Filter by processing branch/organization
-                const targetBranchId = (req.query.branchId as string) || user.branchId || organizationId;
-                query.processingBranch = targetBranchId;
+                // Filter by processing branch/organization ONLY if we are fetching claimed inventory 
+                // e.g., 'approved', 'delivered' etc. If fetching purely 'pending', do not restrict by branch 
+                // because pending items are unclaimed.
+                if (!(statusList.length === 1 && statusList[0] === MaterialStatus.PENDING)) {
+                    const targetBranchId = (req.query.branchId as string) || user.branchId || organizationId;
+                    query.processingBranch = targetBranchId;
+                }
             } else {
                 query.status = MaterialStatus.PENDING;
             }
@@ -220,7 +224,7 @@ export class MaterialController {
             const material = await Material.findById(id);
             if (!material) {
                 throw new AppError('Material not found', 404);
-            }
+            } 
 
             const finalPrice = offeredPrice || req.body.pricePerKg;
             if (finalPrice) {

@@ -29,7 +29,8 @@ const BranchDashboard: React.FC = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude }),
-        () => setUserLocation({ lat: 6.5244, lng: 3.3792 })
+        () => setUserLocation({ lat: 6.5244, lng: 3.3792 }),
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     } else {
       setUserLocation({ lat: 6.5244, lng: 3.3792 });

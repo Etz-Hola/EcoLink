@@ -119,7 +119,7 @@ const MaterialUpload: React.FC = () => {
         setLocationLoading(false);
         setLocationError('Could not get your location. Please enter it manually.');
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   };
 

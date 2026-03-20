@@ -9,7 +9,7 @@ const upload = multer({ limits: { fileSize: 10 * 1024 * 1024 } });
 const router = express.Router();
 
 // Public/Semi-public routes
-router.get('/pending', MaterialController.getPendingMaterials);
+router.get('/pending', protect, MaterialController.getPendingMaterials);
 router.get('/stats/branch', protect, authorize(UserRole.BRANCH, UserRole.ADMIN), MaterialController.getBranchStats);
 
 // Protected routes
