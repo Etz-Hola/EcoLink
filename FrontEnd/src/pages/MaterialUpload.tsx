@@ -20,7 +20,7 @@ interface AdminDefaultPrice {
   materialType: string;
   condition: string | null;
   name: string;
-}
+} 
 
 interface LocationData {
   lat: number;
@@ -41,7 +41,7 @@ const MaterialUpload: React.FC = () => {
     condition: 'clean',
     weight: '',
     description: '',
-  });
+  }); 
 
   const [photos, setPhotos] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
